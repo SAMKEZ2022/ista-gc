@@ -96,25 +96,29 @@
     debugInfo.classList.remove('hidden');
     debugInfo.innerHTML = `<b>Debug:</b> Je cherche les notes pour l'email → [${studentEmail}]`;
     
-    const q = query(collection(db, "notes"), where("studentEmail", "==", studentEmail));
-    const querySnapshot = await getDocs(q);
-    notesList.innerHTML = "";
-    
-    if(querySnapshot.empty){
-      notesList.innerHTML = `Aucune note trouvée pour l'email : <b>${studentEmail}</b><br><br>
-      Vérifie dans Firebase que le champ "studentEmail" est exactement : ${studentEmail}`;
-      return;
-    }
+    try {
+      const q = query(collection(db, "notes"), where("studentEmail", "==", studentEmail));
+      const querySnapshot = await getDocs(q);
+      notesList.innerHTML = "";
+      
+      if(querySnapshot.empty){
+        notesList.innerHTML = `❌ Aucune note trouvée pour l'email : <b>${studentEmail}</b><br><br>
+        Va dans Firebase > Firestore > notes et vérifie que studentEmail = ${studentEmail}`;
+        return;
+      }
 
-    querySnapshot.forEach((doc) => {
-      const note = doc.data();
-      notesList.innerHTML += `
-        <div class="note">
-          <b>${note.courseName}</b> : ${note.grade}/20 
-          <span style="float: right;">${note.semester}</span>
-        </div>
-      `;
-    });
+      querySnapshot.forEach((doc) => {
+        const note = doc.data();
+        notesList.innerHTML += `
+          <div class="note">
+            <b>${note.courseName}</b> : ${note.grade}/20 
+            <span style="float: right;">${note.semester}</span>
+          </div>
+        `;
+      });
+    } catch(error) {
+      notesList.innerHTML = "❌ Erreur Firebase: " + error.message;
+    }
   }
 </script>
 
