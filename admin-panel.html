@@ -6,82 +6,34 @@
   <title>ISTA-GC | Panel Admin</title>
   <style>
     *{box-sizing:border-box; margin:0; padding:0}
-    body{
-      font-family:'Segoe UI', Arial, sans-serif; 
-      background:#F5F1EB /* Fond café très clair */
-    }
+    body{font-family:'Segoe UI', Arial, sans-serif; background:#F5F1EB}
     
-    /* HEADER CAFÉ */
     header{
-      background:#6B4F3D; /* Café foncé */
-      color:white; 
-      padding:12px 30px; 
-      display:flex; 
-      align-items:center;
-      gap:15px;
-      box-shadow:0 2px 8px rgba(0,0,0,0.25);
-      position:sticky;
-      top:0;
-      z-index:10
+      background:#6B4F3D; color:white; padding:12px 30px; 
+      display:flex; align-items:center; gap:15px;
+      box-shadow:0 2px 8px rgba(0,0,0,0.25); position:sticky; top:0;
     }
-    header img{
-      height:50px; 
-      background:white; 
-      padding:4px; 
-      border-radius:8px
-    }
+    header img{height:50px; background:white; padding:4px; border-radius:8px}
     header h1{font-size:20px; margin:0; font-weight:600}
 
-    /* CONTENU */
-    .container{
-      max-width:550px; 
-      margin:60px auto; 
-      background:white; 
-      padding:35px; 
-      border-radius:12px; 
-      box-shadow:0 4px 20px rgba(107,79,61,0.15)
-    }
-    input{
-      padding:14px; 
-      margin:10px 0; 
-      width:100%; 
-      border:1px solid #D2B48C; 
-      border-radius:6px; 
-      font-size:15px;
-      transition:0.2s
-    }
-    input:focus{
-      outline:none; 
-      border-color:#8B6F47;
-      box-shadow:0 0 0 2px rgba(139,111,71,0.1)
-    }
+    .container{max-width:650px; margin:40px auto; background:white; padding:35px; border-radius:12px; box-shadow:0 4px 20px rgba(107,79,61,0.15)}
+    input{padding:14px; margin:10px 0; width:100%; border:1px solid #D2B48C; border-radius:6px; font-size:15px}
+    input:focus{outline:none; border-color:#8B6F47}
     
-    /* BOUTON CAFÉ */
-    .btn{
-      padding:14px; 
-      width:100%; 
-      background:#8B6F47; /* Café */
-      color:white; 
-      border:none; 
-      cursor:pointer; 
-      border-radius:6px; 
-      font-size:16px;
-      font-weight:bold;
-      margin-top:10px;
-      transition:0.2s
-    }
-    .btn:hover{background:#6B4F3D; transform:translateY(-1px)}
-
-    #adminSection{display:none}
-    h2{
-      text-align:center; 
-      color:#6B4F3D; 
-      margin-bottom:25px;
-      font-size:24px
-    }
+    .btn{padding:14px; width:100%; background:#8B6F47; color:white; border:none; cursor:pointer; border-radius:6px; font-size:16px; font-weight:bold; margin-top:10px}
+    .btn:hover{background:#6B4F3D}
+    .btn-small{padding:8px 12px; font-size:14px; width:auto; margin-left:10px}
     .btn-danger{background:#A0522D !important}
     .btn-danger:hover{background:#8B4513 !important}
-    hr{border:none; border-top:1px solid #EADDCF; margin:20px 0}
+
+    #adminSection{display:none}
+    h2{text-align:center; color:#6B4F3D; margin-bottom:25px; font-size:24px}
+    hr{border:none; border-top:1px solid #EADDCF; margin:25px 0}
+    
+    /* LISTE DES COURS */
+    .cours-item{display:flex; justify-content:space-between; align-items:center; padding:15px; border:1px solid #EADDCF; border-radius:8px; margin-bottom:10px; background:#FFFBF7}
+    .cours-info b{color:#6B4F3D; font-size:16px}
+    .cours-info p{margin:3px 0; color:#555; font-size:14px}
   </style>
 </head>
 <body>
@@ -91,9 +43,8 @@
   </header>
 
   <div class="container">
-    <h2>Connexion Admin</h2>
-    
     <div id="loginSection">
+      <h2>Connexion Admin</h2>
       <input id="email" type="email" placeholder="Email Admin" required>
       <input id="password" type="password" placeholder="Mot de passe" required>
       <button class="btn" onclick="login()">Se connecter</button>
@@ -108,6 +59,10 @@
       
       <hr>
       
+      <h2>Liste des cours</h2>
+      <div id="listeCours">Chargement...</div>
+
+      <hr>
       <button class="btn btn-danger" onclick="logout()">Se déconnecter</button>
     </div>
   </div>
@@ -115,9 +70,9 @@
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
   import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
-  import { getFirestore, collection, addDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+  import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
-  // ⚠️ COLLE ICI LA MÊME CONFIG QUE DANS salle-cours.html
+  // ⚠️ COLLE TA CONFIG ICI - MÊME QUE salle-cours.html
   const firebaseConfig = {
     apiKey: "TA_CLE",
     authDomain: "TON_PROJET.firebaseapp.com",
@@ -131,15 +86,14 @@
   const auth = getAuth(app);
   const db = getFirestore(app);
 
-  // Vérifier si déjà connecté
   onAuthStateChanged(auth, user => {
     if(user){ 
       document.getElementById('loginSection').style.display='none'; 
       document.getElementById('adminSection').style.display='block'; 
+      chargerCours();
     }
   });
 
-  // Connexion
   window.login = () => {
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
@@ -147,27 +101,45 @@
     .catch(err => alert("Erreur: " + err.message))
   }
 
-  // Déconnexion
   window.logout = () => signOut(auth).then(()=>location.reload())
 
-  // Ajouter cours
   window.ajouterCours = async () => {
     const nom = document.getElementById('nomCours').value;
     const salle = document.getElementById('salle').value;
     const heure = document.getElementById('heure').value;
-    
     if(!nom) return alert("Le nom du cours est obligatoire");
     
-    await addDoc(collection(db, "cours"), {
-      nom: nom,
-      salle: salle,
-      heure: heure,
-      createdAt: new Date()
-    });
-    alert("Cours ajouté avec succès !");
+    await addDoc(collection(db, "cours"), {nom, salle, heure, createdAt: new Date()});
+    alert("Cours ajouté !");
     document.getElementById('nomCours').value = ""; 
     document.getElementById('salle').value = ""; 
     document.getElementById('heure').value = "";
+    chargerCours();
+  }
+
+  async function chargerCours(){
+    const snap = await getDocs(collection(db, "cours"));
+    let html = "";
+    snap.forEach(docSnap => {
+      const c = docSnap.data();
+      html += `
+        <div class="cours-item">
+          <div class="cours-info">
+            <b>${c.nom}</b>
+            <p>Salle: ${c.salle || '-'} | Heure: ${c.heure || '-'}</p>
+          </div>
+          <button class="btn btn-danger btn-small" onclick="supprimerCours('${docSnap.id}')">Supprimer</button>
+        </div>
+      `;
+    });
+    document.getElementById('listeCours').innerHTML = html || "<p>Aucun cours ajouté</p>";
+  }
+
+  window.supprimerCours = async (id) => {
+    if(confirm("Supprimer ce cours ?")){
+      await deleteDoc(doc(db, "cours", id));
+      chargerCours();
+    }
   }
 </script>
 </body>
