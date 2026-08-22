@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Connexion - ISTA GC</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 flex items-center justify-center h-screen">
+  <div class="bg-white p-8 rounded shadow-md w-96">
+    <h2 class="text-2xl font-bold mb-6 text-center">Connexion</h2>
+    <input id="email" type="email" placeholder="Email" class="w-full p-2 border rounded mb-4">
+    <input id="password" type="password" placeholder="Mot de passe" class="w-full p-2 border rounded mb-4">
+    <button onclick="login()" class="w-full bg-green-600 text-white p-2 rounded hover:bg-green-700">Se connecter</button>
+    <p class="mt-4 text-center">Pas de compte ? <a href="register.html" class="text-blue-600">S'inscrire</a></p>
+    <p id="error" class="text-red-500 mt-2"></p>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCv3W6M3RmbipblwJ65Q0uw99a2H3tStU0",
+      authDomain: "ista-gc.firebaseapp.com",
+      projectId: "ista-gc",
+      storageBucket: "ista-gc.firebasestorage.app",
+      messagingSenderId: "75501350048",
+      appId: "1:75501350048:web:8def71328c58dd6b7d6dc5",
+      measurementId: "G-B2Y89V3X35"
+    };
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    window.login = () => {
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      signInWithEmailAndPassword(auth, email, password)
+        .then(() => window.location.href = "espace-etudiant.html")
+        .catch(error => document.getElementById('error').innerText = error.message);
+    }
+  </script>
+</body>
+</html>
