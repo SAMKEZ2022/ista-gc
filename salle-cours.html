@@ -1,159 +1,115 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ISTR - Salle de Cours</title>
-  <style>
-    :root {
-      --bleu-istr: #0056b3;
-      --vert-istr: #00a859;
-      --gris-bg: #f4f6f9;
-    }
-    * { box-sizing: border-box; }
-    body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--gris-bg); margin: 0; padding: 0; }
-    
-    .header {
-      background: linear-gradient(135deg, var(--bleu-istr) 0%, var(--vert-istr) 100%);
-      color: white;
-      padding: 20px 30px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-    }
-    .header h1 { margin: 0; font-size: 20px; }
-    .nav-buttons button { background: rgba(255,255,255,0.2); border: 1px solid white; color: white; padding: 8px 15px; border-radius: 6px; cursor: pointer; margin-left: 10px; }
-    .nav-buttons button:hover { background: white; color: var(--bleu-istr); }
-
-    .container { max-width: 1100px; margin: 30px auto; padding: 0 20px; }
-    h2 { color: var(--bleu-istr); }
-    
-    .classe-section { margin-bottom: 40px; }
-    .classe-titre {
-      background: var(--bleu-istr);
-      color: white;
-      padding: 15px 20px;
-      border-radius: 10px;
-      font-size: 18px;
-      font-weight: bold;
-      margin-bottom: 15px;
-    }
-
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
-    
-    .card {
-      background: white;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-      border-left: 5px solid var(--vert-istr);
-      transition: 0.3s;
-    }
-    .card:hover { transform: translateY(-5px); }
-    
-    .card h3 { margin: 0 0 10px; color: var(--bleu-istr); }
-    .card .prof { color: #666; font-size: 14px; margin-bottom: 8px; }
-    .card .horaire { background: #f0f9ff; padding: 8px; border-radius: 6px; font-weight: bold; color: var(--vert-istr); }
-    .card .btn-doc { margin-top: 12px; background: var(--vert-istr); color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; }
-    .hidden { display: none; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Salle de Cours - ISTA GC</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 20px; }
+        .container { max-width: 900px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { color: #0056b3; text-align: center; }
+        .login-box, .courses-box { padding: 20px; }
+        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: #0056b3; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
+        button:hover { background: #004494; }
+        .course-card { border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; border-radius: 5px; background: #fafafa; }
+        .course-card h3 { margin: 0 0 10px 0; color: #333; }
+        .error { color: red; text-align: center; }
+    </style>
 </head>
 <body>
 
-<div class="header">
-  <div>
-    <h1>ISTR - Salle de Cours</h1>
-  </div>
-  <div class="nav-buttons">
-    <button onclick="window.location.href='espace-etudiant.html'">Mes Notes</button>
-    <button onclick="logout()">Déconnexion</button>
-  </div>
-</div>
-
 <div class="container">
-  <h2>Emploi du Temps par Classe</h2>
-  
-  <div id="classes-container">
-    Chargement des cours...
-  </div>
+    <h1>ISTA GC - Salle de Cours</h1>
+
+    <div id="login-container" class="login-box">
+        <h2>Connexion Étudiant</h2>
+        <form id="login-form">
+            <input type="email" id="email" placeholder="Votre email @ista.gc" required>
+            <input type="password" id="password" placeholder="Mot de passe: Etudiant123" required>
+            <button type="submit">Se connecter</button>
+        </form>
+        <p id="login-error" class="error"></p>
+    </div>
+
+    <div id="courses-container" class="courses-box" style="display: none;">
+        <h2>Mes Cours</h2>
+        <div id="courses-list">
+            <p>Chargement de vos cours...</p>
+        </div>
+        <button onclick="logout()" style="background: #dc3545; margin-top: 20px;">Déconnexion</button>
+    </div>
 </div>
 
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-  import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyCv3W6M3RmbipblwJ65Q0uw99a2H3tStU0",
-    authDomain: "ista-gc.firebaseapp.com",
-    projectId: "ista-gc",
-    storageBucket: "ista-gc.firebasestorage.app",
-    messagingSenderId: "75501350048",
-    appId: "1:75501350048:web:8def71328c58dd6b7d6dc5",
-    measurementId: "G-B2Y89V3X35"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
-
-  onAuthStateChanged(auth, (user) => {
-    if (user) {
-      loadCours(user.email);
-    } else {
-      window.location.href = 'espace-etudiant.html';
-    }
-  });
-
-  window.logout = () => { signOut(auth); }
-
-  async function loadCours(studentEmail) {
-    const container = document.getElementById('classes-container');
-    const q = query(collection(db, "cours"), where("etudiants", "array-contains", studentEmail));
-    const querySnapshot = await getDocs(q);
-    
-    const classes = {
-      "LP1-GC / BTS1-GC": [],
-      "LP2-GC / BTS2-GC": [],
-      "LP3-GC": []
+    // REMPLACE UNIQUEMENT LES XXXX PAR TES INFOS FIREBASE
+    const firebaseConfig = {
+      apiKey: "XXXXXXX",
+      authDomain: "XXXXXXX.firebaseapp.com",
+      projectId: "XXXXXXX",
+      storageBucket: "XXXXXXX.appspot.com",
+      messagingSenderId: "XXXXXXX",
+      appId: "XXXXXXX"
     };
 
-    querySnapshot.forEach((doc) => {
-      const cours = doc.data();
-      if(classes[cours.classe]) {
-        classes[cours.classe].push(cours);
-      }
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    let currentUserEmail = null;
+
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        currentUserEmail = document.getElementById('email').value.trim().toLowerCase();
+        const password = document.getElementById('password').value;
+        
+        if (password === 'Etudiant123') {
+            document.getElementById('login-container').style.display = 'none';
+            document.getElementById('courses-container').style.display = 'block';
+            loadCourses();
+        } else {
+            document.getElementById('login-error').textContent = 'Email ou mot de passe incorrect.';
+        }
     });
 
-    container.innerHTML = "";
-    for(const [nomClasse, listeCours] of Object.entries(classes)) {
-      if(listeCours.length > 0) {
-        let htmlCours = `<div class="classe-section">
-          <div class="classe-titre">${nomClasse}</div>
-          <div class="grid">`;
+    async function loadCourses() {
+        console.log("Email connecté:", currentUserEmail);
+        const coursesList = document.getElementById('courses-list');
+        coursesList.innerHTML = '<p>Chargement...</p>';
         
-        listeCours.forEach(cours => {
-          htmlCours += `
-            <div class="card">
-              <h3>${cours.nomCours}</h3>
-              <p class="prof">👨‍🏫 Prof: ${cours.professeur}</p>
-              <p class="horaire">🗓️ ${cours.jour} - ${cours.heure}</p>
-              <p>📍 Salle: ${cours.salle}</p>
-              <button class="btn-doc" onclick="alert('Support: ${cours.nomCours}')">Voir les supports</button>
-            </div>
-          `;
+        const querySnapshot = await getDocs(collection(db, "cours"));
+        let coursesFound = 0;
+        coursesList.innerHTML = '';
+        
+        querySnapshot.forEach((doc) => {
+            const course = doc.data();
+            const studentList = (course.etudiants || []).map(e => e.toLowerCase().trim());
+            
+            if (studentList.includes(currentUserEmail)) {
+                coursesFound++;
+                coursesList.innerHTML += `
+                    <div class="course-card">
+                        <h3>${course.code} - ${course.nom}</h3>
+                        <p><strong>Prof:</strong> ${course.professeur}</p>
+                        <p><strong>Horaire:</strong> ${course.horaire}</p>
+                    </div>
+                `;
+            }
         });
-
-        htmlCours += `</div></div>`;
-        container.innerHTML += htmlCours;
-      }
+        
+        if (coursesFound === 0) {
+            coursesList.innerHTML = `<p>Aucun cours trouvé pour: <b>${currentUserEmail}</b></p>`;
+        }
     }
 
-    if(container.innerHTML === ""){
-      container.innerHTML = `<p style="text-align:center; color:#888;">Aucun cours trouvé pour votre classe.</p>`;
+    window.logout = function() {
+        currentUserEmail = null;
+        document.getElementById('courses-container').style.display = 'none';
+        document.getElementById('login-container').style.display = 'block';
+        document.getElementById('login-form').reset();
     }
-  }
 </script>
 
 </body>
