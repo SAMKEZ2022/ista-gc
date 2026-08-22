@@ -3,31 +3,115 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Espace Etudiant - ISTA GC</title>
+  <title>Espace Étudiant - ISTA GC</title>
   <style>
-    body { font-family: Arial; margin:0; background:#f4f4f4; text-align:center; }
-    header { background:#003366; color:white; padding:20px; }
-    header img { width:100px; margin-bottom:10px; }
-    .container { padding:40px 20px; min-height:400px; }
-    .btn { background:#0066cc; color:white; padding:12px 25px; text-decoration:none; border-radius:6px; display:inline-block; }
-    footer { background:#003366; color:white; padding:15px; }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background:#f4f4f4; color:#333; }
+    
+    header { 
+      background: linear-gradient(135deg, #003366, #0066cc); 
+      color:white; padding:25px 20px; text-align:center; 
+      box-shadow:0 2px 10px rgba(0,0,0,0.2);
+    }
+    header img { width:90px; margin-bottom:10px; }
+    header h1 { font-size:20px; }
+
+    .container { padding:30px 20px; max-width:1000px; margin:auto; }
+    h3 { text-align:center; color:#003366; font-size:22px; margin-bottom:30px; }
+
+    .grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:20px; }
+
+    .card { 
+      background:white; padding:25px; border-radius:10px; 
+      box-shadow:0 3px 10px rgba(0,0,0,0.1); 
+    }
+    .card h4 { color:#003366; margin-bottom:15px; border-bottom:2px solid #0066cc; padding-bottom:8px; }
+
+    table { width:100%; border-collapse: collapse; margin-top:10px; }
+    table th { background:#0066cc; color:white; padding:10px; text-align:left; font-size:14px; }
+    table td { padding:10px; border-bottom:1px solid #eee; font-size:14px; }
+    table tr:hover { background:#f9f9f9; }
+
+    .note { font-weight:bold; color:#0066cc; }
+    .devoir { background:#fff3cd; padding:12px; border-left:4px solid #ffc107; margin:10px 0; border-radius:4px; }
+    .btn { 
+      background:#0066cc; color:white; padding:10px 20px; text-decoration:none; 
+      border-radius:6px; display:inline-block; margin-top:10px; font-size:14px;
+    }
+    .btn:hover { background:#004999; }
+    .retour { text-align:center; margin-top:30px; }
+    
+    footer { background:#003366; color:white; padding:20px; text-align:center; margin-top:40px; }
   </style>
 </head>
 <body>
   <header>
     <img src="logo-ista.jpg" alt="Logo ISTA">
-    <h1>Institut des Sciences, Technologies et Arts</h1>
-    <h2>Plateforme Génie Civil</h2>
+    <h1>Espace Étudiant - Génie Civil</h1>
   </header>
 
   <div class="container">
-    <h3>🎓 Espace Etudiant</h3>
-    <p>Ici tu mettras les notes, planning et informations étudiants</p>
-    <a href="index.html" class="btn">⬅ Retour Accueil</a>
+    <h3>👨‍🎓 Bienvenue sur ton Espace Étudiant</h3>
+    
+    <div class="grid">
+      <!-- PLANNING -->
+      <div class="card">
+        <h4>📅 Planning de la Semaine</h4>
+        <table>
+          <tr><th>Jour</th><th>Cours</th><th>Heure</th></tr>
+          <tr><td>Lundi</td><td>RDM - Prof. Kossi</td><td>8h - 10h</td></tr>
+          <tr><td>Mardi</td><td>Béton Armé - Prof. Ama</td><td>10h - 12h</td></tr>
+          <tr><td>Mercredi</td><td>HSE - Prof. Tchak</td><td>8h - 10h</td></tr>
+          <tr><td>Jeudi</td><td>Topographie - Prof. Kofi</td><td>14h - 16h</td></tr>
+          <tr><td>Vendredi</td><td>Travaux Pratiques</td><td>9h - 12h</td></tr>
+        </table>
+      </div>
+
+      <!-- NOTES -->
+      <div class="card">
+        <h4>📊 Mes Notes</h4>
+        <table>
+          <tr><th>Matière</th><th>CC</th><th>Examen</th><th>Moyenne</th></tr>
+          <tr><td>RDM</td><td>14</td><td>16</td><td class="note">15</td></tr>
+          <tr><td>Béton Armé</td><td>12</td><td>13</td><td class="note">12.5</td></tr>
+          <tr><td>HSE</td><td>17</td><td>15</td><td class="note">16</td></tr>
+          <tr><td>Topographie</td><td>11</td><td>14</td><td class="note">12.5</td></tr>
+        </table>
+        <p style="margin-top:10px; text-align:right;"><b>Moyenne Générale : 14.0</b></p>
+      </div>
+
+      <!-- DEVOIRS -->
+      <div class="card">
+        <h4>📝 Devoirs à Rendre</h4>
+        <div class="devoir">
+          <b>HSE :</b> Rapport sur les EPI <br>
+          <small>Date limite : 30 Août 2026</small> <br>
+          <a href="#" class="btn">Déposer le devoir</a>
+        </div>
+        <div class="devoir">
+          <b>RDM :</b> Exercices Chapitre 3 <br>
+          <small>Date limite : 02 Septembre 2026</small> <br>
+          <a href="#" class="btn">Déposer le devoir</a>
+        </div>
+      </div>
+
+      <!-- RESSOURCES -->
+      <div class="card">
+        <h4>📚 Ressources</h4>
+        <p>Accès rapide aux modules :</p>
+        <a href="hse.html" class="btn">Module HSE</a>
+        <a href="rdm.html" class="btn">Module RDM</a>
+        <a href="beton.html" class="btn">Module Béton Armé</a>
+      </div>
+    </div>
+
+    <div class="retour">
+      <a href="index.html" class="btn">⬅ Retour Accueil</a>
+    </div>
   </div>
 
   <footer>
-    © 2026 ISTA GC | Tous droits réservés
+    © 2026 ISTA GC | Espace Étudiant Génie Civil
   </footer>
 </body>
 </html>
