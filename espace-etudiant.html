@@ -97,22 +97,23 @@
     debugInfo.innerHTML = `<b>Debug:</b> Je cherche les notes pour l'email → [${studentEmail}]`;
     
     try {
-      const q = query(collection(db, "notes"), where("studentEmail", "==", studentEmail));
+      // ICI ON CHERCHE AVEC "email" POUR MATCHER FIREBASE
+      const q = query(collection(db, "notes"), where("email", "==", studentEmail));
       const querySnapshot = await getDocs(q);
       notesList.innerHTML = "";
       
       if(querySnapshot.empty){
-        notesList.innerHTML = `❌ Aucune note trouvée pour l'email : <b>${studentEmail}</b><br><br>
-        Va dans Firebase > Firestore > notes et vérifie que studentEmail = ${studentEmail}`;
+        notesList.innerHTML = `❌ Aucune note trouvée pour l'email : <b>${studentEmail}</b>`;
         return;
       }
 
       querySnapshot.forEach((doc) => {
         const note = doc.data();
+        // ICI ON LIT "cours", "note", "semestre" POUR MATCHER FIREBASE
         notesList.innerHTML += `
           <div class="note">
-            <b>${note.courseName}</b> : ${note.grade}/20 
-            <span style="float: right;">${note.semester}</span>
+            <b>${note.cours}</b> : ${note.note}/20 
+            <span style="float: right;">${note.semestre}</span>
           </div>
         `;
       });
