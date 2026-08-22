@@ -3,122 +3,166 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Plateforme Génie Civil - ISTA</title>
+  <title>ISTA GC - Génie Civil</title>
   <style>
     * { margin:0; padding:0; box-sizing:border-box; }
     body { font-family: 'Segoe UI', Arial, sans-serif; background:#f4f4f4; color:#333; }
     
+    /* HEADER */
     header { 
       background: linear-gradient(135deg, #003366, #0066cc); 
-      color:white; padding:40px 20px; text-align:center; 
-      box-shadow:0 3px 10px rgba(0,0,0,0.2);
+      color:white; 
+      padding:40px 20px; 
+      text-align:center; 
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
     }
-    header img { width:110px; margin-bottom:15px; }
-    header h1 { font-size:24px; margin-bottom:8px; }
-    header p { font-size:16px; font-weight:300; opacity:0.9; }
+    header img { width:100px; margin-bottom:15px; border-radius:50%; border:3px solid white; }
+    header h1 { font-size:28px; margin-bottom:8px; }
+    header p { font-size:16px; opacity:0.9; }
 
-    .container { padding:50px 20px; max-width:1100px; margin:auto; }
+    /* NAV */
+    nav { background:#002244; padding:15px; text-align:center; }
+    nav a { color:white; text-decoration:none; margin:0 15px; font-weight:bold; }
+    nav a:hover { color:#ffcc00; }
+
+    /* CONTAINER */
+    .container { padding:40px 20px; max-width:1200px; margin:auto; }
+    
+    /* SECTION BIENVENUE */
     .welcome { text-align:center; margin-bottom:40px; }
     .welcome h2 { color:#003366; font-size:26px; margin-bottom:10px; }
-    .welcome p { color:#666; font-size:16px; }
+    .welcome p { color:#555; font-size:16px; }
 
+    /* CARTES MODULES */
     .modules { 
       display:grid; 
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); 
       gap:25px; 
       margin-bottom:40px;
     }
-
-    .module { 
-      background:white; padding:30px; border-radius:12px; 
+    .card { 
+      background:white; 
+      padding:25px; 
+      border-radius:12px; 
       box-shadow:0 4px 12px rgba(0,0,0,0.1); 
-      text-align:center; transition: transform 0.3s, box-shadow 0.3s;
+      transition: transform 0.3s;
+      border-top: 4px solid #0066cc;
     }
-    .module:hover { transform: translateY(-5px); box-shadow:0 6px 20px rgba(0,0,0,0.15); }
-    
-    .module .icon { font-size:45px; margin-bottom:15px; }
-    .module h3 { color:#003366; font-size:20px; margin-bottom:10px; }
-    .module p { color:#666; font-size:14px; margin-bottom:20px; min-height:40px; }
+    .card:hover { transform: translateY(-5px); }
+    .card h3 { color:#003366; margin-bottom:10px; font-size:20px; }
+    .card p { color:#666; margin-bottom:15px; font-size:14px; }
+    .card a { 
+      display:inline-block; 
+      background:#0066cc; 
+      color:white; 
+      padding:10px 20px; 
+      border-radius:6px; 
+      text-decoration:none; 
+      font-weight:bold;
+    }
+    .card a:hover { background:#004999; }
 
+    /* BOUTON CONTACT */
+    .contact-section { text-align:center; margin:50px 0; }
     .btn { 
-      background:#0066cc; color:white; padding:12px 25px; text-decoration:none; 
-      border-radius:6px; display:inline-block; font-weight:bold; transition: background 0.3s;
+      background:#0066cc; 
+      color:white; 
+      padding:16px 35px; 
+      border:none; 
+      border-radius:8px; 
+      font-size:17px; 
+      font-weight:bold; 
+      cursor:pointer; 
+      text-decoration:none;
+      display:inline-block;
+      transition: background 0.3s;
     }
     .btn:hover { background:#004999; }
 
-    .info { 
-      background:white; padding:25px; border-radius:10px; 
-      box-shadow:0 3px 10px rgba(0,0,0,0.1); margin-top:30px;
-    }
-    .info h3 { color:#003366; margin-bottom:15px; }
-    .info ul { list-style:none; padding-left:0; }
-    .info ul li { padding:8px 0; border-bottom:1px solid #eee; }
-    .info ul li:before { content:"✓ "; color:#0066cc; font-weight:bold; }
-
+    /* FOOTER */
     footer { 
-      background:#003366; color:white; padding:25px; text-align:center; 
-      margin-top:50px; font-size:14px;
+      background:#003366; 
+      color:white; 
+      padding:25px; 
+      text-align:center; 
+      margin-top:40px; 
     }
+    footer p { margin:5px 0; }
 
-    @media(max-width:768px){
-      header h1 { font-size:20px; }
-      .modules { grid-template-columns: 1fr; }
+    @media(max-width:768px) {
+      header h1 { font-size:22px; }
+      nav a { display:block; margin:10px 0; }
     }
   </style>
 </head>
 <body>
   <header>
     <img src="logo-ista.jpg" alt="Logo ISTA">
-    <h1>Institut des Sciences, Technologies et Arts</h1>
-    <p>Plateforme Officielle - Département Génie Civil</p>
+    <h1>ISTA - Institut des Sciences et Techniques Appliquées</h1>
+    <p>Département Génie Civil - Kara, Togo</p>
   </header>
+
+  <nav>
+    <a href="index.html">Accueil</a>
+    <a href="login.html">Espace Étudiant</a>
+    <a href="contact.html">Contact</a>
+  </nav>
 
   <div class="container">
     <div class="welcome">
-      <h2>Bienvenue sur la Plateforme GC</h2>
-      <p>Accédez à tous vos cours, ressources et informations en un seul endroit</p>
+      <h2>🎓 Bienvenue sur la Plateforme ISTA GC</h2>
+      <p>Accédez aux cours, ressources et informations de votre département</p>
     </div>
 
     <div class="modules">
-      <!-- MODULE A -->
-      <div class="module">
-        <div class="icon">📘</div>
-        <h3>A. Module HSE</h3>
-        <p>Hygiène, Sécurité, Environnement. Cours PDF + Vidéos de formation</p>
-        <a href="hse.html" class="btn">Accéder au Module</a>
+      <div class="card">
+        <h3>📐 Résistance des Matériaux</h3>
+        <p>Cours, TD, TP et examens sur RDM. Téléchargez les supports de cours.</p>
+        <a href="#">Accéder au cours</a>
       </div>
 
-      <!-- MODULE B -->
-      <div class="module">
-        <div class="icon">📚</div>
-        <h3>B. Cours & Ressources</h3>
-        <p>RDM, Béton Armé, Topographie, Métré. Téléchargez tous les supports</p>
-        <a href="cours.html" class="btn">Voir les Cours</a>
+      <div class="card">
+        <h3>🏗️ Béton Armé</h3>
+        <p>Dimensionnement, calculs BAEL et Eurocode. Projets et exercices corrigés.</p>
+        <a href="#">Accéder au cours</a>
       </div>
 
-      <!-- MODULE C -->
-      <div class="module">
-        <div class="icon">👨‍🎓</div>
-        <h3>C. Espace Étudiant</h3>
-        <p>Planning, Notes, Devoirs et Annonces importantes</p>
-        <a href="espace-etudiant.html" class="btn">Mon Espace</a>
+      <div class="card">
+        <h3>📏 Topographie</h3>
+        <p>Levés topographiques, plans, nivellement. Matériel et méthodes.</p>
+        <a href="#">Accéder au cours</a>
+      </div>
+
+      <div class="card">
+        <h3>🚧 Routes et VRD</h3>
+        <p>Dimensionnement des chaussées, assainissement et réseaux divers.</p>
+        <a href="#">Accéder au cours</a>
+      </div>
+
+      <div class="card">
+        <h3>📊 DAO - AutoCAD</h3>
+        <p>Apprendre AutoCAD, plans 2D/3D et techniques de dessin.</p>
+        <a href="#">Accéder au cours</a>
+      </div>
+
+      <div class="card">
+        <h3>📚 Bibliothèque</h3>
+        <p>Tous les PDF, livres et documents du département en téléchargement.</p>
+        <a href="#">Voir la bibliothèque</a>
       </div>
     </div>
 
-    <div class="info">
-      <h3>ℹ️ Informations Importantes</h3>
-      <ul>
-        <li>Tous les cours sont disponibles 24h/24 et 7j/7</li>
-        <li>Les devoirs doivent être déposés avant la date limite</li>
-        <li>Pour toute question, contactez l'administration</li>
-        <li>Nouveauté : Vidéos HSE ajoutées cette semaine</li>
-      </ul>
+    <div class="contact-section">
+      <h2 style="color:#003366; margin-bottom:15px;">Besoin d'aide ?</h2>
+      <p style="color:#666; margin-bottom:20px;">Contactez l'administration du département</p>
+      <a href="contact.html" class="btn">📩 Nous Contacter</a>
     </div>
   </div>
 
   <footer>
-    © 2026 ISTA - Institut des Sciences, Technologies et Arts <br>
-    Département Génie Civil | Kara, Togo
+    <p><b>ISTA GC</b> - Institut des Sciences et Techniques Appliquées</p>
+    <p>Kara, Togo | Tel: +228 90 12 34 56 | Email: contact@ista-gc.tg</p>
+    <p>© 2026 Tous droits réservés</p>
   </footer>
 </body>
 </html>
