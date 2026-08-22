@@ -3,35 +3,122 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Plateforme ISTA GC</title>
+  <title>Plateforme Génie Civil - ISTA</title>
   <style>
-    body { font-family: Arial; margin:0; background:#f4f4f4; text-align:center; }
-    header { background:#003366; color:white; padding:20px; }
-    header img { width:100px; margin-bottom:10px; }
-    nav a { background:#0066cc; color:white; padding:12px 25px; text-decoration:none; margin:10px; border-radius:6px; display:inline-block; font-weight:bold; }
-    nav a:hover { background:#004999; }
-    .container { padding:40px 20px; min-height:400px; }
-    footer { background:#003366; color:white; padding:15px; }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background:#f4f4f4; color:#333; }
+    
+    header { 
+      background: linear-gradient(135deg, #003366, #0066cc); 
+      color:white; padding:40px 20px; text-align:center; 
+      box-shadow:0 3px 10px rgba(0,0,0,0.2);
+    }
+    header img { width:110px; margin-bottom:15px; }
+    header h1 { font-size:24px; margin-bottom:8px; }
+    header p { font-size:16px; font-weight:300; opacity:0.9; }
+
+    .container { padding:50px 20px; max-width:1100px; margin:auto; }
+    .welcome { text-align:center; margin-bottom:40px; }
+    .welcome h2 { color:#003366; font-size:26px; margin-bottom:10px; }
+    .welcome p { color:#666; font-size:16px; }
+
+    .modules { 
+      display:grid; 
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
+      gap:25px; 
+      margin-bottom:40px;
+    }
+
+    .module { 
+      background:white; padding:30px; border-radius:12px; 
+      box-shadow:0 4px 12px rgba(0,0,0,0.1); 
+      text-align:center; transition: transform 0.3s, box-shadow 0.3s;
+    }
+    .module:hover { transform: translateY(-5px); box-shadow:0 6px 20px rgba(0,0,0,0.15); }
+    
+    .module .icon { font-size:45px; margin-bottom:15px; }
+    .module h3 { color:#003366; font-size:20px; margin-bottom:10px; }
+    .module p { color:#666; font-size:14px; margin-bottom:20px; min-height:40px; }
+
+    .btn { 
+      background:#0066cc; color:white; padding:12px 25px; text-decoration:none; 
+      border-radius:6px; display:inline-block; font-weight:bold; transition: background 0.3s;
+    }
+    .btn:hover { background:#004999; }
+
+    .info { 
+      background:white; padding:25px; border-radius:10px; 
+      box-shadow:0 3px 10px rgba(0,0,0,0.1); margin-top:30px;
+    }
+    .info h3 { color:#003366; margin-bottom:15px; }
+    .info ul { list-style:none; padding-left:0; }
+    .info ul li { padding:8px 0; border-bottom:1px solid #eee; }
+    .info ul li:before { content:"✓ "; color:#0066cc; font-weight:bold; }
+
+    footer { 
+      background:#003366; color:white; padding:25px; text-align:center; 
+      margin-top:50px; font-size:14px;
+    }
+
+    @media(max-width:768px){
+      header h1 { font-size:20px; }
+      .modules { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
   <header>
     <img src="logo-ista.jpg" alt="Logo ISTA">
     <h1>Institut des Sciences, Technologies et Arts</h1>
-    <h2>Plateforme Génie Civil</h2>
+    <p>Plateforme Officielle - Département Génie Civil</p>
   </header>
 
   <div class="container">
-    <h3>Bienvenue sur la Plateforme ISTA GC</h3>
-    <p>Accédez aux modules de cours et à l'espace étudiant</p>
-    <nav>
-      <a href="hse.html">📘 Module HSE</a>
-      <a href="etudiant.html">🎓 Espace Etudiant</a>
-    </nav>
+    <div class="welcome">
+      <h2>Bienvenue sur la Plateforme GC</h2>
+      <p>Accédez à tous vos cours, ressources et informations en un seul endroit</p>
+    </div>
+
+    <div class="modules">
+      <!-- MODULE A -->
+      <div class="module">
+        <div class="icon">📘</div>
+        <h3>A. Module HSE</h3>
+        <p>Hygiène, Sécurité, Environnement. Cours PDF + Vidéos de formation</p>
+        <a href="hse.html" class="btn">Accéder au Module</a>
+      </div>
+
+      <!-- MODULE B -->
+      <div class="module">
+        <div class="icon">📚</div>
+        <h3>B. Cours & Ressources</h3>
+        <p>RDM, Béton Armé, Topographie, Métré. Téléchargez tous les supports</p>
+        <a href="cours.html" class="btn">Voir les Cours</a>
+      </div>
+
+      <!-- MODULE C -->
+      <div class="module">
+        <div class="icon">👨‍🎓</div>
+        <h3>C. Espace Étudiant</h3>
+        <p>Planning, Notes, Devoirs et Annonces importantes</p>
+        <a href="espace-etudiant.html" class="btn">Mon Espace</a>
+      </div>
+    </div>
+
+    <div class="info">
+      <h3>ℹ️ Informations Importantes</h3>
+      <ul>
+        <li>Tous les cours sont disponibles 24h/24 et 7j/7</li>
+        <li>Les devoirs doivent être déposés avant la date limite</li>
+        <li>Pour toute question, contactez l'administration</li>
+        <li>Nouveauté : Vidéos HSE ajoutées cette semaine</li>
+      </ul>
+    </div>
   </div>
 
   <footer>
-    © 2026 ISTA GC | Tous droits réservés
+    © 2026 ISTA - Institut des Sciences, Technologies et Arts <br>
+    Département Génie Civil | Kara, Togo
   </footer>
 </body>
 </html>
