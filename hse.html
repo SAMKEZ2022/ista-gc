@@ -5,12 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Module HSE - ISTA GC</title>
   <style>
-    body { font-family: Arial; margin:0; background:#f4f4f4; text-align:center; }
-    header { background:#003366; color:white; padding:20px; }
+    body { font-family: Arial; margin:0; background:#f4f4f4; }
+    header { background:#003366; color:white; padding:20px; text-align:center; }
     header img { width:100px; margin-bottom:10px; }
-    .container { padding:40px 20px; min-height:400px; }
-    .btn { background:#0066cc; color:white; padding:12px 25px; text-decoration:none; border-radius:6px; display:inline-block; }
-    footer { background:#003366; color:white; padding:15px; }
+    .container { padding:30px 20px; max-width:900px; margin:auto; }
+    .cours { background:white; padding:20px; margin:15px 0; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.1); text-align:left; }
+    .btn { background:#0066cc; color:white; padding:10px 20px; text-decoration:none; border-radius:5px; display:inline-block; margin-top:10px; }
+    .btn:hover { background:#004999; }
+    .retour { text-align:center; margin-top:30px; }
+    footer { background:#003366; color:white; padding:15px; text-align:center; }
   </style>
 </head>
 <body>
@@ -21,9 +24,29 @@
   </header>
 
   <div class="container">
-    <h3>📘 Module HSE - Hygiène, Sécurité, Environnement</h3>
-    <p>Ici tu mettras tes cours, PDF et vidéos HSE</p>
-    <a href="index.html" class="btn">⬅ Retour Accueil</a>
+    <h3 style="text-align:center;">📘 Module HSE - Hygiène, Sécurité, Environnement</h3>
+    
+    <div class="cours">
+      <h4>Chapitre 1 : Introduction à la HSE</h4>
+      <p>Concepts de base, objectifs et enjeux de la HSE dans le BTP.</p>
+      <a href="cours1-introduction-hse.pdf" class="btn" download>📥 Télécharger le PDF</a>
+    </div>
+
+    <div class="cours">
+      <h4>Chapitre 2 : Risques sur Chantier</h4>
+      <p>Identification des dangers et mesures de prévention.</p>
+      <a href="cours2-risques-chantier.pdf" class="btn" download>📥 Télécharger le PDF</a>
+    </div>
+
+    <div class="cours">
+      <h4>Chapitre 3 : EPI et Signalisation</h4>
+      <p>Les équipements de protection individuelle et les panneaux.</p>
+      <a href="cours3-epi-signalisation.pdf" class="btn" download>📥 Télécharger le PDF</a>
+    </div>
+
+    <div class="retour">
+      <a href="index.html" class="btn">⬅ Retour Accueil</a>
+    </div>
   </div>
 
   <footer>
