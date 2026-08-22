@@ -2,10 +2,16 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ISTA-GC | Panel Admin</title>
   <style>
-    body{margin:0; font-family:'Segoe UI', Arial; background:#F5F1EB}
+    *{box-sizing:border-box; margin:0; padding:0}
+    body{
+      font-family:'Segoe UI', Arial, sans-serif; 
+      background:#F5F1EB /* Fond café très clair */
+    }
     
+    /* HEADER CAFÉ */
     header{
       background:#6B4F3D; /* Café foncé */
       color:white; 
@@ -13,16 +19,45 @@
       display:flex; 
       align-items:center;
       gap:15px;
-      box-shadow:0 2px 5px rgba(0,0,0,0.2)
+      box-shadow:0 2px 8px rgba(0,0,0,0.25);
+      position:sticky;
+      top:0;
+      z-index:10
     }
-    header img{height:50px; background:white; padding:4px; border-radius:6px} /* cadre blanc autour du logo */
-    header h1{font-size:20px; margin:0}
+    header img{
+      height:50px; 
+      background:white; 
+      padding:4px; 
+      border-radius:8px
+    }
+    header h1{font-size:20px; margin:0; font-weight:600}
 
-    .box{max-width:500px; margin:60px auto; background:white; padding:35px; border-radius:10px; box-shadow:0 4px 20px rgba(107,79,61,0.15)}
-    input{padding:14px; margin:10px 0; width:100%; box-sizing:border-box; border:1px solid #D2B48C; border-radius:6px; font-size:15px}
-    input:focus{outline:none; border-color:#8B6F47}
+    /* CONTENU */
+    .container{
+      max-width:550px; 
+      margin:60px auto; 
+      background:white; 
+      padding:35px; 
+      border-radius:12px; 
+      box-shadow:0 4px 20px rgba(107,79,61,0.15)
+    }
+    input{
+      padding:14px; 
+      margin:10px 0; 
+      width:100%; 
+      border:1px solid #D2B48C; 
+      border-radius:6px; 
+      font-size:15px;
+      transition:0.2s
+    }
+    input:focus{
+      outline:none; 
+      border-color:#8B6F47;
+      box-shadow:0 0 0 2px rgba(139,111,71,0.1)
+    }
     
-    button{
+    /* BOUTON CAFÉ */
+    .btn{
       padding:14px; 
       width:100%; 
       background:#8B6F47; /* Café */
@@ -32,37 +67,48 @@
       border-radius:6px; 
       font-size:16px;
       font-weight:bold;
-      margin-top:5px
+      margin-top:10px;
+      transition:0.2s
     }
-    button:hover{background:#6B4F3D}
+    .btn:hover{background:#6B4F3D; transform:translateY(-1px)}
 
-    #admin{display:none}
-    h2{text-align:center; color:#6B4F3D; margin-bottom:20px}
-    .logout{background:#A0522D !important}
+    #adminSection{display:none}
+    h2{
+      text-align:center; 
+      color:#6B4F3D; 
+      margin-bottom:25px;
+      font-size:24px
+    }
+    .btn-danger{background:#A0522D !important}
+    .btn-danger:hover{background:#8B4513 !important}
+    hr{border:none; border-top:1px solid #EADDCF; margin:20px 0}
   </style>
 </head>
 <body>
   <header>
-    <!-- MET TON LOGO ICI -->
-    <img src="logo-ista.png" alt="Logo ISTA">
+    <img src="logo-ista.jpg" alt="Logo ISTA">
     <h1>ISTA-GC | Panel Admin</h1>
   </header>
 
-  <div class="box">
+  <div class="container">
     <h2>Connexion Admin</h2>
-    <div id="login">
-      <input id="email" type="email" placeholder="Email Admin">
-      <input id="password" type="password" placeholder="Mot de passe">
-      <button onclick="login()">Se connecter</button>
+    
+    <div id="loginSection">
+      <input id="email" type="email" placeholder="Email Admin" required>
+      <input id="password" type="password" placeholder="Mot de passe" required>
+      <button class="btn" onclick="login()">Se connecter</button>
     </div>
 
-    <div id="admin">
-      <h2>Gestion des Cours</h2>
-      <input id="nomCours" placeholder="Nom du cours">
-      <input id="salle" placeholder="Salle">
-      <input id="heure" placeholder="Heure ex: 08h-10h">
-      <button onclick="ajouterCours()">Ajouter le cours</button>
-      <button onclick="logout()" class="logout">Se déconnecter</button>
+    <div id="adminSection">
+      <h2>Ajouter un cours</h2>
+      <input id="nomCours" placeholder="Nom du cours" required>
+      <input id="salle" placeholder="Salle ex: Salle A12">
+      <input id="heure" placeholder="Heure ex: Lundi 08h-10h">
+      <button class="btn" onclick="ajouterCours()">Ajouter le cours</button>
+      
+      <hr>
+      
+      <button class="btn btn-danger" onclick="logout()">Se déconnecter</button>
     </div>
   </div>
 
@@ -71,24 +117,57 @@
   import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
   import { getFirestore, collection, addDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
-  // COLLE ICI LA MÊME CONFIG QUE salle-cours.html
-  const firebaseConfig = { /* ... */ };
+  // ⚠️ COLLE ICI LA MÊME CONFIG QUE DANS salle-cours.html
+  const firebaseConfig = {
+    apiKey: "TA_CLE",
+    authDomain: "TON_PROJET.firebaseapp.com",
+    projectId: "TON_PROJET",
+    storageBucket: "TON_PROJET.appspot.com",
+    messagingSenderId: "TON_ID",
+    appId: "TON_APP_ID"
+  };
 
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const db = getFirestore(app);
 
+  // Vérifier si déjà connecté
   onAuthStateChanged(auth, user => {
-    if(user){ document.getElementById('login').style.display='none'; document.getElementById('admin').style.display='block'; }
+    if(user){ 
+      document.getElementById('loginSection').style.display='none'; 
+      document.getElementById('adminSection').style.display='block'; 
+    }
   });
 
-  window.login = () => signInWithEmailAndPassword(auth, email.value, password.value).catch(err => alert("Erreur: " + err.message))
+  // Connexion
+  window.login = () => {
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    signInWithEmailAndPassword(auth, email, password)
+    .catch(err => alert("Erreur: " + err.message))
+  }
+
+  // Déconnexion
   window.logout = () => signOut(auth).then(()=>location.reload())
+
+  // Ajouter cours
   window.ajouterCours = async () => {
-    if(!nomCours.value) return alert("Remplis le nom du cours");
-    await addDoc(collection(db, "cours"), {nom: nomCours.value, salle: salle.value, heure: heure.value, createdAt: new Date()});
-    alert("Cours ajouté !");
-    nomCours.value = ""; salle.value = ""; heure.value = "";
+    const nom = document.getElementById('nomCours').value;
+    const salle = document.getElementById('salle').value;
+    const heure = document.getElementById('heure').value;
+    
+    if(!nom) return alert("Le nom du cours est obligatoire");
+    
+    await addDoc(collection(db, "cours"), {
+      nom: nom,
+      salle: salle,
+      heure: heure,
+      createdAt: new Date()
+    });
+    alert("Cours ajouté avec succès !");
+    document.getElementById('nomCours').value = ""; 
+    document.getElementById('salle').value = ""; 
+    document.getElementById('heure').value = "";
   }
 </script>
 </body>
