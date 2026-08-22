@@ -13,6 +13,7 @@
     button:hover { background: #004494; }
     .note { background: #e7f3ff; padding: 15px; margin: 10px 0; border-left: 5px solid #0056b3; border-radius: 5px; }
     .error { color: red; text-align: center; margin-top: 10px; }
+    .warning { color: #856404; background: #fff3cd; padding: 10px; border-radius: 5px; margin: 10px 0; }
     .hidden { display: none; }
     .header-notes { display: flex; justify-content: space-between; align-items: center; }
     .btn-logout { background: #dc3545; width: auto; padding: 8px 15px; font-size: 14px; }
@@ -37,6 +38,7 @@
       <h3>Mes Notes</h3>
       <button class="btn-logout" onclick="logout()">Déconnexion</button>
     </div>
+    <div id="debug-info" class="warning hidden"></div>
     <div id="notes-list">Chargement...</div>
   </div>
 </div>
@@ -89,12 +91,18 @@
 
   async function loadNotes(studentEmail) {
     const notesList = document.getElementById('notes-list');
+    const debugInfo = document.getElementById('debug-info');
+    
+    debugInfo.classList.remove('hidden');
+    debugInfo.innerHTML = `<b>Debug:</b> Je cherche les notes pour l'email → [${studentEmail}]`;
+    
     const q = query(collection(db, "notes"), where("studentEmail", "==", studentEmail));
     const querySnapshot = await getDocs(q);
     notesList.innerHTML = "";
     
     if(querySnapshot.empty){
-      notesList.innerHTML = "Aucune note trouvée pour cet email.";
+      notesList.innerHTML = `Aucune note trouvée pour l'email : <b>${studentEmail}</b><br><br>
+      Vérifie dans Firebase que le champ "studentEmail" est exactement : ${studentEmail}`;
       return;
     }
 
