@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin ISTA-GC</title>
+    <style>
+        body { font-family: Arial; background: #f4f4f4; padding: 20px; }
+        .container { max-width: 650px; margin: auto; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h2 { color: #004AAD; text-align: center; }
+        input, textarea, button { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+        button { background: #004AAD; color: white; border: none; cursor: pointer; font-size: 16px; font-weight: bold; }
+        button:hover { background: #003380; }
+        .success { color: green; font-weight: bold; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>🔒 Panneau Admin ISTA-GC</h2>
+    
+    <h3>1. Créer un nouveau cours</h3>
+    <input type="text" id="codeCours" placeholder="Code du cours: ex LP4-GC">
+    <input type="text" id="nomCours" placeholder="Nom du cours: ex Réseaux">
+    <input type="text" id="prof" placeholder="Professeur: ex Mme DUPONT">
+    <input type="text" id="horaire" placeholder="Horaire: ex Vendredi 08h00 - 10h00">
+    <textarea id="emails" rows="5" placeholder="Colle les emails des étudiants ici, 1 par ligne"></textarea>
+    <button onclick="creerCours()">Créer le Cours</button>
+    <p id="message"></p>
+</div>
+
+<script type="module">
+    // MOT DE PASSE POUR PROTÉGER LA PAGE
+    const ADMIN_PASSWORD = "ista2026"; 
+    const pass = prompt("Mot de passe Admin :");
+    if(pass !== ADMIN_PASSWORD){
+        alert("Accès refusé");
+        window.location.href = "index.html";
+    }
+
+    // COLLE TA CONFIG FIREBASE ICI
+    const firebaseConfig = {
+      apiKey: "TA_CLE_ICI",
+      authDomain: "ista-gc.firebaseapp.com",
+      projectId: "ista-gc",
+      storageBucket: "ista-gc.appspot.com",
+      messagingSenderId: "TON_ID",
+      appId: "TON_APP_ID"
+    };
+
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    async function creerCours() {
+        const code = document.getElementById('codeCours').value;
+        const nom = document.getElementById('nomCours').value;
+        const prof = document.getElementById('prof').value;
+        const horaire = document.getElementById('horaire').value;
+        const emails = document.getElementById('emails').value.split('\n').map(e => e.trim()).filter(e => e !== '');
+        
+        if(!code || !nom || emails.length === 0){
+            document.getElementById('message').innerHTML = '<span class="error">Code, Nom et au moins 1 email sont obligatoires</span>';
+            return;
+        }
+
+        try {
+            await addDoc(collection(db, "cours"), {
+                code: code,
+                nom: nom,
+                professeur: prof,
+                horaire: horaire,
+                etudiants: emails
+            });
+            document.getElementById('message').innerHTML = '<span class="success">✅ Cours créé avec succès !</span>';
+            document.querySelectorAll('input, textarea').forEach(i => i.value = '');
+        } catch (e) {
+            document.getElementById('message').innerHTML = '<span class="error">Erreur: ' + e.message + '</span>';
+        }
+    }
+    window.creerCours = creerCours;
+</script>
+</body>
+</html>
