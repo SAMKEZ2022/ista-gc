@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin - Saisir Notes</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+  <h1 class="text-2xl font-bold">Ajouter une Note</h1>
+  
+  <div class="bg-white p-6 rounded shadow mt-4 max-w-lg">
+    <input id="email" type="email" placeholder="email de l'étudiant" class="border p-2 w-full mb-2">
+    <input id="matiere" type="text" placeholder="Matière" class="border p-2 w-full mb-2">
+    <input id="note" type="number" placeholder="Note /20" class="border p-2 w-full mb-2">
+    <input id="semestre" type="text" placeholder="S1 ou S2" class="border p-2 w-full mb-2">
+    <button onclick="ajouterNote()" class="bg-blue-600 text-white p-2 w-full rounded">Enregistrer la note</button>
+    <p id="message" class="mt-2"></p>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    
+    const firebaseConfig = { apiKey: "AIzaSyCv3W6M3RmbipblwJ65Q0uw99a2H3tStU0", authDomain: "ista-gc.firebaseapp.com", projectId: "ista-gc", storageBucket: "ista-gc.firebasestorage.app", messagingSenderId: "75501350048", appId: "1:75501350048:web:8def71328c58dd6b7d6dc5" };
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    window.ajouterNote = async () => {
+      const data = {
+        email: document.getElementById('email').value,
+        matiere: document.getElementById('matiere').value,
+        note: parseFloat(document.getElementById('note').value),
+        semestre: document.getElementById('semestre').value
+      };
+      await addDoc(collection(db, "tape notes"), data);
+      document.getElementById('message').innerText = "Note ajoutée avec succès !";
+    }
+  </script>
+</body>
+</html>
