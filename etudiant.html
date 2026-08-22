@@ -3,115 +3,151 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Espace Étudiant - ISTA GC</title>
+  <title>ISTR - Espace Étudiant</title>
   <style>
-    * { margin:0; padding:0; box-sizing:border-box; }
-    body { font-family: 'Segoe UI', Arial, sans-serif; background:#f4f4f4; color:#333; }
+    :root {
+      --bleu-istr: #0056b3;
+      --vert-istr: #00a859;
+      --gris-bg: #f4f6f9;
+    }
+    * { box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--gris-bg); margin: 0; padding: 0; }
     
-    header { 
-      background: linear-gradient(135deg, #003366, #0066cc); 
-      color:white; padding:25px 20px; text-align:center; 
-      box-shadow:0 2px 10px rgba(0,0,0,0.2);
+    /* HEADER PRO SANS LOGO */
+    .header {
+      background: linear-gradient(135deg, var(--bleu-istr) 0%, var(--vert-istr) 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
     }
-    header img { width:90px; margin-bottom:10px; }
-    header h1 { font-size:20px; }
+    .header h1 { margin: 0; font-size: 24px; font-weight: 700; letter-spacing: 1px; }
+    .header p { margin: 8px 0 0; font-size: 16px; opacity: 0.95; }
 
-    .container { padding:30px 20px; max-width:1000px; margin:auto; }
-    h3 { text-align:center; color:#003366; font-size:22px; margin-bottom:30px; }
-
-    .grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:20px; }
-
-    .card { 
-      background:white; padding:25px; border-radius:10px; 
-      box-shadow:0 3px 10px rgba(0,0,0,0.1); 
-    }
-    .card h4 { color:#003366; margin-bottom:15px; border-bottom:2px solid #0066cc; padding-bottom:8px; }
-
-    table { width:100%; border-collapse: collapse; margin-top:10px; }
-    table th { background:#0066cc; color:white; padding:10px; text-align:left; font-size:14px; }
-    table td { padding:10px; border-bottom:1px solid #eee; font-size:14px; }
-    table tr:hover { background:#f9f9f9; }
-
-    .note { font-weight:bold; color:#0066cc; }
-    .devoir { background:#fff3cd; padding:12px; border-left:4px solid #ffc107; margin:10px 0; border-radius:4px; }
-    .btn { 
-      background:#0066cc; color:white; padding:10px 20px; text-decoration:none; 
-      border-radius:6px; display:inline-block; margin-top:10px; font-size:14px;
-    }
-    .btn:hover { background:#004999; }
-    .retour { text-align:center; margin-top:30px; }
+    .container { max-width: 850px; margin: 30px auto; background: white; padding: 35px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
     
-    footer { background:#003366; color:white; padding:20px; text-align:center; margin-top:40px; }
+    h2 { color: var(--bleu-istr); }
+    input { width: 100%; padding: 14px; margin: 12px 0; border: 2px solid #ddd; border-radius: 8px; font-size: 15px; }
+    input:focus { border-color: var(--bleu-istr); outline: none; }
+    
+    button { width: 100%; padding: 15px; background: var(--bleu-istr); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+    button:hover { background: #004494; transform: translateY(-2px); }
+    
+    .note { background: #f0f9ff; padding: 20px; margin: 15px 0; border-left: 6px solid var(--vert-istr); border-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
+    .note b { color: var(--bleu-istr); font-size: 17px; }
+    .note .semestre { background: var(--vert-istr); color: white; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+    
+    .error { color: #dc3545; text-align: center; margin-top: 10px; font-weight: bold; }
+    .hidden { display: none; }
+    .header-notes { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--gris-bg); padding-bottom: 15px; margin-bottom: 25px; }
+    .btn-logout { background: #dc3545; width: auto; padding: 10px 20px; font-size: 14px; }
+    .btn-logout:hover { background: #c82333; }
+    .welcome { color: var(--bleu-istr); margin-bottom: 20px; }
+
+    @media (max-width: 600px) {
+      .header { padding: 20px; }
+      .header h1 { font-size: 20px; }
+      .container { margin: 15px; padding: 20px; }
+    }
   </style>
 </head>
 <body>
-  <header>
-    <img src="logo-ista.jpg" alt="Logo ISTA">
-    <h1>Espace Étudiant - Génie Civil</h1>
-  </header>
 
-  <div class="container">
-    <h3>👨‍🎓 Bienvenue sur ton Espace Étudiant</h3>
-    
-    <div class="grid">
-      <!-- PLANNING -->
-      <div class="card">
-        <h4>📅 Planning de la Semaine</h4>
-        <table>
-          <tr><th>Jour</th><th>Cours</th><th>Heure</th></tr>
-          <tr><td>Lundi</td><td>RDM - Prof. Kossi</td><td>8h - 10h</td></tr>
-          <tr><td>Mardi</td><td>Béton Armé - Prof. Ama</td><td>10h - 12h</td></tr>
-          <tr><td>Mercredi</td><td>HSE - Prof. Tchak</td><td>8h - 10h</td></tr>
-          <tr><td>Jeudi</td><td>Topographie - Prof. Kofi</td><td>14h - 16h</td></tr>
-          <tr><td>Vendredi</td><td>Travaux Pratiques</td><td>9h - 12h</td></tr>
-        </table>
-      </div>
+<div class="header">
+  <h1>INSTITUT DES SCIENCES, TECHNOLOGIES ET ARTS</h1>
+  <p>ISTR - Plateforme Académique Étudiante</p>
+</div>
 
-      <!-- NOTES -->
-      <div class="card">
-        <h4>📊 Mes Notes</h4>
-        <table>
-          <tr><th>Matière</th><th>CC</th><th>Examen</th><th>Moyenne</th></tr>
-          <tr><td>RDM</td><td>14</td><td>16</td><td class="note">15</td></tr>
-          <tr><td>Béton Armé</td><td>12</td><td>13</td><td class="note">12.5</td></tr>
-          <tr><td>HSE</td><td>17</td><td>15</td><td class="note">16</td></tr>
-          <tr><td>Topographie</td><td>11</td><td>14</td><td class="note">12.5</td></tr>
-        </table>
-        <p style="margin-top:10px; text-align:right;"><b>Moyenne Générale : 14.0</b></p>
-      </div>
-
-      <!-- DEVOIRS -->
-      <div class="card">
-        <h4>📝 Devoirs à Rendre</h4>
-        <div class="devoir">
-          <b>HSE :</b> Rapport sur les EPI <br>
-          <small>Date limite : 30 Août 2026</small> <br>
-          <a href="#" class="btn">Déposer le devoir</a>
-        </div>
-        <div class="devoir">
-          <b>RDM :</b> Exercices Chapitre 3 <br>
-          <small>Date limite : 02 Septembre 2026</small> <br>
-          <a href="#" class="btn">Déposer le devoir</a>
-        </div>
-      </div>
-
-      <!-- RESSOURCES -->
-      <div class="card">
-        <h4>📚 Ressources</h4>
-        <p>Accès rapide aux modules :</p>
-        <a href="hse.html" class="btn">Module HSE</a>
-        <a href="rdm.html" class="btn">Module RDM</a>
-        <a href="beton.html" class="btn">Module Béton Armé</a>
-      </div>
-    </div>
-
-    <div class="retour">
-      <a href="index.html" class="btn">⬅ Retour Accueil</a>
-    </div>
+<div class="container">
+  
+  <div id="login-box">
+    <h2 style="text-align: center;">Connexion Étudiant</h2>
+    <input type="email" id="email" placeholder="Email institutionnel" value="etudiant1@ista.gc">
+    <input type="password" id="password" placeholder="Mot de passe" value="Etudiant123">
+    <button onclick="login()">Se connecter</button>
+    <p id="error-msg" class="error"></p>
   </div>
 
-  <footer>
-    © 2026 ISTA GC | Espace Étudiant Génie Civil
-  </footer>
+  <div id="notes-box" class="hidden">
+    <div class="header-notes">
+      <div>
+        <h2 class="welcome">Bienvenue</h2>
+        <h3 style="margin:0; color:#555;">Mes Notes Académiques</h3>
+      </div>
+      <button class="btn-logout" onclick="logout()">Déconnexion</button>
+    </div>
+    <div id="notes-list">Chargement...</div>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCv3W6M3RmbipblwJ65Q0uw99a2H3tStU0",
+    authDomain: "ista-gc.firebaseapp.com",
+    projectId: "ista-gc",
+    storageBucket: "ista-gc.firebasestorage.app",
+    messagingSenderId: "75501350048",
+    appId: "1:75501350048:web:8def71328c58dd6b7d6dc5",
+    measurementId: "G-B2Y89V3X35"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      document.getElementById('login-box').classList.add('hidden');
+      document.getElementById('notes-box').classList.remove('hidden');
+      document.querySelector('.welcome').innerText = `Bienvenue, ${user.email}`;
+      loadNotes(user.email);
+    } else {
+      document.getElementById('login-box').classList.remove('hidden');
+      document.getElementById('notes-box').classList.add('hidden');
+    }
+  });
+
+  window.login = () => {
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    document.getElementById('error-msg').innerText = "";
+    signInWithEmailAndPassword(auth, email, password)
+      .catch((error) => {
+        document.getElementById('error-msg').innerText = "Email ou mot de passe incorrect";
+      });
+  }
+
+  window.logout = () => { signOut(auth); }
+
+  async function loadNotes(studentEmail) {
+    const notesList = document.getElementById('notes-list');
+    const q = query(collection(db, "notes"), where("email", "==", studentEmail));
+    const querySnapshot = await getDocs(q);
+    notesList.innerHTML = "";
+    
+    if(querySnapshot.empty){
+      notesList.innerHTML = `<p style="text-align:center; color:#888;">Aucune note disponible pour le moment.</p>`;
+      return;
+    }
+
+    querySnapshot.forEach((doc) => {
+      const note = doc.data();
+      notesList.innerHTML += `
+        <div class="note">
+          <div>
+            <b>${note.cours}</b> <br>
+            Note : <b>${note.note}/20</b>
+          </div>
+          <span class="semestre">${note.semestre}</span>
+        </div>
+      `;
+    });
+  }
+</script>
+
 </body>
 </html>
