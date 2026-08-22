@@ -30,7 +30,6 @@
     h2{text-align:center; color:#6B4F3D; margin-bottom:25px; font-size:24px}
     hr{border:none; border-top:1px solid #EADDCF; margin:25px 0}
     
-    /* LISTE DES COURS */
     .cours-item{display:flex; justify-content:space-between; align-items:center; padding:15px; border:1px solid #EADDCF; border-radius:8px; margin-bottom:10px; background:#FFFBF7}
     .cours-info b{color:#6B4F3D; font-size:16px}
     .cours-info p{margin:3px 0; color:#555; font-size:14px}
@@ -72,14 +71,15 @@
   import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
   import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
-  // ⚠️ COLLE TA CONFIG ICI - MÊME QUE salle-cours.html
+  // TA VRAIE CONFIG FIREBASE
   const firebaseConfig = {
-    apiKey: "TA_CLE",
-    authDomain: "TON_PROJET.firebaseapp.com",
-    projectId: "TON_PROJET",
-    storageBucket: "TON_PROJET.appspot.com",
-    messagingSenderId: "TON_ID",
-    appId: "TON_APP_ID"
+    apiKey: "AIzaSyCv3W6M3RmbipblwJ65Q0uw99a2H3tStU0",
+    authDomain: "ista-gc.firebaseapp.com",
+    projectId: "ista-gc",
+    storageBucket: "ista-gc.firebasestorage.app",
+    messagingSenderId: "75501350048",
+    appId: "1:75501350048:web:8def71328c58dd6b7d6dc5",
+    measurementId: "G-B2Y89V3X35"
   };
 
   const app = initializeApp(firebaseConfig);
