@@ -3,127 +3,145 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Salle de Cours - ISTA GC</title>
+    <title>Mes Cours - ISTA-GC</title>
     <style>
-        body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 20px; }
-        .container { max-width: 900px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        h1 { color: #0056b3; text-align: center; }
-        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background: #0056b3; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
-        button:hover { background: #004494; }
-        button.logout { background: #dc3545; margin-top: 20px; }
-        .course-card { border-left: 4px solid #0056b3; padding: 15px; margin-bottom: 15px; border-radius: 5px; background: #fafafa; }
-        .course-card h3 { margin: 0 0 10px 0; color: #333; }
-        .error { color: red; text-align: center; font-weight: bold; }
-        .info { text-align: center; color: #555; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
+        body { background: #f4f4f4; }
+        header { background: #003366; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .container { max-width: 1000px; margin: 20px auto; padding: 20px; }
+        .login-box, .dashboard { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .login-box input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; }
+        .btn { background: #003366; color: white; padding: 12px 20px; border: none; border-radius: 5px; cursor: pointer; width: 100%; font-size: 16px; }
+        .btn:hover { background: #002244; }
+        .btn-logout { background: #dc3545; width: auto; padding: 8px 15px; }
+        .cours-card { background: #e9f5ff; border-left: 5px solid #003366; padding: 20px; margin: 15px 0; border-radius: 5px; }
+        .cours-card h3 { color: #003366; margin-bottom: 10px; }
+        .hidden { display: none; }
+        #errorMsg { color: red; margin-top: 10px; }
     </style>
 </head>
 <body>
+    <header>
+        <h1>ISTA-GC | Espace Étudiant</h1>
+        <button id="logoutBtn" class="btn-logout hidden">Déconnexion</button>
+    </header>
 
-<div class="container">
-    <h1>ISTA GC - Salle de Cours</h1>
+    <div class="container">
+        <!-- FORMULAIRE DE CONNEXION -->
+        <div id="loginBox" class="login-box">
+            <h2>Connexion Étudiant</h2>
+            <input type="email" id="email" placeholder="Email institutionnel" required>
+            <input type="password" id="password" placeholder="Mot de passe" required>
+            <button id="loginBtn" class="btn">Se connecter</button>
+            <p id="errorMsg"></p>
+        </div>
 
-    <div id="login-container">
-        <h2>Connexion Étudiant</h2>
-        <form id="login-form">
-            <input type="email" id="email" placeholder="Ex: etudiant1@ista.gc" required>
-            <input type="password" id="password" placeholder="Mot de passe: Etudiant123" required>
-            <button type="submit">Se connecter</button>
-        </form>
-        <p id="login-error" class="error"></p>
+        <!-- TABLEAU DE BORD -->
+        <div id="dashboard" class="dashboard hidden">
+            <h2>Bienvenue, <span id="userEmail"></span></h2>
+            <h3>Mes Cours</h3>
+            <div id="coursesContainer">
+                <p>Chargement de vos cours...</p>
+            </div>
+        </div>
     </div>
 
-    <div id="courses-container" style="display: none;">
-        <h2>Mes Cours</h2>
-        <p id="welcome-user" class="info"></p>
-        <div id="courses-list"><p>Chargement...</p></div>
-        <button class="logout" onclick="logout()">Déconnexion</button>
-    </div>
-</div>
+    <!-- FIREBASE -->
+    <script type="module">
+        // 1. COLLE ICI TA CONFIG FIREBASE
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-<script type="module">
-    // 1. IMPORT FIREBASE
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        const firebaseConfig = {
+          apiKey: "TA_CLE_ICI",
+          authDomain: "TON_PROJET.firebaseapp.com",
+          projectId: "TON_PROJET",
+          storageBucket: "TON_PROJET.appspot.com",
+          messagingSenderId: "TON_ID",
+          appId: "TON_APP_ID"
+        };
 
-    // 2. REMPLACE ÇA PAR TA VRAIE CONFIG FIREBASE
-    const firebaseConfig = {
-      apiKey: "TA_CLE_API",
-      authDomain: "TON_PROJET.firebaseapp.com",
-      projectId: "TON_PROJET",
-      storageBucket: "TON_PROJET.appspot.com",
-      messagingSenderId: "TON_ID",
-      appId: "TON_APP_ID"
-    };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
 
-    // 3. INITIALISATION
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    let currentUserEmail = null;
+        // 2. ELEMENTS HTML
+        const loginBox = document.getElementById('loginBox');
+        const dashboard = document.getElementById('dashboard');
+        const loginBtn = document.getElementById('loginBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const errorMsg = document.getElementById('errorMsg');
+        const userEmailSpan = document.getElementById('userEmail');
+        const coursesContainer = document.getElementById('coursesContainer');
 
-    // 4. GESTION LOGIN
-    document.getElementById('login-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const emailInput = document.getElementById('email').value.trim().toLowerCase();
-        const passwordInput = document.getElementById('password').value;
-        document.getElementById('login-error').textContent = '';
-
-        if (passwordInput === 'Etudiant123') {
-            currentUserEmail = emailInput;
-            document.getElementById('welcome-user').textContent = `Connecté: ${currentUserEmail}`;
-            document.getElementById('login-container').style.display = 'none';
-            document.getElementById('courses-container').style.display = 'block';
-            loadCourses();
-        } else {
-            document.getElementById('login-error').textContent = 'Mot de passe incorrect. Utilisez: Etudiant123';
-        }
-    });
-
-    // 5. CHARGER LES COURS
-    async function loadCourses() {
-        const coursesList = document.getElementById('courses-list');
-        coursesList.innerHTML = '<p>Chargement de vos cours...</p>';
-        
-        try {
-            const querySnapshot = await getDocs(collection(db, "cours"));
-            let coursesFound = 0;
-            coursesList.innerHTML = '';
+        // 3. CONNEXION
+        loginBtn.addEventListener('click', () => {
+            const email = emailInput.value;
+            const password = passwordInput.value;
+            errorMsg.textContent = "";
             
-            querySnapshot.forEach((doc) => {
-                const course = doc.data();
-                // On nettoie la liste pour enlever espaces et majuscules
-                const studentList = (course.etudiants || []).map(e => String(e).toLowerCase().trim());
-                
-          if (true) { // FORCE L'AFFICHAGE POUR TEST
-                    coursesFound++;
-                    coursesList.innerHTML += `
-                        <div class="course-card">
-                            <h3>${course.code} - ${course.nom}</h3>
-                            <p><strong>Professeur:</strong> ${course.professeur}</p>
-                            <p><strong>Horaire:</strong> ${course.horaire}</p>
-                        </div>
-                    `;
-                }
-            });
-            
-            if (coursesFound === 0) {
-                coursesList.innerHTML = `<p class="info">Aucun cours trouvé pour: <b>${currentUserEmail}</b><br>Vérifiez que cet email est bien dans la liste "etudiants" du cours sur Firebase.</p>`;
+            signInWithEmailAndPassword(auth, email, password)
+                .catch((error) => {
+                    errorMsg.textContent = "Email ou mot de passe incorrect.";
+                });
+        });
+
+        // 4. DECONNEXION
+        logoutBtn.addEventListener('click', () => {
+            signOut(auth);
+        });
+
+        // 5. SURVEILLER L'ETAT DE CONNEXION
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // Connecté
+                loginBox.classList.add('hidden');
+                dashboard.classList.remove('hidden');
+                logoutBtn.classList.remove('hidden');
+                userEmailSpan.textContent = user.email;
+                loadCourses(user.email);
+            } else {
+                // Déconnecté
+                loginBox.classList.remove('hidden');
+                dashboard.classList.add('hidden');
+                logoutBtn.classList.add('hidden');
+                coursesContainer.innerHTML = "<p>Chargement de vos cours...</p>";
             }
-            
-        } catch (error) {
-            console.error("Erreur Firestore:", error);
-            coursesList.innerHTML = `<p class="error">Erreur de connexion à Firebase: ${error.message}</p>`;
+        });
+
+        // 6. CHARGER LES COURS DEPUIS FIRESTORE - ADAPTE A TA BASE
+        async function loadCourses(userEmail) {
+            try {
+                const q = query(collection(db, "cours"), where("etudiants", "array-contains", userEmail));
+                const querySnapshot = await getDocs(q);
+                
+                if (querySnapshot.empty) {
+                    coursesContainer.innerHTML = `<p>Aucun cours trouvé pour: ${userEmail}</p>`;
+                    return;
+                }
+
+                coursesContainer.innerHTML = ""; // Vider
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const coursDiv = document.createElement('div');
+                    coursDiv.className = 'cours-card';
+                    coursDiv.innerHTML = `
+                        <h3>${data.nom}</h3>
+                        <p><strong>Professeur:</strong> ${data.professeur}</p>
+                        <p><strong>Horaire:</strong> ${data.jour} ${data.heure}</p>
+                        <p><strong>Salle:</strong> ${data.salle}</p>
+                        <p><strong>Classe:</strong> ${data.classe}</p>
+                    `;
+                    coursesContainer.appendChild(coursDiv);
+                });
+            } catch (error) {
+                console.error("Erreur chargement cours:", error);
+                coursesContainer.innerHTML = `<p style="color:red;">Erreur: ${error.message}</p>`;
+            }
         }
-    }
-
-    // 6. DECONNEXION
-    window.logout = function() {
-        currentUserEmail = null;
-        document.getElementById('courses-container').style.display = 'none';
-        document.getElementById('login-container').style.display = 'block';
-        document.getElementById('login-form').reset();
-    }
-</script>
-
+    </script>
 </body>
 </html>
