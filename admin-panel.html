@@ -2,21 +2,55 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Panel Admin - ISTA-GC</title>
+  <title>ISTA-GC | Panel Admin</title>
   <style>
-    body{font-family:Arial; background:#f5f5f5; padding:20px}
-    .box{max-width:500px; margin:50px auto; background:white; padding:30px; border-radius:8px; box-shadow:0 2px 10px rgba(0,0,0,0.1)}
-    input,button{padding:12px; margin:8px 0; width:100%; box-sizing:border-box}
-    button{background:#003366; color:white; border:none; cursor:pointer; border-radius:4px}
-    button:hover{background:#002244}
+    body{margin:0; font-family:'Segoe UI', Arial; background:#f5f1eb} /* fond café clair */
+    
+    /* HEADER COULEUR CAFÉ */
+    header{
+      background:#6B4F3D; /* Café foncé */
+      color:white; 
+      padding:15px 30px; 
+      display:flex; 
+      align-items:center;
+      gap:15px;
+      box-shadow:0 2px 5px rgba(0,0,0,0.2)
+    }
+    header img{height:45px}
+    header h1{font-size:20px; margin:0}
+
+    .box{max-width:500px; margin:50px auto; background:white; padding:30px; border-radius:8px; box-shadow:0 2px 15px rgba(107,79,61,0.2)}
+    input{padding:12px; margin:8px 0; width:100%; box-sizing:border-box; border:1px solid #D2B48C; border-radius:4px}
+    input:focus{outline:none; border-color:#6B4F3D}
+    
+    /* BOUTON COULEUR CAFÉ */
+    button{
+      padding:12px; 
+      width:100%; 
+      background:#8B6F47; /* Café */
+      color:white; 
+      border:none; 
+      cursor:pointer; 
+      border-radius:4px; 
+      font-size:16px;
+      font-weight:bold
+    }
+    button:hover{background:#6B4F3D}
+
     #admin{display:none}
-    h1{color:#003366; text-align:center}
+    h2{text-align:center; color:#6B4F3D}
+    .logout{background:#A0522D !important; margin-top:15px}
   </style>
 </head>
 <body>
-  <div class="box">
-    <h1>Panel Admin ISTA-GC</h1>
+  <header>
+    <!-- REMPLACE PAR TON LOGO ISTA -->
+    <img src="https://via.placeholder.com/45x45.png?text=ISTA" alt="Logo ISTA">
+    <h1>ISTA-GC | Panel Admin</h1>
+  </header>
 
+  <div class="box">
+    <h2>Connexion Admin</h2>
     <div id="login">
       <input id="email" type="email" placeholder="Email Admin">
       <input id="password" type="password" placeholder="Mot de passe">
@@ -29,8 +63,7 @@
       <input id="salle" placeholder="Salle">
       <input id="heure" placeholder="Heure ex: 08h-10h">
       <button onclick="ajouterCours()">Ajouter le cours</button>
-      <hr>
-      <button onclick="logout()" style="background:red">Se déconnecter</button>
+      <button onclick="logout()" class="logout">Se déconnecter</button>
     </div>
   </div>
 
@@ -39,42 +72,22 @@
   import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
   import { getFirestore, collection, addDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
-  // ⚠️ COPIE ICI LA MÊME CONFIG QUE DANS salle-cours.html
-  const firebaseConfig = {
-    apiKey: "TA_CLE_ICI",
-    authDomain: "TON_PROJET.firebaseapp.com",
-    projectId: "TON_PROJET",
-    storageBucket: "TON_PROJET.appspot.com",
-    messagingSenderId: "TON_ID",
-    appId: "TON_APP_ID"
-  };
+  // COLLE ICI LA MÊME CONFIG QUE salle-cours.html
+  const firebaseConfig = { /* ... */ };
 
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const db = getFirestore(app);
 
   onAuthStateChanged(auth, user => {
-    if(user){
-      document.getElementById('login').style.display='none';
-      document.getElementById('admin').style.display='block';
-    }
+    if(user){ document.getElementById('login').style.display='none'; document.getElementById('admin').style.display='block'; }
   });
 
-  window.login = () => {
-    signInWithEmailAndPassword(auth, email.value, password.value)
-    .catch(err => alert("Erreur: " + err.message))
-  }
-
+  window.login = () => signInWithEmailAndPassword(auth, email.value, password.value).catch(err => alert("Erreur: " + err.message))
   window.logout = () => signOut(auth).then(()=>location.reload())
-
   window.ajouterCours = async () => {
-    if(!nomCours.value || !salle.value) return alert("Remplis tous les champs");
-    await addDoc(collection(db, "cours"), {
-      nom: nomCours.value,
-      salle: salle.value,
-      heure: heure.value,
-      createdAt: new Date()
-    });
+    if(!nomCours.value) return alert("Remplis le nom du cours");
+    await addDoc(collection(db, "cours"), {nom: nomCours.value, salle: salle.value, heure: heure.value, createdAt: new Date()});
     alert("Cours ajouté !");
     nomCours.value = ""; salle.value = ""; heure.value = "";
   }
