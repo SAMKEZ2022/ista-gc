@@ -8,13 +8,14 @@
         body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 20px; }
         .container { max-width: 900px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         h1 { color: #0056b3; text-align: center; }
-        .login-box, .courses-box { padding: 20px; }
-        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
         button { width: 100%; padding: 12px; background: #0056b3; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
         button:hover { background: #004494; }
-        .course-card { border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; border-radius: 5px; background: #fafafa; }
+        button.logout { background: #dc3545; margin-top: 20px; }
+        .course-card { border-left: 4px solid #0056b3; padding: 15px; margin-bottom: 15px; border-radius: 5px; background: #fafafa; }
         .course-card h3 { margin: 0 0 10px 0; color: #333; }
-        .error { color: red; text-align: center; }
+        .error { color: red; text-align: center; font-weight: bold; }
+        .info { text-align: center; color: #555; }
     </style>
 </head>
 <body>
@@ -22,88 +23,100 @@
 <div class="container">
     <h1>ISTA GC - Salle de Cours</h1>
 
-    <div id="login-container" class="login-box">
+    <div id="login-container">
         <h2>Connexion Étudiant</h2>
         <form id="login-form">
-            <input type="email" id="email" placeholder="Votre email @ista.gc" required>
+            <input type="email" id="email" placeholder="Ex: etudiant1@ista.gc" required>
             <input type="password" id="password" placeholder="Mot de passe: Etudiant123" required>
             <button type="submit">Se connecter</button>
         </form>
         <p id="login-error" class="error"></p>
     </div>
 
-    <div id="courses-container" class="courses-box" style="display: none;">
+    <div id="courses-container" style="display: none;">
         <h2>Mes Cours</h2>
-        <div id="courses-list">
-            <p>Chargement de vos cours...</p>
-        </div>
-        <button onclick="logout()" style="background: #dc3545; margin-top: 20px;">Déconnexion</button>
+        <p id="welcome-user" class="info"></p>
+        <div id="courses-list"><p>Chargement...</p></div>
+        <button class="logout" onclick="logout()">Déconnexion</button>
     </div>
 </div>
 
 <script type="module">
+    // 1. IMPORT FIREBASE
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    // REMPLACE UNIQUEMENT LES XXXX PAR TES INFOS FIREBASE
+    // 2. REMPLACE ÇA PAR TA CONFIG FIREBASE
     const firebaseConfig = {
-      apiKey: "XXXXXXX",
-      authDomain: "XXXXXXX.firebaseapp.com",
-      projectId: "XXXXXXX",
-      storageBucket: "XXXXXXX.appspot.com",
-      messagingSenderId: "XXXXXXX",
-      appId: "XXXXXXX"
+      apiKey: "COLLE_TA_CLE_API_ICI",
+      authDomain: "COLLE_TON_AUTH_DOMAIN_ICI",
+      projectId: "COLLE_TON_PROJECT_ID_ICI",
+      storageBucket: "COLLE_TON_STORAGE_BUCKET_ICI",
+      messagingSenderId: "COLLE_TON_MESSAGING_ID_ICI",
+      appId: "COLLE_TON_APP_ID_ICI"
     };
 
+    // 3. INITIALISATION
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-
     let currentUserEmail = null;
 
+    // 4. GESTION LOGIN
     document.getElementById('login-form').addEventListener('submit', async (e) => {
         e.preventDefault();
-        currentUserEmail = document.getElementById('email').value.trim().toLowerCase();
-        const password = document.getElementById('password').value;
-        
-        if (password === 'Etudiant123') {
+        const emailInput = document.getElementById('email').value.trim().toLowerCase();
+        const passwordInput = document.getElementById('password').value;
+        document.getElementById('login-error').textContent = '';
+
+        if (passwordInput === 'Etudiant123') {
+            currentUserEmail = emailInput;
+            document.getElementById('welcome-user').textContent = `Connecté: ${currentUserEmail}`;
             document.getElementById('login-container').style.display = 'none';
             document.getElementById('courses-container').style.display = 'block';
             loadCourses();
         } else {
-            document.getElementById('login-error').textContent = 'Email ou mot de passe incorrect.';
+            document.getElementById('login-error').textContent = 'Mot de passe incorrect. Utilisez: Etudiant123';
         }
     });
 
+    // 5. CHARGER LES COURS
     async function loadCourses() {
-        console.log("Email connecté:", currentUserEmail);
         const coursesList = document.getElementById('courses-list');
-        coursesList.innerHTML = '<p>Chargement...</p>';
+        coursesList.innerHTML = '<p>Chargement de vos cours...</p>';
         
-        const querySnapshot = await getDocs(collection(db, "cours"));
-        let coursesFound = 0;
-        coursesList.innerHTML = '';
-        
-        querySnapshot.forEach((doc) => {
-            const course = doc.data();
-            const studentList = (course.etudiants || []).map(e => e.toLowerCase().trim());
+        try {
+            const querySnapshot = await getDocs(collection(db, "cours"));
+            let coursesFound = 0;
+            coursesList.innerHTML = '';
             
-            if (studentList.includes(currentUserEmail)) {
-                coursesFound++;
-                coursesList.innerHTML += `
-                    <div class="course-card">
-                        <h3>${course.code} - ${course.nom}</h3>
-                        <p><strong>Prof:</strong> ${course.professeur}</p>
-                        <p><strong>Horaire:</strong> ${course.horaire}</p>
-                    </div>
-                `;
+            querySnapshot.forEach((doc) => {
+                const course = doc.data();
+                // On met tout en minuscule pour comparer
+                const studentList = (course.etudiants || []).map(e => String(e).toLowerCase().trim());
+                
+                if (studentList.includes(currentUserEmail)) {
+                    coursesFound++;
+                    coursesList.innerHTML += `
+                        <div class="course-card">
+                            <h3>${course.code} - ${course.nom}</h3>
+                            <p><strong>Professeur:</strong> ${course.professeur}</p>
+                            <p><strong>Horaire:</strong> ${course.horaire}</p>
+                        </div>
+                    `;
+                }
+            });
+            
+            if (coursesFound === 0) {
+                coursesList.innerHTML = `<p class="info">Aucun cours trouvé pour: <b>${currentUserEmail}</b><br>Vérifiez que votre email est bien dans la liste "etudiants" du cours sur Firebase.</p>`;
             }
-        });
-        
-        if (coursesFound === 0) {
-            coursesList.innerHTML = `<p>Aucun cours trouvé pour: <b>${currentUserEmail}</b></p>`;
+            
+        } catch (error) {
+            console.error("Erreur Firestore:", error);
+            coursesList.innerHTML = `<p class="error">Erreur de connexion à Firebase: ${error.message}</p>`;
         }
     }
 
+    // 6. DECONNEXION
     window.logout = function() {
         currentUserEmail = null;
         document.getElementById('courses-container').style.display = 'none';
