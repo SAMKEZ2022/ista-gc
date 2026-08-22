@@ -1,63 +1,10 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8">
-  <title>Admin - Saisir Notes</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-100 p-8">
-  <div id="login-box" class="max-w-sm mx-auto bg-white p-6 rounded shadow">
-    <h1 class="text-xl font-bold mb-4">Connexion Prof</h1>
-    <input id="email" type="email" value="prof@ista.gc" class="border p-2 w-full mb-2">
-    <input id="password" type="password" placeholder="Mot de passe" class="border p-2 w-full mb-2">
-    <button onclick="login()" class="bg-blue-600 text-white p-2 w-full rounded">Se connecter</button>
-  </div>
-
-  <div id="form-box" class="hidden max-w-lg mx-auto bg-white p-6 rounded shadow mt-4">
-    <h1 class="text-2xl font-bold">Ajouter une Note</h1>
-    <input id="email-etudiant" type="email" placeholder="email de l'étudiant" class="border p-2 w-full mb-2 mt-4">
-    <input id="matiere" type="text" placeholder="Matière" class="border p-2 w-full mb-2">
-    <input id="note" type="number" placeholder="Note /20" class="border p-2 w-full mb-2">
-    <input id="semestre" type="text" placeholder="S1 ou S2" class="border p-2 w-full mb-2">
-    <button onclick="ajouterNote()" class="bg-green-600 text-white p-2 w-full rounded">Enregistrer la note</button>
-    <button onclick="logout()" class="bg-red-600 text-white p-2 w-full rounded mt-2">Se déconnecter</button>
-    <p id="message" class="mt-2"></p>
-  </div>
-
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-    
-    const firebaseConfig = { apiKey: "AIzaSyCv3W6M3RmbipblwJ65Q0uw99a2H3tStU0", authDomain: "ista-gc.firebaseapp.com", projectId: "ista-gc", storageBucket: "ista-gc.firebasestorage.app", messagingSenderId: "75501350048", appId: "1:75501350048:web:8def71328c58dd6b7d6dc5" };
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-
-    onAuthStateChanged(auth, (user) => {
-      if (user && user.email === "prof@ista.gc") {
-        document.getElementById('login-box').classList.add('hidden');
-        document.getElementById('form-box').classList.remove('hidden');
-      }
-    });
-
-    window.login = () => {
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
-      signInWithEmailAndPassword(auth, email, password);
-    }
-    window.logout = () => signOut(auth).then(() => location.reload());
-
-    window.ajouterNote = async () => {
-      const data = {
-        email: document.getElementById('email-etudiant').value,
-        matiere: document.getElementById('matiere').value,
-        note: parseFloat(document.getElementById('note').value),
-        semestre: document.getElementById('semestre').value
-      };
-      await addDoc(collection(db, "tape notes"), data);
-      document.getElementById('message').innerText = "Note ajoutée avec succès !";
-    }
-  </script>
-</body>
-</html>
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyCv3W6M3RmbipblwJ65Q0uw99a2H3tStU0",
+  authDomain: "ista-gc.firebaseapp.com",
+  projectId: "ista-gc",
+  storageBucket: "ista-gc.firebasestorage.app",
+  messagingSenderId: "75501350048",
+  appId: "1:75501350048:web:8def71328c58dd6b7d6dc5",
+  measurementId: "G-B2Y89V3X35"
+};
