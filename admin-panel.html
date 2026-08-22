@@ -4,48 +4,47 @@
   <meta charset="UTF-8">
   <title>ISTA-GC | Panel Admin</title>
   <style>
-    body{margin:0; font-family:'Segoe UI', Arial; background:#f5f1eb} /* fond café clair */
+    body{margin:0; font-family:'Segoe UI', Arial; background:#F5F1EB}
     
-    /* HEADER COULEUR CAFÉ */
     header{
       background:#6B4F3D; /* Café foncé */
       color:white; 
-      padding:15px 30px; 
+      padding:12px 30px; 
       display:flex; 
       align-items:center;
       gap:15px;
       box-shadow:0 2px 5px rgba(0,0,0,0.2)
     }
-    header img{height:45px}
+    header img{height:50px; background:white; padding:4px; border-radius:6px} /* cadre blanc autour du logo */
     header h1{font-size:20px; margin:0}
 
-    .box{max-width:500px; margin:50px auto; background:white; padding:30px; border-radius:8px; box-shadow:0 2px 15px rgba(107,79,61,0.2)}
-    input{padding:12px; margin:8px 0; width:100%; box-sizing:border-box; border:1px solid #D2B48C; border-radius:4px}
-    input:focus{outline:none; border-color:#6B4F3D}
+    .box{max-width:500px; margin:60px auto; background:white; padding:35px; border-radius:10px; box-shadow:0 4px 20px rgba(107,79,61,0.15)}
+    input{padding:14px; margin:10px 0; width:100%; box-sizing:border-box; border:1px solid #D2B48C; border-radius:6px; font-size:15px}
+    input:focus{outline:none; border-color:#8B6F47}
     
-    /* BOUTON COULEUR CAFÉ */
     button{
-      padding:12px; 
+      padding:14px; 
       width:100%; 
       background:#8B6F47; /* Café */
       color:white; 
       border:none; 
       cursor:pointer; 
-      border-radius:4px; 
+      border-radius:6px; 
       font-size:16px;
-      font-weight:bold
+      font-weight:bold;
+      margin-top:5px
     }
     button:hover{background:#6B4F3D}
 
     #admin{display:none}
-    h2{text-align:center; color:#6B4F3D}
-    .logout{background:#A0522D !important; margin-top:15px}
+    h2{text-align:center; color:#6B4F3D; margin-bottom:20px}
+    .logout{background:#A0522D !important}
   </style>
 </head>
 <body>
   <header>
-    <!-- REMPLACE PAR TON LOGO ISTA -->
-    <img src="https://via.placeholder.com/45x45.png?text=ISTA" alt="Logo ISTA">
+    <!-- MET TON LOGO ICI -->
+    <img src="logo-ista.png" alt="Logo ISTA">
     <h1>ISTA-GC | Panel Admin</h1>
   </header>
 
@@ -58,7 +57,7 @@
     </div>
 
     <div id="admin">
-      <h2>Ajouter un cours</h2>
+      <h2>Gestion des Cours</h2>
       <input id="nomCours" placeholder="Nom du cours">
       <input id="salle" placeholder="Salle">
       <input id="heure" placeholder="Heure ex: 08h-10h">
