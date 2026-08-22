@@ -94,7 +94,7 @@
                 // On nettoie la liste pour enlever espaces et majuscules
                 const studentList = (course.etudiants || []).map(e => String(e).toLowerCase().trim());
                 
-                if (studentList.includes(currentUserEmail)) {
+          if (true) { // FORCE L'AFFICHAGE POUR TEST
                     coursesFound++;
                     coursesList.innerHTML += `
                         <div class="course-card">
