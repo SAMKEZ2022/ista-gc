@@ -2,92 +2,79 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>ISTA-GC | Espace Étudiant</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ISTA-GC | Emploi du Temps</title>
   <style>
-    body{margin:0; font-family:'Segoe UI', Arial; background:#F0F6FF} /* fond bleu très clair */
+    *{box-sizing:border-box; margin:0; padding:0}
+    body{font-family:'Segoe UI', Arial, sans-serif; background:#F0F4F8}
     
-    /* HEADER BLEU */
     header{
-      background:#003366; /* Bleu ISTA */
-      color:white; 
-      padding:15px 30px; 
-      display:flex; 
-      align-items:center;
-      gap:15px;
-      box-shadow:0 2px 5px rgba(0,0,0,0.2)
+      background:#004AAD; color:white; padding:15px 30px; 
+      display:flex; align-items:center; gap:15px;
+      box-shadow:0 3px 10px rgba(0,74,173,0.3); position:sticky; top:0;
     }
-    header img{height:45px; background:white; padding:3px; border-radius:4px}
-    header h1{font-size:20px; margin:0}
+    header img{height:55px; background:white; padding:5px; border-radius:10px}
+    header h1{font-size:22px; margin:0; font-weight:700}
 
-    .box{max-width:500px; margin:50px auto; background:white; padding:30px; border-radius:8px; box-shadow:0 2px 15px rgba(0,51,102,0.2)}
-    input{padding:12px; margin:8px 0; width:100%; box-sizing:border-box; border:1px solid #99BADD; border-radius:4px}
-    input:focus{outline:none; border-color:#003366}
-    
-    /* BOUTON BLEU */
-    button{
-      padding:12px; 
-      width:100%; 
-      background:#003366; /* Bleu */
-      color:white; 
-      border:none; 
-      cursor:pointer; 
-      border-radius:4px; 
-      font-size:16px;
-      font-weight:bold
+    .container{max-width:900px; margin:40px auto; padding:20px}
+    h2{text-align:center; color:#004AAD; margin-bottom:30px; font-size:28px}
+
+    .cours-card{
+      background:white; padding:20px; margin:15px 0; border-radius:12px; 
+      box-shadow:0 3px 12px rgba(0,74,173,0.1); 
+      border-left:6px solid #004AAD;
+      transition:transform 0.2s;
     }
-    button:hover{background:#002244}
-
-    #dashboard{display:none}
-    h2{text-align:center; color:#003366}
+    .cours-card:hover{transform:translateX(5px)}
+    .cours-card b{font-size:20px; color:#004AAD}
+    .cours-card p{margin:8px 0 0 0; color:#333; font-size:15px}
+    .no-cours{text-align:center; padding:40px; color:#666; background:white; border-radius:12px}
   </style>
 </head>
 <body>
   <header>
-    <img src="logo-ista.png" alt="Logo ISTA"> <!-- Mets ton logo ici -->
-    <h1>ISTA-GC | Espace Étudiant</h1>
+    <img src="logo-ista.jpg" alt="Logo ISTA">
+    <h1>ISTA-GC | Emploi du Temps</h1>
   </header>
 
-  <div class="box">
-    <h2>Connexion Étudiant</h2>
-    <div id="login">
-      <input id="email" type="email" placeholder="Email Étudiant">
-      <input id="password" type="password" placeholder="Mot de passe">
-      <button onclick="login()">Se connecter</button>
-    </div>
-
-    <div id="dashboard">
-      <h2>Mes Cours</h2>
-      <div id="listeCours">Chargement...</div>
-      <button onclick="logout()" style="background:#555; margin-top:15px">Se déconnecter</button>
-    </div>
+  <div class="container">
+    <h2>Liste des cours du jour</h2>
+    <div id="listeCoursPublic">Chargement des cours...</div>
   </div>
 
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-  import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
-  import { getFirestore, collection, getDocs } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+  import { getFirestore, collection, getDocs, orderBy, query } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
-  const firebaseConfig = { /* TA CONFIG ICI */ };
+  const firebaseConfig = {
+    apiKey: "AIzaSyCv3W6M3RmbipblwJ65Q0uw99a2H3tStU0",
+    authDomain: "ista-gc.firebaseapp.com",
+    projectId: "ista-gc",
+    storageBucket: "ista-gc.firebasestorage.app",
+    messagingSenderId: "75501350048",
+    appId: "1:75501350048:web:8def71328c58dd6b7d6dc5",
+    measurementId: "G-B2Y89V3X35"
+  };
   const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
   const db = getFirestore(app);
 
-  onAuthStateChanged(auth, user => {
-    if(user){ document.getElementById('login').style.display='none'; document.getElementById('dashboard').style.display='block'; chargerCours(); }
-  });
-
-  window.login = () => signInWithEmailAndPassword(auth, email.value, password.value).catch(err => alert("Erreur: " + err.message))
-  window.logout = () => signOut(auth).then(()=>location.reload())
-  
-  async function chargerCours(){
-    const snap = await getDocs(collection(db, "cours"));
+  async function chargerCoursPublic(){
+    const q = query(collection(db, "cours"), orderBy("createdAt", "desc"));
+    const snap = await getDocs(q);
     let html = "";
-    snap.forEach(doc => {
-      const c = doc.data();
-      html += `<p><b>${c.nom}</b> - ${c.salle} - ${c.heure}</p>`;
+    snap.forEach(docSnap => {
+      const c = docSnap.data();
+      const nomCours = c.nom || c.name || "Sans nom";
+      html += `
+        <div class="cours-card">
+          <b>${nomCours}</b>
+          <p><b>Salle:</b> ${c.salle || '-'} | <b>Heure:</b> ${c.heure || '-'}</p>
+        </div>
+      `;
     });
-    document.getElementById('listeCours').innerHTML = html || "Aucun cours";
+    document.getElementById('listeCoursPublic').innerHTML = html || '<div class="no-cours">Aucun cours programmé pour le moment</div>';
   }
+  chargerCoursPublic();
 </script>
 </body>
 </html>
