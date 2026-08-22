@@ -5,29 +5,55 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ISTAGC - Espace Étudiant</title>
   <style>
-    body { font-family: Arial, sans-serif; background: #f0f2f5; padding: 20px; }
-    .container { max-width: 600px; margin: auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-    h1 { color: #0056b3; text-align: center; }
-    input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
-    button { width: 100%; padding: 12px; background: #0056b3; color: white; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; }
-    button:hover { background: #004494; }
-    .note { background: #e7f3ff; padding: 15px; margin: 10px 0; border-left: 5px solid #0056b3; border-radius: 5px; }
-    .error { color: red; text-align: center; margin-top: 10px; }
-    .warning { color: #856404; background: #fff3cd; padding: 10px; border-radius: 5px; margin: 10px 0; }
+    :root {
+      --bleu-ista: #0056b3;
+      --vert-ista: #00a859;
+      --gris-bg: #f4f6f9;
+    }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--gris-bg); margin: 0; padding: 0; }
+    
+    .header {
+      background: linear-gradient(135deg, var(--bleu-ista) 0%, var(--vert-ista) 100%);
+      color: white;
+      padding: 20px;
+      text-align: center;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    .header h1 { margin: 0; font-size: 24px; }
+    .header p { margin: 5px 0 0; font-size: 14px; opacity: 0.9; }
+
+    .container { max-width: 800px; margin: 30px auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
+    
+    input { width: 100%; padding: 12px; margin: 10px 0; border: 2px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 15px; }
+    input:focus { border-color: var(--bleu-ista); outline: none; }
+    
+    button { width: 100%; padding: 14px; background: var(--bleu-ista); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+    button:hover { background: #004494; transform: translateY(-2px); }
+    
+    .note { background: #f0f9ff; padding: 18px; margin: 12px 0; border-left: 6px solid var(--vert-ista); border-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
+    .note b { color: var(--bleu-ista); font-size: 16px; }
+    .note .semestre { background: var(--vert-ista); color: white; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+    
+    .error { color: #dc3545; text-align: center; margin-top: 10px; font-weight: bold; }
     .hidden { display: none; }
-    .header-notes { display: flex; justify-content: space-between; align-items: center; }
-    .btn-logout { background: #dc3545; width: auto; padding: 8px 15px; font-size: 14px; }
+    .header-notes { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--gris-bg); padding-bottom: 15px; margin-bottom: 20px; }
+    .btn-logout { background: #dc3545; width: auto; padding: 10px 20px; font-size: 14px; }
     .btn-logout:hover { background: #c82333; }
+    .welcome { color: var(--bleu-ista); margin-bottom: 20px; }
   </style>
 </head>
 <body>
 
+<div class="header">
+  <h1>INSTITUT SUPÉRIEUR DE TECHNOLOGIE AGROPASTORALE</h1>
+  <p>ISTAGC - Plateforme Académique Étudiante</p>
+</div>
+
 <div class="container">
-  <h1>ISTAGC - Espace Étudiant</h1>
   
   <div id="login-box">
-    <h3>Connexion</h3>
-    <input type="email" id="email" placeholder="Email étudiant" value="etudiant1@ista.gc">
+    <h2 style="color: var(--bleu-ista); text-align: center;">Connexion Étudiant</h2>
+    <input type="email" id="email" placeholder="Email institutionnel" value="etudiant1@ista.gc">
     <input type="password" id="password" placeholder="Mot de passe" value="Etudiant123">
     <button onclick="login()">Se connecter</button>
     <p id="error-msg" class="error"></p>
@@ -35,10 +61,12 @@
 
   <div id="notes-box" class="hidden">
     <div class="header-notes">
-      <h3>Mes Notes</h3>
+      <div>
+        <h2 class="welcome">Bienvenue</h2>
+        <h3 style="margin:0;">Mes Notes Académiques</h3>
+      </div>
       <button class="btn-logout" onclick="logout()">Déconnexion</button>
     </div>
-    <div id="debug-info" class="warning hidden"></div>
     <div id="notes-list">Chargement...</div>
   </div>
 </div>
@@ -66,6 +94,7 @@
     if (user) {
       document.getElementById('login-box').classList.add('hidden');
       document.getElementById('notes-box').classList.remove('hidden');
+      document.querySelector('.welcome').innerText = `Bienvenue, ${user.email}`;
       loadNotes(user.email);
     } else {
       document.getElementById('login-box').classList.remove('hidden');
@@ -79,47 +108,35 @@
     document.getElementById('error-msg').innerText = "";
     signInWithEmailAndPassword(auth, email, password)
       .catch((error) => {
-        document.getElementById('error-msg').innerText = "Erreur: Email ou mot de passe incorrect";
+        document.getElementById('error-msg').innerText = "Email ou mot de passe incorrect";
       });
   }
 
-  window.logout = () => {
-    signOut(auth).then(() => {
-      location.reload();
-    });
-  }
+  window.logout = () => { signOut(auth); }
 
   async function loadNotes(studentEmail) {
     const notesList = document.getElementById('notes-list');
-    const debugInfo = document.getElementById('debug-info');
+    const q = query(collection(db, "notes"), where("email", "==", studentEmail));
+    const querySnapshot = await getDocs(q);
+    notesList.innerHTML = "";
     
-    debugInfo.classList.remove('hidden');
-    debugInfo.innerHTML = `<b>Debug:</b> Je cherche les notes pour l'email → [${studentEmail}]`;
-    
-    try {
-      // ICI ON CHERCHE AVEC "email" POUR MATCHER FIREBASE
-      const q = query(collection(db, "notes"), where("email", "==", studentEmail));
-      const querySnapshot = await getDocs(q);
-      notesList.innerHTML = "";
-      
-      if(querySnapshot.empty){
-        notesList.innerHTML = `❌ Aucune note trouvée pour l'email : <b>${studentEmail}</b>`;
-        return;
-      }
-
-      querySnapshot.forEach((doc) => {
-        const note = doc.data();
-        // ICI ON LIT "cours", "note", "semestre" POUR MATCHER FIREBASE
-        notesList.innerHTML += `
-          <div class="note">
-            <b>${note.cours}</b> : ${note.note}/20 
-            <span style="float: right;">${note.semestre}</span>
-          </div>
-        `;
-      });
-    } catch(error) {
-      notesList.innerHTML = "❌ Erreur Firebase: " + error.message;
+    if(querySnapshot.empty){
+      notesList.innerHTML = `<p style="text-align:center; color:#888;">Aucune note disponible pour le moment.</p>`;
+      return;
     }
+
+    querySnapshot.forEach((doc) => {
+      const note = doc.data();
+      notesList.innerHTML += `
+        <div class="note">
+          <div>
+            <b>${note.cours}</b> <br>
+            Note : <b>${note.note}/20</b>
+          </div>
+          <span class="semestre">${note.semestre}</span>
+        </div>
+      `;
+    });
   }
 </script>
 
