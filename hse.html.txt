@@ -1,0 +1,8 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="UTF-8"><title>Module HSE</title></head>
+<body>
+  <h1>Module HSE - ISTA GC</h1>
+  <a href="index.html">Retour Accueil</a>
+</body>
+</html>

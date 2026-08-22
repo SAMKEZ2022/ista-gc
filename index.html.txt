@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Plateforme ISTA GC</title>
+</head>
+<body>
+  <h1>Bienvenue sur la Plateforme ISTA GC</h1>
+  <a href="hse.html">Module HSE</a> | <a href="etudiant.html">Espace Etudiant</a>
+</body>
+</html>

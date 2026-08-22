@@ -1,0 +1,8 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="UTF-8"><title>Espace Etudiant</title></head>
+<body>
+  <h1>Espace Etudiant - ISTA GC</h1>
+  <a href="index.html">Retour Accueil</a>
+</body>
+</html>
