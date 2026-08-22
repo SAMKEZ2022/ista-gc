@@ -3,56 +3,78 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ISTAGC - Espace Étudiant</title>
+  <title>ISTR - Espace Étudiant</title>
   <style>
     :root {
-      --bleu-ista: #0056b3;
-      --vert-ista: #00a859;
+      --bleu-istr: #0056b3;
+      --vert-istr: #00a859;
       --gris-bg: #f4f6f9;
     }
+    * { box-sizing: border-box; }
     body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--gris-bg); margin: 0; padding: 0; }
     
+    /* HEADER AVEC LOGO LISIBLE */
     .header {
-      background: linear-gradient(135deg, var(--bleu-ista) 0%, var(--vert-ista) 100%);
+      background: linear-gradient(135deg, var(--bleu-istr) 0%, var(--vert-istr) 100%);
       color: white;
-      padding: 20px;
-      text-align: center;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      padding: 20px 30px;
+      display: flex;
+      align-items: center;
+      gap: 25px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
     }
-    .header h1 { margin: 0; font-size: 24px; }
-    .header p { margin: 5px 0 0; font-size: 14px; opacity: 0.9; }
+    .header img {
+      height: 85px; /* Logo plus grand */
+      background: transparent; /* Pas de fond blanc */
+      border-radius: 0; /* Pas de rond */
+      padding: 0;
+      object-fit: contain;
+    }
+    .header-text h1 { margin: 0; font-size: 22px; font-weight: 700; }
+    .header-text p { margin: 5px 0 0; font-size: 15px; opacity: 0.95; }
 
-    .container { max-width: 800px; margin: 30px auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
+    .container { max-width: 850px; margin: 30px auto; background: white; padding: 35px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
     
-    input { width: 100%; padding: 12px; margin: 10px 0; border: 2px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 15px; }
-    input:focus { border-color: var(--bleu-ista); outline: none; }
+    h2 { color: var(--bleu-istr); }
+    input { width: 100%; padding: 14px; margin: 12px 0; border: 2px solid #ddd; border-radius: 8px; font-size: 15px; }
+    input:focus { border-color: var(--bleu-istr); outline: none; }
     
-    button { width: 100%; padding: 14px; background: var(--bleu-ista); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+    button { width: 100%; padding: 15px; background: var(--bleu-istr); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; }
     button:hover { background: #004494; transform: translateY(-2px); }
     
-    .note { background: #f0f9ff; padding: 18px; margin: 12px 0; border-left: 6px solid var(--vert-ista); border-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
-    .note b { color: var(--bleu-ista); font-size: 16px; }
-    .note .semestre { background: var(--vert-ista); color: white; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+    .note { background: #f0f9ff; padding: 20px; margin: 15px 0; border-left: 6px solid var(--vert-istr); border-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
+    .note b { color: var(--bleu-istr); font-size: 17px; }
+    .note .semestre { background: var(--vert-istr); color: white; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; }
     
     .error { color: #dc3545; text-align: center; margin-top: 10px; font-weight: bold; }
     .hidden { display: none; }
-    .header-notes { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--gris-bg); padding-bottom: 15px; margin-bottom: 20px; }
+    .header-notes { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--gris-bg); padding-bottom: 15px; margin-bottom: 25px; }
     .btn-logout { background: #dc3545; width: auto; padding: 10px 20px; font-size: 14px; }
     .btn-logout:hover { background: #c82333; }
-    .welcome { color: var(--bleu-ista); margin-bottom: 20px; }
+    .welcome { color: var(--bleu-istr); margin-bottom: 20px; }
+
+    /* Responsive mobile */
+    @media (max-width: 600px) {
+      .header { flex-direction: column; text-align: center; gap: 10px; }
+      .header img { height: 70px; }
+      .container { margin: 15px; padding: 20px; }
+    }
   </style>
 </head>
 <body>
 
 <div class="header">
-  <h1>INSTITUT SUPÉRIEUR DE TECHNOLOGIE AGROPASTORALE</h1>
-  <p>ISTAGC - Plateforme Académique Étudiante</p>
+  <img src="https://raw.githubusercontent.com/samkez2022/ista-gc/main/logo-istr.png" alt="Logo ISTR">
+  <div class="header-text">
+    <h1>INSTITUT DES SCIENCES, TECHNOLOGIES ET ARTS</h1>
+    <p>ISTR - Plateforme Académique Étudiante</p>
+  </div>
 </div>
 
 <div class="container">
   
   <div id="login-box">
-    <h2 style="color: var(--bleu-ista); text-align: center;">Connexion Étudiant</h2>
+    <h2 style="text-align: center;">Connexion Étudiant</h2>
     <input type="email" id="email" placeholder="Email institutionnel" value="etudiant1@ista.gc">
     <input type="password" id="password" placeholder="Mot de passe" value="Etudiant123">
     <button onclick="login()">Se connecter</button>
@@ -63,7 +85,7 @@
     <div class="header-notes">
       <div>
         <h2 class="welcome">Bienvenue</h2>
-        <h3 style="margin:0;">Mes Notes Académiques</h3>
+        <h3 style="margin:0; color:#555;">Mes Notes Académiques</h3>
       </div>
       <button class="btn-logout" onclick="logout()">Déconnexion</button>
     </div>
