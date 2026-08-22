@@ -46,14 +46,14 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    // 2. REMPLACE ÇA PAR TA CONFIG FIREBASE
+    // 2. REMPLACE ÇA PAR TA VRAIE CONFIG FIREBASE
     const firebaseConfig = {
-      apiKey: "COLLE_TA_CLE_API_ICI",
-      authDomain: "COLLE_TON_AUTH_DOMAIN_ICI",
-      projectId: "COLLE_TON_PROJECT_ID_ICI",
-      storageBucket: "COLLE_TON_STORAGE_BUCKET_ICI",
-      messagingSenderId: "COLLE_TON_MESSAGING_ID_ICI",
-      appId: "COLLE_TON_APP_ID_ICI"
+      apiKey: "TA_CLE_API",
+      authDomain: "TON_PROJET.firebaseapp.com",
+      projectId: "TON_PROJET",
+      storageBucket: "TON_PROJET.appspot.com",
+      messagingSenderId: "TON_ID",
+      appId: "TON_APP_ID"
     };
 
     // 3. INITIALISATION
@@ -91,7 +91,7 @@
             
             querySnapshot.forEach((doc) => {
                 const course = doc.data();
-                // On met tout en minuscule pour comparer
+                // On nettoie la liste pour enlever espaces et majuscules
                 const studentList = (course.etudiants || []).map(e => String(e).toLowerCase().trim());
                 
                 if (studentList.includes(currentUserEmail)) {
@@ -107,7 +107,7 @@
             });
             
             if (coursesFound === 0) {
-                coursesList.innerHTML = `<p class="info">Aucun cours trouvé pour: <b>${currentUserEmail}</b><br>Vérifiez que votre email est bien dans la liste "etudiants" du cours sur Firebase.</p>`;
+                coursesList.innerHTML = `<p class="info">Aucun cours trouvé pour: <b>${currentUserEmail}</b><br>Vérifiez que cet email est bien dans la liste "etudiants" du cours sur Firebase.</p>`;
             }
             
         } catch (error) {
