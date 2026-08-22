@@ -71,7 +71,7 @@
   import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
   import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
-  // TA VRAIE CONFIG FIREBASE
+  // TA CONFIG FIREBASE
   const firebaseConfig = {
     apiKey: "AIzaSyCv3W6M3RmbipblwJ65Q0uw99a2H3tStU0",
     authDomain: "ista-gc.firebaseapp.com",
@@ -122,11 +122,16 @@
     let html = "";
     snap.forEach(docSnap => {
       const c = docSnap.data();
+      // FIX: lit nom OU name pour compatibilité avec anciens cours
+      const nomCours = c.nom || c.name || "Sans nom";
+      const salleCours = c.salle || "-";
+      const heureCours = c.heure || "-";
+
       html += `
         <div class="cours-item">
           <div class="cours-info">
-            <b>${c.nom}</b>
-            <p>Salle: ${c.salle || '-'} | Heure: ${c.heure || '-'}</p>
+            <b>${nomCours}</b>
+            <p>Salle: ${salleCours} | Heure: ${heureCours}</p>
           </div>
           <button class="btn btn-danger btn-small" onclick="supprimerCours('${docSnap.id}')">Supprimer</button>
         </div>
