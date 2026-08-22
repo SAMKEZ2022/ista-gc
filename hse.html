@@ -5,52 +5,107 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Module HSE - ISTA GC</title>
   <style>
-    body { font-family: Arial; margin:0; background:#f4f4f4; }
-    header { background:#003366; color:white; padding:20px; text-align:center; }
-    header img { width:100px; margin-bottom:10px; }
-    .container { padding:30px 20px; max-width:900px; margin:auto; }
-    .cours { background:white; padding:20px; margin:15px 0; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.1); text-align:left; }
-    .btn { background:#0066cc; color:white; padding:10px 20px; text-decoration:none; border-radius:5px; display:inline-block; margin-top:10px; }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background:#f4f4f4; color:#333; line-height:1.6; }
+    
+    header { 
+      background: linear-gradient(135deg, #003366, #0066cc); 
+      color:white; padding:30px 20px; text-align:center; 
+      box-shadow:0 2px 10px rgba(0,0,0,0.2);
+    }
+    header img { width:100px; margin-bottom:15px; }
+    header h1 { font-size:22px; margin-bottom:5px; }
+    header h2 { font-size:16px; font-weight:300; }
+
+    .container { padding:40px 20px; max-width:950px; margin:auto; }
+    h3 { text-align:center; color:#003366; font-size:24px; margin-bottom:35px; }
+
+    .section-title { color:#003366; font-size:18px; margin:30px 0 15px 0; border-left:4px solid #0066cc; padding-left:10px; }
+
+    .cours { 
+      background:white; padding:25px; margin:15px 0; border-radius:10px; 
+      box-shadow:0 3px 8px rgba(0,0,0,0.1); transition: transform 0.2s;
+    }
+    .cours:hover { transform: translateY(-3px); }
+    .cours h4 { color:#003366; margin-bottom:8px; }
+    .cours p { color:#666; margin-bottom:15px; }
+
+    .video-box { 
+      background:white; padding:25px; margin:20px 0; border-radius:10px; 
+      box-shadow:0 3px 8px rgba(0,0,0,0.1); 
+    }
+    .video-box h4 { color:#003366; margin-bottom:8px; }
+    .video-box p { color:#666; margin-bottom:15px; font-size:14px; }
+    iframe { 
+      border-radius:10px; width:100%; height:350px; border:none; 
+      box-shadow:0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .btn { 
+      background:#0066cc; color:white; padding:12px 25px; text-decoration:none; 
+      border-radius:6px; display:inline-block; font-weight:bold; transition: background 0.3s;
+    }
     .btn:hover { background:#004999; }
-    .retour { text-align:center; margin-top:30px; }
-    footer { background:#003366; color:white; padding:15px; text-align:center; }
+
+    .retour { text-align:center; margin-top:40px; }
+    
+    footer { 
+      background:#003366; color:white; padding:20px; text-align:center; 
+      margin-top:50px; font-size:14px;
+    }
+
+    @media(max-width:768px){
+      iframe { height:250px; }
+      header h1 { font-size:18px; }
+    }
   </style>
 </head>
 <body>
   <header>
     <img src="logo-ista.jpg" alt="Logo ISTA">
     <h1>Institut des Sciences, Technologies et Arts</h1>
-    <h2>Plateforme Génie Civil</h2>
+    <h2>Plateforme Génie Civil - Département HSE</h2>
   </header>
 
   <div class="container">
-    <h3 style="text-align:center;">📘 Module HSE - Hygiène, Sécurité, Environnement</h3>
+    <h3>📘 Module HSE - Hygiène, Sécurité, Environnement</h3>
     
+    <h4 class="section-title">📄 Cours PDF à Télécharger</h4>
     <div class="cours">
       <h4>Chapitre 1 : Introduction à la HSE</h4>
-      <p>Concepts de base, objectifs et enjeux de la HSE dans le BTP.</p>
+      <p>Concepts de base, objectifs, réglementation et enjeux de la HSE dans le BTP.</p>
       <a href="cours1-introduction-hse.pdf" class="btn" download>📥 Télécharger le PDF</a>
     </div>
 
     <div class="cours">
       <h4>Chapitre 2 : Risques sur Chantier</h4>
-      <p>Identification des dangers et mesures de prévention.</p>
+      <p>Identification des dangers, analyse des risques et mesures de prévention.</p>
       <a href="cours2-risques-chantier.pdf" class="btn" download>📥 Télécharger le PDF</a>
     </div>
 
-    <div class="cours">
-      <h4>Chapitre 3 : EPI et Signalisation</h4>
-      <p>Les équipements de protection individuelle et les panneaux.</p>
-      <a href="cours3-epi-signalisation.pdf" class="btn" download>📥 Télécharger le PDF</a>
+    <h4 class="section-title">🎥 Vidéos de Formation</h4>
+    
+    <div class="video-box">
+      <h4>Vidéo 1 : Sécurité sur Chantier</h4>
+      <p>Bonnes pratiques et règles essentielles pour travailler en sécurité.</p>
+      <iframe src="https://www.youtube.com/embed/EJl1Q-M3cYo" 
+      title="Securite Chantier HSE" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+    </div>
+
+    <div class="video-box">
+      <h4>Vidéo 2 : EPI et Signalisation</h4>
+      <p>Port des équipements de protection et lecture de la signalisation de sécurité.</p>
+      <iframe src="https://www.youtube.com/embed/tha-F7Xh-jY" 
+      title="EPI Signalisation HSE" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
     </div>
 
     <div class="retour">
-      <a href="index.html" class="btn">⬅ Retour Accueil</a>
+      <a href="index.html" class="btn">⬅ Retour à l'Accueil</a>
     </div>
   </div>
 
   <footer>
-    © 2026 ISTA GC | Tous droits réservés
+    © 2026 ISTA GC | Plateforme Génie Civil | Tous droits réservés
   </footer>
 </body>
 </html>
