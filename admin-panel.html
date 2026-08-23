@@ -1,46 +1,65 @@
 <!DOCTYPE html>
 <html lang="fr">
-<head>
-  <meta charset="UTF-8">
-  <title>ISTA-GC | Panel Admin</title>
-  <style>
-    body{font-family:'Segoe UI'; background:#F5F1EB; margin:0}
-    header{background:#6B4F3D; color:white; padding:12px 30px; display:flex; align-items:center; gap:15px}
-    header img{height:50px; background:white; padding:4px; border-radius:8px}
-    .container{max-width:1000px; margin:30px auto; background:white; padding:30px; border-radius:12px}
-    input{padding:12px; margin:8px 0; width:100%; border:1px solid #D2B48C; border-radius:6px}
-    .btn{padding:12px; background:#8B6F47; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer}
-    #adminSection{display:none} .enLigne{color:green} .deconnecte{color:gray}
-  </style>
+<head><meta charset="UTF-8"><title>Panel Prof</title>
+<style>body{font-family:'Segoe UI'; padding:20px; background:#F0F4F8}
+.box{max-width:600px; margin:auto; background:white; padding:20px; border-radius:12px}
+input{width:100%; padding:12px; margin:10px 0; border:1px solid #ccc}
+.btn{background:#004AAD; color:white; padding:14px; border:none; width:100%; cursor:pointer; border-radius:8px}</style>
 </head>
 <body>
-  <header><img src="wa_image_6252039400060238608.jpeg"><h1>ISTA-GC | Panel Admin</h1></header>
-  <div class="container">
-    <div id="login"><h2>Connexion</h2><input id="email" type="email"><input id="password" type="password"><button class="btn" onclick="login()">Se connecter</button></div>
-    <div id="admin" style="display:none">
-      <h2>Ajouter Cours</h2><input id="nom" placeholder="Nom"><input id="salle" placeholder="Salle"><input id="heure" placeholder="Heure"><input id="lien" placeholder="Lien Meet/Zoom"><button class="btn" onclick="add()">Ajouter</button><hr><div id="liste"></div>
-    </div>
+<div class="box">
+  <h2>Panel Professeur ISTA-GC</h2>
+  <div id="login">
+    <input id="email" type="email" placeholder="Email Prof">
+    <input id="pass" type="password" placeholder="Mot de passe">
+    <button class="btn" onclick="login()">Se connecter</button>
   </div>
+  <div id="admin" style="display:none">
+    <p>Connecté: <b id="profEmail"></b> <button onclick="logout()">Déconnexion</button></p>
+    <h3>Ajouter un cours</h3>
+    <input id="nomCours" placeholder="Nom du cours">
+    <input id="salle" placeholder="Salle ou Lien Zoom">
+    <input id="heure" type="datetime-local">
+    <input id="lien" placeholder="Lien Google Meet">
+    <button class="btn" onclick="ajouterCours()">Lancer le cours</button>
+    <hr><h3>Mes cours</h3><ul id="liste"></ul>
+  </div>
+</div>
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
-import { getFirestore, collection, addDoc, onSnapshot, query, orderBy } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+import { getFirestore, collection, addDoc, query, where, onSnapshot, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 const app = initializeApp({apiKey: "AIzaSyCv3W6M3RmbipblwJ65Q0uw99a2H3tStU0", authDomain: "ista-gc.firebaseapp.com", projectId: "ista-gc"});
-const auth=getAuth(app); const db=getFirestore(app);
-onAuthStateChanged(auth, u=>{if(u){login.style.display='none';admin.style.display='block';load()}});
-window.login=()=>signInWithEmailAndPassword(auth,email.value,password.value);
-window.add=async()=>{await addDoc(collection(db,"cours"),{nom:nom.value,salle:salle.value,heure:heure.value,lien:lien.value});}
-function load(){
-  onSnapshot(query(collection(db,"cours"),orderBy("createdAt","desc")),snap=>{
-    let h=""; snap.forEach(d=>{h+=`<div style="border:1px solid #ccc; padding:15px; margin:10px 0"><b>${d.data().nom}</b><div id="p-${d.id}"></div></div>`; loadPresence(d.id)});
-    liste.innerHTML=h;
-  })
-}
-function loadPresence(id){
-  onSnapshot(collection(db,"cours",id,"etudiants"),snap=>{
-    let h=""; snap.forEach(s=>{const d=s.data(); h+=`<p class="${d.statut}">${d.nom} - ${d.matricule} ${d.statut=='enLigne'?'🟢':'🔴'} Temps: ${d.temps||0}min</p>`});
-    document.getElementById(`p-${id}`).innerHTML=h;
-  })
+const auth = getAuth(app); const db = getFirestore(app); let userId = null;
+
+function login(){ signInWithEmailAndPassword(auth, email.value, pass.value).catch(e=>alert(e.message)) }
+function logout(){ signOut(auth) }
+
+onAuthStateChanged(auth, user=>{
+  if(user){
+    userId = user.uid;
+    document.getElementById('login').style.display='none';
+    document.getElementById('admin').style.display='block';
+    document.getElementById('profEmail').innerText=user.email;
+    // Affiche seulement les cours de ce prof
+    onSnapshot(query(collection(db,"cours"), where("profId","==",userId)), snap=>{
+      liste.innerHTML=''; snap.forEach(d=>{
+        const c=d.data(); liste.innerHTML+=`<li>${c.nom} - ${c.heure} <a href="salle.html?id=${d.id}" target="_blank">Lien Etudiant</a></li>`
+      })
+    })
+  } else {
+    document.getElementById('login').style.display='block';
+    document.getElementById('admin').style.display='none';
+  }
+});
+
+async function ajouterCours(){
+  await addDoc(collection(db,"cours"),{
+    nom:nomCours.value, salle:salle.value, heure:heure.value, lien:lien.value,
+    profId:userId, // Important: on lie le cours au prof
+    created:serverTimestamp()
+  });
+  alert("Cours lancé!"); nomCours.value=''; lien.value='';
 }
 </script>
 </body>
