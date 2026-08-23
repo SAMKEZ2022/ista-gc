@@ -2,16 +2,20 @@
 <html lang="fr">
 <head><meta charset="UTF-8"><title>Panel Prof</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>body{font-family:'Segoe UI'; padding:20px; background:#F0F4F8}.box{max-width:500px; margin:auto; background:white; padding:20px; border-radius:12px}
-input,button{width:100%; padding:12px; margin:8px 0; border-radius:8px; border:1px solid #ccc; box-sizing:border-box}
-button{background:#004AAD; color:white; border:none; font-size:16px}</style>
+<style>
+body{font-family:'Segoe UI'; padding:20px; background:#F0F4F8}
+.box{max-width:500px; margin:auto; background:white; padding:20px; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.1)}
+input,button{width:100%; padding:14px; margin:10px 0; border-radius:8px; border:1px solid #ccc; box-sizing:border-box; font-size:16px}
+button{background:#004AAD; color:white; border:none; cursor:pointer}
+button:hover{opacity:0.9}
+</style>
 </head>
 <body>
 <div class="box">
   <h2>Panel Professeur ISTA-GC</h2>
   <div id="login">
-    <input id="email" type="email" placeholder="Email Prof">
-    <input id="pass" type="password" placeholder="Mot de passe">
+    <input id="email" type="email" placeholder="Email Prof" autocomplete="username">
+    <input id="pass" type="password" placeholder="Mot de passe" autocomplete="current-password">
     <button id="btnLogin">Se connecter</button>
     <p id="erreur" style="color:red"></p>
   </div>
@@ -19,35 +23,53 @@ button{background:#004AAD; color:white; border:none; font-size:16px}</style>
     <p>Connecté: <b id="profEmail"></b></p>
     <button id="btnLogout">Déconnexion</button>
     <hr>
+    <h3>Lancer un cours</h3>
     <input id="nomCours" placeholder="Nom du cours">
     <input id="lien" placeholder="Lien Google Meet">
     <button id="btnAjouter">Lancer le cours</button>
+    <p id="ok" style="color:green"></p>
   </div>
 </div>
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
-import { getFirestore, collection, addDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+import { getFirestore, collection, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
 const app = initializeApp({apiKey: "AIzaSyCv3W6M3RmbipblwJ65Q0uw99a2H3tStU0", authDomain: "ista-gc.firebaseapp.com", projectId: "ista-gc"});
 const auth = getAuth(app); const db = getFirestore(app);
 
-btnLogin.onclick = ()=>{
+document.getElementById('btnLogin').addEventListener('click', ()=>{
   erreur.innerText='';
   signInWithEmailAndPassword(auth, email.value, pass.value)
-  .catch(e=>{ erreur.innerText = e.code })
-}
-btnLogout.onclick = ()=>{ signOut(auth) }
-btnAjouter.onclick = async ()=>{
-  await addDoc(collection(db,"cours"),{nom:nomCours.value, lien:lien.value, profId:auth.currentUser.uid})
-  alert("Cours ajouté!")
-}
+  .catch(e=>{ erreur.innerText = "Erreur: " + e.message })
+})
+
+document.getElementById('btnLogout').addEventListener('click', ()=>{ 
+  signOut(auth) 
+})
+
+document.getElementById('btnAjouter').addEventListener('click', async ()=>{
+  ok.innerText='';
+  if(!nomCours.value || !lien.value) {ok.innerText="Remplis tout"; ok.style.color="red"; return}
+  await addDoc(collection(db,"cours"),{
+    nom:nomCours.value, 
+    lien:lien.value, 
+    profId:auth.currentUser.uid,
+    profEmail:auth.currentUser.email,
+    created:serverTimestamp()
+  })
+  ok.innerText="Cours lancé avec succès!"; ok.style.color="green";
+  nomCours.value=''; lien.value='';
+})
 
 onAuthStateChanged(auth, user=>{
   if(user){
-    login.style.display='none'; admin.style.display='block'; profEmail.innerText=user.email;
+    document.getElementById('login').style.display='none'; 
+    document.getElementById('admin').style.display='block'; 
+    document.getElementById('profEmail').innerText=user.email;
   } else {
-    login.style.display='block'; admin.style.display='none';
+    document.getElementById('login').style.display='block'; 
+    document.getElementById('admin').style.display='none';
   }
 });
 </script>
