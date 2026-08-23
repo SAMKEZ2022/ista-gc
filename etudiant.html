@@ -2,152 +2,120 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ISTR - Espace Étudiant</title>
+  <title>ISTAGC - Espace Étudiant</title>
   <style>
-    :root {
-      --bleu-istr: #0056b3;
-      --vert-istr: #00a859;
-      --gris-bg: #f4f6f9;
-    }
-    * { box-sizing: border-box; }
-    body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--gris-bg); margin: 0; padding: 0; }
-    
-    /* HEADER PRO SANS LOGO */
-    .header {
-      background: linear-gradient(135deg, var(--bleu-istr) 0%, var(--vert-istr) 100%);
-      color: white;
-      padding: 30px;
-      text-align: center;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-    }
-    .header h1 { margin: 0; font-size: 24px; font-weight: 700; letter-spacing: 1px; }
-    .header p { margin: 8px 0 0; font-size: 16px; opacity: 0.95; }
-
-    .container { max-width: 850px; margin: 30px auto; background: white; padding: 35px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
-    
-    h2 { color: var(--bleu-istr); }
-    input { width: 100%; padding: 14px; margin: 12px 0; border: 2px solid #ddd; border-radius: 8px; font-size: 15px; }
-    input:focus { border-color: var(--bleu-istr); outline: none; }
-    
-    button { width: 100%; padding: 15px; background: var(--bleu-istr); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; }
-    button:hover { background: #004494; transform: translateY(-2px); }
-    
-    .note { background: #f0f9ff; padding: 20px; margin: 15px 0; border-left: 6px solid var(--vert-istr); border-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
-    .note b { color: var(--bleu-istr); font-size: 17px; }
-    .note .semestre { background: var(--vert-istr); color: white; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; }
-    
-    .error { color: #dc3545; text-align: center; margin-top: 10px; font-weight: bold; }
-    .hidden { display: none; }
-    .header-notes { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--gris-bg); padding-bottom: 15px; margin-bottom: 25px; }
-    .btn-logout { background: #dc3545; width: auto; padding: 10px 20px; font-size: 14px; }
-    .btn-logout:hover { background: #c82333; }
-    .welcome { color: var(--bleu-istr); margin-bottom: 20px; }
-
-    @media (max-width: 600px) {
-      .header { padding: 20px; }
-      .header h1 { font-size: 20px; }
-      .container { margin: 15px; padding: 20px; }
-    }
+    * { box-sizing: border-box; font-family: Arial, sans-serif; }
+    body { background: linear-gradient(135deg, #007bff, #6610f2); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
+  .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 8px 25px rgba(0,0,0,0.2); width: 650px; }
+    h2 { text-align: center; color: #007bff; }
+    input, button { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 8px; font-size: 15px; }
+    button { background: #007bff; color: white; border: none; cursor: pointer; font-weight: bold; }
+  .tabs button { width: 49%; background: #ccc; color: black; }
+  .tabs button.active { background: #007bff; color: white; }
+  .hidden { display: none; }
+  .item { border: 1px solid #ddd; padding: 15px; border-radius: 8px; margin-top: 10px; background: #f8f9fa; }
+    a { color: #007bff; }
+  .rendre-btn { background: #28a745; }
   </style>
 </head>
 <body>
 
-<div class="header">
-  <h1>INSTITUT DES SCIENCES, TECHNOLOGIES ET ARTS</h1>
-  <p>ISTR - Plateforme Académique Étudiante</p>
-</div>
-
-<div class="container">
-  
-  <div id="login-box">
-    <h2 style="text-align: center;">Connexion Étudiant</h2>
-    <input type="email" id="email" placeholder="Email institutionnel" value="etudiant1@ista.gc">
-    <input type="password" id="password" placeholder="Mot de passe" value="Etudiant123">
+  <div class="container" id="login-container">
+    <h2>Connexion Étudiant</h2>
+    <input type="email" id="email" placeholder="Email de l'Étudiant">
+    <input type="password" id="password" placeholder="Mot de passe">
     <button onclick="login()">Se connecter</button>
-    <p id="error-msg" class="error"></p>
   </div>
 
-  <div id="notes-box" class="hidden">
-    <div class="header-notes">
-      <div>
-        <h2 class="welcome">Bienvenue</h2>
-        <h3 style="margin:0; color:#555;">Mes Notes Académiques</h3>
-      </div>
-      <button class="btn-logout" onclick="logout()">Déconnexion</button>
+  <div class="container hidden" id="etu-container">
+    <h2>Bonjour Étudiant</h2>
+    <button onclick="logout()" style="background: red;">Se déconnecter</button>
+
+    <div class="tabs">
+      <button id="btnCours" class="active" onclick="showTab('cours')">Mes Cours</button>
+      <button id="btnDevoir" onclick="showTab('devoir')">Mes Devoirs</button>
     </div>
-    <div id="notes-list">Chargement...</div>
+
+    <div id="tab-cours"><h3>Documents de Cours</h3><div id="liste-cours">Chargement...</div></div>
+    <div id="tab-devoir" class="hidden"><h3>Devoirs à rendre</h3><div id="liste-devoirs">Chargement...</div></div>
   </div>
-</div>
 
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-  import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyCv3W6M3RmbipblwJ65Q0uw99a2H3tStU0",
-    authDomain: "ista-gc.firebaseapp.com",
-    projectId: "ista-gc",
-    storageBucket: "ista-gc.firebasestorage.app",
-    messagingSenderId: "75501350048",
-    appId: "1:75501350048:web:8def71328c58dd6b7d6dc5",
-    measurementId: "G-B2Y89V3X35"
-  };
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCv3W6M3RmbipblwJ65Q0uw99a2H3tStU0",
+      authDomain: "ista-gc.firebaseapp.com",
+      projectId: "ista-gc",
+      storageBucket: "ista-gc.firebasestorage.app",
+      messagingSenderId: "75501350048",
+      appId: "1:75501350048:web:8def71328c58dd6b7d6dc5"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    const storage = firebase.storage();
 
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
-
-  onAuthStateChanged(auth, (user) => {
-    if (user) {
-      document.getElementById('login-box').classList.add('hidden');
-      document.getElementById('notes-box').classList.remove('hidden');
-      document.querySelector('.welcome').innerText = `Bienvenue, ${user.email}`;
-      loadNotes(user.email);
-    } else {
-      document.getElementById('login-box').classList.remove('hidden');
-      document.getElementById('notes-box').classList.add('hidden');
+    function login() {
+      auth.signInWithEmailAndPassword(document.getElementById('email').value, document.getElementById('password').value)
+     .then(() => {
+          document.getElementById('login-container').classList.add('hidden');
+          document.getElementById('etu-container').classList.remove('hidden');
+          chargerCours(); chargerDevoirs();
+        });
     }
-  });
-
-  window.login = () => {
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-    document.getElementById('error-msg').innerText = "";
-    signInWithEmailAndPassword(auth, email, password)
-      .catch((error) => {
-        document.getElementById('error-msg').innerText = "Email ou mot de passe incorrect";
-      });
-  }
-
-  window.logout = () => { signOut(auth); }
-
-  async function loadNotes(studentEmail) {
-    const notesList = document.getElementById('notes-list');
-    const q = query(collection(db, "notes"), where("email", "==", studentEmail));
-    const querySnapshot = await getDocs(q);
-    notesList.innerHTML = "";
-    
-    if(querySnapshot.empty){
-      notesList.innerHTML = `<p style="text-align:center; color:#888;">Aucune note disponible pour le moment.</p>`;
-      return;
+    function logout() { auth.signOut().then(() => location.reload()); }
+    function showTab(tab) {
+      document.getElementById('tab-cours').classList.add('hidden');
+      document.getElementById('tab-devoir').classList.add('hidden');
+      document.getElementById('btnCours').classList.remove('active');
+      document.getElementById('btnDevoir').classList.remove('active');
+      document.getElementById('tab-'+tab).classList.remove('hidden');
+      document.getElementById('btn'+tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
     }
 
-    querySnapshot.forEach((doc) => {
-      const note = doc.data();
-      notesList.innerHTML += `
-        <div class="note">
-          <div>
-            <b>${note.cours}</b> <br>
-            Note : <b>${note.note}/20</b>
-          </div>
-          <span class="semestre">${note.semestre}</span>
-        </div>
-      `;
-    });
-  }
-</script>
+    async function rendreDevoir(devoirId) {
+      const input = document.getElementById('rendu_'+devoirId);
+      const fichier = input.files[0];
+      if(!fichier) return alert("Choisis un fichier d'abord");
 
+      const ref = storage.ref(`rendus/${devoirId}_${auth.currentUser.uid}_${fichier.name}`);
+      await ref.put(fichier);
+
+      db.collection("rendus").add({
+        devoirId: devoirId, etudiantId: auth.currentUser.uid,
+        dateRendu: new Date(), nomFichier: fichier.name
+      }).then(() => alert("Devoir rendu avec succès!"));
+    }
+
+    function chargerCours() {
+      db.collection("publications").where("type", "==", "cours").where("classe", "==", "L1")
+     .onSnapshot((snapshot) => {
+          let html = "";
+          snapshot.forEach(doc => {
+            const d = doc.data();
+            html += `<div class="item"><b>${d.titre}</b><br><a href="${d.fichierUrl}" target="_blank">📄 Télécharger le cours</a></div>`;
+          });
+          document.getElementById('liste-cours').innerHTML = html || "Aucun cours";
+        });
+    }
+
+    function chargerDevoirs() {
+      db.collection("publications").where("type", "==", "devoir").where("classe", "==", "L1")
+     .onSnapshot((snapshot) => {
+          let html = "";
+          snapshot.forEach(doc => {
+            const d = doc.data();
+            html += `<div class="item"><b>${d.titre}</b><br>${d.description}<br><b>Limite: ${d.dateLimite}</b>`;
+            if(d.fichierUrl) html += `<br><a href="${d.fichierUrl}" target="_blank">📎 Sujet du devoir</a>`;
+            html += `<br><input type="file" id="rendu_${doc.id}"><button class="rendre-btn" onclick="rendreDevoir('${doc.id}')">Rendre mon devoir</button></div>`;
+          });
+          document.getElementById('liste-devoirs').innerHTML = html || "Aucun devoir";
+        });
+    }
+  </script>
 </body>
 </html>
