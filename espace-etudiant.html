@@ -2,16 +2,17 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Espace Étudiant - ISTAGC</title>
+  <title>Connexion Étudiant - ISTAGC</title>
   <style>
-    body{margin:0;font-family:'Segoe UI',Arial;background:#f5f7fa}
-    header{background:linear-gradient(135deg,#007BFF,#00C853);color:white;padding:25px;text-align:center}
-    header h1{font-size:20px;margin:0}
-    .container{background:white;margin:20px auto;padding:30px;border-radius:16px;max-width:800px;box-shadow:0 4px 20px rgba(0,0,0,0.1)}
-    .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
-    .deco{background:#DC3545;color:white;border:none;padding:10px 20px;border-radius:8px;cursor:pointer;font-weight:bold}
-    .note-card{background:#f0f4ff;padding:15px;border-left:4px solid #007BFF;margin:10px 0;border-radius:8px}
-    .note-matiere{font-weight:bold;color:#007BFF}
+    body{margin:0;font-family:'Segoe UI',Arial;background:linear-gradient(135deg,#007BFF,#00C853);height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center}
+    header{color:white;text-align:center;margin-bottom:30px}
+    header h1{font-size:22px}
+    .box{background:white;padding:40px;border-radius:16px;width:400px;box-shadow:0 10px 40px rgba(0,0,0,0.2)}
+    .box h2{text-align:center;color:#007BFF;margin-bottom:25px}
+    input{width:100%;padding:14px;margin:12px 0;border:2px solid #e0e0e0;border-radius:10px;font-size:15px}
+    button{width:100%;padding:14px;background:#007BFF;color:white;border:none;border-radius:10px;font-size:16px;font-weight:bold;cursor:pointer}
+    button:hover{background:#0056b3}
+    .error{color:#DC3545;text-align:center;margin-top:15px;font-weight:600}
   </style>
 </head>
 <body>
@@ -19,76 +20,50 @@
     <h1>INSTITUT SUPÉRIEUR DE TECHNOLOGIE AGROPASTORALE</h1>
     <p>ISTAGC - Plateforme Académique Étudiante</p>
   </header>
-
-  <div class="container">
-    <div class="top">
-      <h2 id="welcome">Bienvenue</h2>
-      <button class="deco" onclick="logout()">Déconnexion</button>
-    </div>
-    
-    <h3>Mes Notes Académiques</h3>
-    <div id="notes">Chargement...</div>
+  <div class="box">
+    <h2>Connexion Étudiant</h2>
+    <input type="email" id="email" placeholder="Email étudiant">
+    <input type="password" id="password" placeholder="Mot de passe">
+    <button onclick="login()">Se connecter</button>
+    <p class="error" id="error"></p>
   </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    // COLLE TA MEME CONFIG ICI
     const firebaseConfig = {
-      apiKey: "TA_CLE",
-      authDomain: "TON_PROJET.firebaseapp.com",
-      projectId: "TON_PROJET",
-      storageBucket: "TON_PROJET.appspot.com",
-      messagingSenderId: "XXX",
-      appId: "XXX"
+      apiKey: "AIzaSyCv3W6M3RmbipblwJ65Q0uw99a2H3tStU0",
+      authDomain: "ista-gc.firebaseapp.com",
+      projectId: "ista-gc",
+      storageBucket: "ista-gc.firebasestorage.app",
+      messagingSenderId: "75501350048",
+      appId: "1:75501350048:web:8def71328c58dd6b7d6dc5",
+      measurementId: "G-B2Y89V3X35"
     };
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        document.getElementById('welcome').innerText = `Bienvenue, ${user.email}`;
-        await chargerNotes(user.email);
-      } else {
-        window.location.href = "login-etudiant.html";
-      }
-    });
-
-    async function chargerNotes(emailEtudiant) {
-      const notesDiv = document.getElementById('notes');
+    async function login() {
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const errorEl = document.getElementById('error');
+      errorEl.innerText = "";
       try {
-        const q = query(collection(db, "notes"), where("email", "==", emailEtudiant));
-        const querySnapshot = await getDocs(q);
-        
-        if (querySnapshot.empty) {
-          notesDiv.innerHTML = "<p>Aucune note disponible pour le moment.</p>";
-          return;
-        }
-
-        let html = "";
-        querySnapshot.forEach((doc) => {
-          const data = doc.data();
-          html += `
-            <div class="note-card">
-              <div class="note-matiere">${data.matiere} - ${data.code}</div>
-              <div>Note: <b>${data.note}/20</b> | Semestre: ${data.semestre}</div>
-            </div>
-          `;
-        });
-        notesDiv.innerHTML = html;
-
-      } catch (error) {
-        notesDiv.innerHTML = "Erreur de chargement des notes";
-        console.error(error);
-      }
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (!userDoc.exists()) { throw new Error("Compte non trouvé dans la base"); }
+        const role = userDoc.data().role;
+        if (role === "etudiant") { window.location.href = "espace-etudiant.html"; }
+        else if (role === "prof") { window.location.href = "admin-panel.html"; }
+        else { errorEl.innerText = "Role non défini"; await auth.signOut(); }
+      } catch (error) { errorEl.innerText = error.message; }
     }
-
-    function logout(){ signOut(auth); }
-    window.logout = logout;
+    window.login = login;
   </script>
 </body>
 </html>
