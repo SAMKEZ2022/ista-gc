@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>ISTAGC - Espace Prof</title>
+  <style>
+    * { box-sizing: border-box; font-family: Arial, sans-serif; }
+    body { background: linear-gradient(135deg, #28a745, #20c997); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
+    .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 8px 25px rgba(0,0,0,0.2); width: 500px; }
+    h2 { text-align: center; color: #28a745; }
+    input, select, textarea, button { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 8px; font-size: 15px; }
+    button { background: #28a745; color: white; border: none; cursor: pointer; font-weight: bold; }
+    button:hover { background: #218838; }
+    .hidden { display: none; }
+    .devoir { border: 1px solid #ddd; padding: 15px; border-radius: 8px; margin-top: 10px; background: #f8f9fa; }
+  </style>
+</head>
+<body>
+
+  <div class="container" id="login-container">
+    <h2>Connexion Prof</h2>
+    <input type="email" id="email" placeholder="Email du Prof" value="prof.math@ista-gc.com">
+    <input type="password" id="password" placeholder="Mot de passe">
+    <button onclick="login()">Se connecter</button>
+    <p style="color:red; text-align:center;" id="error"></p>
+  </div>
+
+  <div class="container hidden" id="prof-container">
+    <h2>Espace Professeur</h2>
+    <button onclick="logout()" style="background: red;">Se déconnecter</button>
+
+    <h3>Créer un Devoir</h3>
+    <input type="text" id="titre" placeholder="Titre du devoir">
+    <textarea id="description" placeholder="Description du devoir" rows="4"></textarea>
+    <select id="classe">
+      <option value="L1">L1</option>
+      <option value="L2">L2</option>
+      <option value="L3">L3</option>
+    </select>
+    <input type="date" id="dateLimite">
+    <button onclick="creerDevoir()">Publier le Devoir</button>
+    <p style="color:green; text-align:center;" id="success"></p>
+
+    <h3>Mes Devoirs</h3>
+    <div id="liste-devoirs"></div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCv3W6M3RmbipblwJ65Q0uw99a2H3tStU0",
+      authDomain: "ista-gc.firebaseapp.com",
+      projectId: "ista-gc",
+      storageBucket: "ista-gc.firebasestorage.app",
+      messagingSenderId: "75501350048",
+      appId: "1:75501350048:web:8def71328c58dd6b7d6dc5"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    function login() {
+      auth.signInWithEmailAndPassword(document.getElementById('email').value, document.getElementById('password').value)
+        .then(() => {
+          document.getElementById('login-container').classList.add('hidden');
+          document.getElementById('prof-container').classList.remove('hidden');
+          chargerDevoirs();
+        })
+        .catch((e) => { document.getElementById('error').innerText = e.message; });
+    }
+
+    function logout() {
+      auth.signOut().then(() => {
+        document.getElementById('prof-container').classList.add('hidden');
+        document.getElementById('login-container').classList.remove('hidden');
+      });
+    }
+
+    function creerDevoir() {
+      const data = {
+        titre: document.getElementById('titre').value,
+        description: document.getElementById('description').value,
+        classe: document.getElementById('classe').value,
+        dateLimite: document.getElementById('dateLimite').value,
+        profId: auth.currentUser.uid,
+        dateCreation: new Date()
+      };
+      db.collection("devoirs").add(data).then(() => {
+        document.getElementById('success').innerText = "Devoir publié !";
+        chargerDevoirs();
+      });
+    }
+
+    function chargerDevoirs() {
+      db.collection("devoirs").where("profId", "==", auth.currentUser.uid)
+        .onSnapshot((snapshot) => {
+          let html = "";
+          snapshot.forEach(doc => {
+            const d = doc.data();
+            html += `<div class="devoir"><b>${d.titre}</b><br>Classe: ${d.classe}<br>Limite: ${d.dateLimite}</div>`;
+          });
+          document.getElementById('liste-devoirs').innerHTML = html;
+        });
+    }
+  </script>
+</body>
+</html>
