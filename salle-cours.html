@@ -27,20 +27,25 @@ import { getFirestore, doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'h
 const app = initializeApp({apiKey: "AIzaSyCv3W6M3RmbipblwJ65Q0uw99a2H3tStU0", authDomain: "ista-gc.firebaseapp.com", projectId: "ista-gc"});
 const db = getFirestore(app);
 const urlParams = new URLSearchParams(window.location.search);
-const coursId = urlParams.get('id'); let etuId = null; let timer = 0; let interval;
+const coursId = urlParams.get('id'); let etuId = null; let temps = 0; let interval;
 
 async function init(){
   const c = await getDoc(doc(db,"cours",coursId));
-  titre.innerText = c.data().nom;
-  lienMeet.href = c.data().lien;
+  if(c.exists()){
+    document.getElementById('titre').innerText = c.data().nom;
+    document.getElementById('lienMeet').href = c.data().lien;
+  } else {
+    document.getElementById('titre').innerText = "Cours introuvable";
+  }
 }
 init();
 
 async function entrer(){
-  etuId = mat.value;
-  await setDoc(doc(db,"cours",coursId,"etudiants",etuId),{nom:nom.value,matricule:mat.value,statut:"enLigne",debut:serverTimestamp()});
-  form.style.display="none"; salle.style.display="block";
-  interval = setInterval(()=>{timer++; timer.innerText=timer; updateDoc(doc(db,"cours",coursId,"etudiants",etuId),{temps:timer})},60000);
+  etuId = document.getElementById('mat').value;
+  await setDoc(doc(db,"cours",coursId,"etudiants",etuId),{nom:document.getElementById('nom').value,matricule:etuId,statut:"enLigne",debut:serverTimestamp()});
+  document.getElementById('form').style.display="none"; 
+  document.getElementById('salle').style.display="block";
+  interval = setInterval(()=>{temps++; document.getElementById('timer').innerText=temps; updateDoc(doc(db,"cours",coursId,"etudiants",etuId),{temps:temps})},60000);
 }
 window.addEventListener('beforeunload', async ()=>{ if(etuId) await updateDoc(doc(db,"cours",coursId,"etudiants",etuId),{statut:"deconnecte"}) });
 </script>
