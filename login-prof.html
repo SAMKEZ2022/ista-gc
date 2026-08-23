@@ -2,15 +2,15 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>ISTA-GC - Connexion Prof</title>
+    <title>ISTA-GC - Connexion Professeur</title>
     <style>
-        body{font-family:Arial;background:#f0f2f5;display:flex;justify-content:center;align-items:center;height:100vh;margin:0}
-       .box{background:white;padding:30px;border-radius:10px;box-shadow:0 0 20px rgba(0,0,0,0.1);width:350px}
+        body{font-family:Arial;background:#ffebee;display:flex;justify-content:center;align-items:center;height:100vh;margin:0}
+        .box{background:white;padding:30px;border-radius:10px;box-shadow:0 0 20px rgba(0,0,0,0.1);width:350px;border-top:4px solid #dc3545}
         h2{color:#dc3545;text-align:center}
         input{width:100%;padding:12px;margin:10px 0;border:1px solid #ddd;border-radius:5px;box-sizing:border-box}
-        button{width:100%;padding:12px;background:#dc3545;color:white;border:none;border-radius:5px;font-size:16px;cursor:pointer}
+        button{width:100%;padding:12px;background:#dc3545;color:white;border:none;border-radius:5px;font-size:16px;cursor:pointer;font-weight:bold}
         button:hover{background:#b02a37}
-       .error{color:red;text-align:center;margin-top:10px}
+        .error{color:red;text-align:center;margin-top:10px;font-size:14px}
     </style>
 </head>
 <body>
@@ -18,31 +18,34 @@
         <h2>ISTA-GC Professeur</h2>
         <input type="email" id="email" placeholder="Email prof">
         <input type="password" id="password" placeholder="Mot de passe">
-        <button onclick="login()">Se connecter</button>
+        <button id="loginBtn">Se connecter</button>
         <p class="error" id="error"></p>
     </div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
         const firebaseConfig = {
-            apiKey: "METS_TA_VRAIE_CLE_ICI",
+            apiKey: "AIzaSyCv3W6M3RmbipblwJ65Q0uw99a2H3tStU0",
             authDomain: "ista-gc.firebaseapp.com",
             projectId: "ista-gc",
-            storageBucket: "ista-gc.appspot.com",
-            appId: "1:XXXX:web:XXXX"
+            storageBucket: "ista-gc.firebasestorage.app",
+            messagingSenderId: "75501350048",
+            appId: "1:75501350048:web:8def71328c58dd6b7d6dc5",
+            measurementId: "G-B2Y89V3X35"
         };
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
 
-        window.login = function() {
+        document.getElementById('loginBtn').addEventListener('click', () => {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
+            document.getElementById('error').innerText = "";
             signInWithEmailAndPassword(auth, email, password)
            .then(() => { window.location.href = 'admin-panel.html'; })
            .catch((error) => { document.getElementById('error').innerText = "Email ou mot de passe incorrect"; });
-        }
+        })
     </script>
 </body>
 </html>
