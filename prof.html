@@ -6,24 +6,28 @@
   <style>
     * { box-sizing: border-box; font-family: Arial, sans-serif; }
     body { background: linear-gradient(135deg, #28a745, #20c997); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
-   .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 8px 25px rgba(0,0,0,0.2); width: 600px; }
+  .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 8px 25px rgba(0,0,0,0.2); width: 600px; }
     h2 { text-align: center; color: #28a745; }
     input, select, textarea, button { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 8px; font-size: 15px; }
     button { background: #28a745; color: white; border: none; cursor: pointer; font-weight: bold; }
-   .tabs button { width: 49%; background: #ccc; color: black; }
-   .tabs button.active { background: #28a745; color: white; }
-   .hidden { display: none; }
-   .item { border: 1px solid #ddd; padding: 15px; border-radius: 8px; margin-top: 10px; background: #f8f9fa; }
-    a { color: #007bff; }
+    button:hover { background: #218838; }
+  .tabs { display: flex; gap: 10px; }
+  .tabs button { width: 50%; background: #ccc; color: black; }
+  .tabs button.active { background: #28a745; color: white; }
+  .hidden { display: none; }
+  .item { border: 1px solid #ddd; padding: 15px; border-radius: 8px; margin-top: 10px; background: #f8f9fa; }
+    a { color: #007bff; text-decoration: none; }
+   #success { text-align: center; font-weight: bold; margin-top: 10px; }
   </style>
 </head>
 <body>
 
   <div class="container" id="login-container">
     <h2>Connexion Prof</h2>
-    <input type="email" id="email" placeholder="Email du Prof">
-    <input type="password" id="password" placeholder="Mot de passe">
+    <input type="email" id="email" placeholder="Email du Prof" value="prof.math@ista-gc.com">
+    <input type="password" id="password" placeholder="Mot de passe" value="Prof123">
     <button onclick="login()">Se connecter</button>
+    <p id="login-error" style="color:red; text-align:center;"></p>
   </div>
 
   <div class="container hidden" id="prof-container">
@@ -39,8 +43,9 @@
       <h3>Nouveau Devoir</h3>
       <input type="text" id="titreDevoir" placeholder="Titre du devoir">
       <textarea id="descDevoir" placeholder="Consignes" rows="3"></textarea>
-      <select id="classeDevoir"><option>L1</option><option>L2</option><option>L3</option></select>
+      <select id="classeDevoir"><option value="L1">L1</option><option value="L2">L2</option><option value="L3">L3</option></select>
       <input type="date" id="dateLimite">
+      <label>Fichier du devoir: </label>
       <input type="file" id="fichierDevoir">
       <button onclick="creerDevoir()">Publier le Devoir</button>
     </div>
@@ -48,14 +53,15 @@
     <div id="tab-cours" class="hidden">
       <h3>Nouveau Cours</h3>
       <input type="text" id="titreCours" placeholder="Titre du cours">
-      <select id="classeCours"><option>L1</option><option>L2</option><option>L3</option></select>
+      <select id="classeCours"><option value="L1">L1</option><option value="L2">L2</option><option value="L3">L3</option></select>
+      <label>Fichier du cours PDF/PPT: </label>
       <input type="file" id="fichierCours">
       <button onclick="uploaderCours()">Publier le Cours</button>
     </div>
-    <p style="color:green; text-align:center;" id="success"></p>
+    <p id="success"></p>
 
     <h3>Mes Publications</h3>
-    <div id="liste-items"></div>
+    <div id="liste-items">Chargement...</div>
   </div>
 
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
@@ -78,14 +84,20 @@
     const storage = firebase.storage();
 
     function login() {
+      document.getElementById('login-error').innerText = "";
       auth.signInWithEmailAndPassword(document.getElementById('email').value, document.getElementById('password').value)
-      .then(() => {
+     .then(() => {
           document.getElementById('login-container').classList.add('hidden');
           document.getElementById('prof-container').classList.remove('hidden');
           chargerItems();
+        })
+     .catch(error => {
+          document.getElementById('login-error').innerText = "Erreur: " + error.message;
         });
     }
+
     function logout() { auth.signOut().then(() => location.reload()); }
+
     function showTab(tab) {
       document.getElementById('tab-devoir').classList.add('hidden');
       document.getElementById('tab-cours').classList.add('hidden');
@@ -93,49 +105,71 @@
       document.getElementById('btnCours').classList.remove('active');
       document.getElementById('tab-'+tab).classList.remove('hidden');
       document.getElementById('btn'+tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
+      document.getElementById('success').innerText = "";
     }
 
     async function uploadFile(inputId, folder) {
       const fichier = document.getElementById(inputId).files[0];
-      if(!fichier) return "";
+      if(!fichier) throw new Error("Aucun fichier sélectionné");
+
       const ref = storage.ref(`${folder}/${Date.now()}_${fichier.name}`);
       const snap = await ref.put(fichier);
       return await snap.ref.getDownloadURL();
     }
 
     async function creerDevoir() {
-      const url = await uploadFile('fichierDevoir', 'devoirs');
-      const data = {
-        type: "devoir", titre: document.getElementById('titreDevoir').value,
-        description: document.getElementById('descDevoir').value, classe: document.getElementById('classeDevoir').value,
-        dateLimite: document.getElementById('dateLimite').value, fichierUrl: url,
-        profId: auth.currentUser.uid, dateCreation: new Date()
-      };
-      db.collection("publications").add(data).then(() => { document.getElementById('success').innerText = "Devoir publié!"; chargerItems(); });
+      document.getElementById('success').style.color = "blue";
+      document.getElementById('success').innerText = "Publication en cours...";
+      try {
+        const url = await uploadFile('fichierDevoir', 'devoirs');
+        const data = {
+          type: "devoir", titre: document.getElementById('titreDevoir').value,
+          description: document.getElementById('descDevoir').value, classe: document.getElementById('classeDevoir').value,
+          dateLimite: document.getElementById('dateLimite').value, fichierUrl: url,
+          profId: auth.currentUser.uid, dateCreation: new Date()
+        };
+        await db.collection("publications").add(data);
+        document.getElementById('success').style.color = "green";
+        document.getElementById('success').innerText = "Devoir publié avec succès!";
+        chargerItems();
+      } catch (error) {
+        document.getElementById('success').style.color = "red";
+        document.getElementById('success').innerText = "Erreur: " + error.message;
+      }
     }
 
     async function uploaderCours() {
-      const url = await uploadFile('fichierCours', 'cours');
-      const data = {
-        type: "cours", titre: document.getElementById('titreCours').value,
-        classe: document.getElementById('classeCours').value, fichierUrl: url,
-        profId: auth.currentUser.uid, dateCreation: new Date()
-      };
-      db.collection("publications").add(data).then(() => { document.getElementById('success').innerText = "Cours publié!"; chargerItems(); });
+      document.getElementById('success').style.color = "blue";
+      document.getElementById('success').innerText = "Upload en cours...";
+      try {
+        const url = await uploadFile('fichierCours', 'cours');
+        const data = {
+          type: "cours", titre: document.getElementById('titreCours').value,
+          classe: document.getElementById('classeCours').value, fichierUrl: url,
+          profId: auth.currentUser.uid, dateCreation: new Date()
+        };
+        await db.collection("publications").add(data);
+        document.getElementById('success').style.color = "green";
+        document.getElementById('success').innerText = "Cours publié avec succès!";
+        chargerItems();
+      } catch (error) {
+        document.getElementById('success').style.color = "red";
+        document.getElementById('success').innerText = "Erreur: " + error.message;
+      }
     }
 
     function chargerItems() {
-      db.collection("publications").where("profId", "==", auth.currentUser.uid)
-      .onSnapshot((snapshot) => {
+      db.collection("publications").where("profId", "==", auth.currentUser.uid).orderBy("dateCreation", "desc")
+     .onSnapshot((snapshot) => {
           let html = "";
           snapshot.forEach(doc => {
             const d = doc.data();
             html += `<div class="item"><b>[${d.type.toUpperCase()}] ${d.titre}</b><br>Classe: ${d.classe}`;
             if(d.dateLimite) html += `<br>Limite: ${d.dateLimite}`;
-            if(d.fichierUrl) html += `<br><a href="${d.fichierUrl}" target="_blank">📎 Télécharger</a>`;
+            if(d.fichierUrl) html += `<br><a href="${d.fichierUrl}" target="_blank">📎 Télécharger le fichier</a>`;
             html += `</div>`;
           });
-          document.getElementById('liste-items').innerHTML = html;
+          document.getElementById('liste-items').innerHTML = html || "Aucune publication";
         });
     }
   </script>
