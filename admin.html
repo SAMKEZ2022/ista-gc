@@ -1,88 +1,169 @@
 <!DOCTYPE html>
 <html lang="fr">
-<head><meta charset="UTF-8"><title>Espace Prof</title>
-<style>
-body{margin:0;font-family:Arial;background:#fff5f5} 
-header{background:linear-gradient(135deg,#DC3545,#FF6B00);color:white;padding:20px;text-align:center}
-.container{max-width:900px;margin:20px auto;background:white;padding:30px;border-radius:12px}
-input,textarea,select{width:100%;padding:12px;margin:8px 0;border:1px solid #ddd;border-radius:8px}
-.btn{background:#DC3545;color:white;padding:12px;border:none;border-radius:8px;cursor:pointer}
-.card{border-left:4px solid #DC3545;background:#fff0f0;padding:15px;margin:10px 0;border-radius:8px}
-</style></head>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ISTAGC - Admin</title>
+  <style>
+    * { box-sizing: border-box; font-family: Arial, sans-serif; }
+    body { background: linear-gradient(135deg, #007bff, #00c6ff); display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+    .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 8px 25px rgba(0,0,0,0.2); width: 400px; }
+    h2 { text-align: center; color: #007bff; margin-bottom: 20px; }
+    input, select, button { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 8px; font-size: 15px; }
+    button { background: #007bff; color: white; border: none; cursor: pointer; font-weight: bold; }
+    button:hover { background: #0056b3; }
+    .hidden { display: none; }
+    .error { color: red; font-size: 14px; text-align: center; }
+    .success { color: green; font-size: 14px; text-align: center; }
+    .section { margin-top: 20px; border-top: 1px solid #ddd; padding-top: 15px; }
+    label { font-weight: bold; font-size: 14px; }
+  </style>
+</head>
 <body>
-<header><h1>ISTAGC - Espace Professeur</h1></header>
-<div class="container">
-  <h2 id="welcome"></h2><button onclick="logout()" style="float:right">Déconnexion</button>
-  
-  <h3>Déposer un Cours</h3>
-  <input id="titreCours" placeholder="Titre du cours: Ex: Agroécologie S1">
-  <textarea id="descCours" placeholder="Description du cours"></textarea>
-  <input type="file" id="fichierCours">
-  <button class="btn" onclick="ajouterCours()">Publier le Cours</button>
 
-  <h3>Déposer un Devoir</h3>
-  <input id="titreDevoir" placeholder="Titre du devoir">
-  <input type="date" id="dateLimite">
-  <button class="btn" onclick="ajouterDevoir()">Publier le Devoir</button>
+  <!-- PAGE DE CONNEXION -->
+  <div class="container" id="login-container">
+    <h2>ISTAGC - Connexion</h2>
+    <input type="email" id="email" placeholder="Email" value="admin@ista-gc.com">
+    <input type="password" id="password" placeholder="Mot de passe">
+    <button onclick="login()">Se connecter</button>
+    <p class="error" id="login-error"></p>
+  </div>
 
-  <h3>Mes Cours Publiés</h3>
-  <div id="listeCours">Chargement...</div>
-</div>
+  <!-- PANEL ADMIN -->
+  <div class="container hidden" id="admin-container">
+    <h2>Panel Administrateur</h2>
+    <button onclick="logout()" style="background: red;">Se déconnecter</button>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, collection, addDoc, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-const firebaseConfig = {apiKey: "AIzaSyCv3W6M3RmbipblwJ65Q0uw99a2H3tStU0",authDomain: "ista-gc.firebaseapp.com",projectId: "ista-gc",storageBucket: "ista-gc.firebasestorage.app",messagingSenderId: "75501350048",appId: "1:75501350048:web:8def71328c58dd6b7d6dc5"};
-const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
-let profEmail = "";
+    <!-- CREER PROF -->
+    <div class="section">
+      <h3>Créer un Professeur</h3>
+      <input type="text" id="prof-nom" placeholder="Nom du Prof">
+      <input type="email" id="prof-email" placeholder="Email du Prof">
+      <input type="password" id="prof-pass" placeholder="Mot de passe">
+      <button onclick="createProf()">Créer Prof</button>
+      <p class="success" id="prof-success"></p>
+    </div>
 
-onAuthStateChanged(auth, (user) => {
-  if(user){ profEmail = user.email; document.getElementById('welcome').innerText = `Bienvenue Prof ${user.email}`; chargerCours(); }
-  else{ window.location.href = "login-prof.html"; }
-});
+    <!-- CREER ETUDIANT -->
+    <div class="section">
+      <h3>Créer un Étudiant</h3>
+      <input type="text" id="etu-nom" placeholder="Nom de l'Étudiant">
+      <input type="email" id="etu-email" placeholder="Email de l'Étudiant">
+      <input type="password" id="etu-pass" placeholder="Mot de passe">
+      <select id="etu-classe">
+        <option value="">-- Choisir Classe --</option>
+        <option value="L1">L1</option>
+        <option value="L2">L2</option>
+        <option value="L3">L3</option>
+      </select>
+      <button onclick="createEtudiant()">Créer Étudiant</button>
+      <p class="success" id="etu-success"></p>
+    </div>
 
-async function ajouterCours(){
-  await addDoc(collection(db,"cours"),{titre:document.getElementById('titreCours').value,description:document.getElementById('descCours').value,prof:profEmail,date:new Date()});
-  alert("Cours publié !"); chargerCours();
-}
-async function ajouterDevoir(){
-  await addDoc(collection(db,"devoirs"),{titre:document.getElementById('titreDevoir').value,dateLimite:document.getElementById('dateLimite').value,prof:profEmail});
-  alert("Devoir publié !");
-}
-async function chargerCours(){
-  const snap = await getDocs(query(collection(db,"cours"), where("prof","==",profEmail)));
-  let html=""; snap.forEach(d=>{const data=d.data(); html+=`<div class="card"><b>${data.titre}</b><br>${data.description}</div>`});
-  document.getElementById('listeCours').innerHTML = html || "Aucun cours";
-}
-function logout(){signOut(auth)} window.logout=logout; window.ajouterCours=ajouterCours; window.ajouterDevoir=ajouterDevoir;
-</script>
-</body></html>
-<!DOCTYPE html>
-<html><head><meta charset="UTF-8"><title>Admin ISTAGC</title>
-<style>body{margin:0;background:#1a1a1a;color:white;font-family:Arial} header{background:black;padding:20px;text-align:center} .container{max-width:800px;margin:20px auto;background:#2a2a2a;padding:30px;border-radius:12px} input,select{width:100%;padding:12px;margin:8px 0;border-radius:8px;border:none}</style></head>
-<body>
-<header><h1>ISTAGC - Espace Administrateur</h1></header>
-<div class="container">
-  <h2>Créer un Compte</h2>
-  <input id="email" placeholder="Email">
-  <input id="password" placeholder="Mot de passe" type="password">
-  <select id="role"><option value="etudiant">Etudiant</option><option value="prof">Professeur</option></select>
-  <button onclick="creerCompte()">Créer le Compte</button>
-  <p id="msg"></p>
-</div>
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-const firebaseConfig = {apiKey: "AIzaSyCv3W6M3RmbipblwJ65Q0uw99a2H3tStU0",authDomain: "ista-gc.firebaseapp.com",projectId: "ista-gc",storageBucket: "ista-gc.firebasestorage.app",messagingSenderId: "75501350048",appId: "1:75501350048:web:8def71328c58dd6b7d6dc5"};
-const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
-async function creerCompte(){
-  const email=document.getElementById('email').value; const password=document.getElementById('password').value; const role=document.getElementById('role').value;
-  const userCred = await createUserWithEmailAndPassword(auth,email,password);
-  await setDoc(doc(db,"users",userCred.user.uid),{email:email,role:role});
-  document.getElementById('msg').innerText = "Compte créé !";
-}
-window.creerCompte=creerCompte;
-</script>
-</body></html>
+    <p class="error" id="admin-error"></p>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+  <script>
+    // TA CONFIG FIREBASE
+    const firebaseConfig = {
+      apiKey: "AIzaSyCv3W6M3RmbipblwJ65Q0uw99a2H3tStU0",
+      authDomain: "ista-gc.firebaseapp.com",
+      projectId: "ista-gc",
+      storageBucket: "ista-gc.firebasestorage.app",
+      messagingSenderId: "75501350048",
+      appId: "1:75501350048:web:8def71328c58dd6b7d6dc5",
+      measurementId: "G-B2Y89V3X35"
+    };
+
+    // Initialiser Firebase
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    // CONNEXION ADMIN
+    function login() {
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      document.getElementById('login-error').innerText = "";
+
+      auth.signInWithEmailAndPassword(email, password)
+        .then((userCredential) => {
+          // Vérifier si c'est bien l'admin
+          if(email === "admin@ista-gc.com"){
+            document.getElementById('login-container').classList.add('hidden');
+            document.getElementById('admin-container').classList.remove('hidden');
+          } else {
+            document.getElementById('login-error').innerText = "Accès refusé. Vous n'êtes pas admin.";
+            auth.signOut();
+          }
+        })
+        .catch((error) => {
+          document.getElementById('login-error').innerText = "Erreur: " + error.message;
+        });
+    }
+
+    // DECONNEXION
+    function logout() {
+      auth.signOut().then(() => {
+        document.getElementById('admin-container').classList.add('hidden');
+        document.getElementById('login-container').classList.remove('hidden');
+      });
+    }
+
+    // CREER PROF
+    function createProf() {
+      const nom = document.getElementById('prof-nom').value;
+      const email = document.getElementById('prof-email').value;
+      const pass = document.getElementById('prof-pass').value;
+      document.getElementById('prof-success').innerText = "";
+
+      auth.createUserWithEmailAndPassword(email, pass)
+        .then((userCredential) => {
+          return db.collection("users").doc(userCredential.user.uid).set({
+            nom: nom,
+            email: email,
+            role: "prof"
+          });
+        })
+        .then(() => {
+          document.getElementById('prof-success').innerText = "Prof créé avec succès !";
+        })
+        .catch((error) => {
+          document.getElementById('admin-error').innerText = "Erreur: " + error.message;
+        });
+    }
+
+    // CREER ETUDIANT
+    function createEtudiant() {
+      const nom = document.getElementById('etu-nom').value;
+      const email = document.getElementById('etu-email').value;
+      const pass = document.getElementById('etu-pass').value;
+      const classe = document.getElementById('etu-classe').value;
+      document.getElementById('etu-success').innerText = "";
+
+      auth.createUserWithEmailAndPassword(email, pass)
+        .then((userCredential) => {
+          return db.collection("users").doc(userCredential.user.uid).set({
+            nom: nom,
+            email: email,
+            role: "etudiant",
+            classe: classe
+          });
+        })
+        .then(() => {
+          document.getElementById('etu-success').innerText = "Étudiant créé avec succès !";
+        })
+        .catch((error) => {
+          document.getElementById('admin-error').innerText = "Erreur: " + error.message;
+        });
+    }
+  </script>
+
+</body>
+</html>
