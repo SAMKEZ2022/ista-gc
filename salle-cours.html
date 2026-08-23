@@ -6,40 +6,40 @@
   <title>ISTA-GC | Emploi du Temps</title>
   <style>
     *{box-sizing:border-box; margin:0; padding:0}
-    body{font-family:'Segoe UI', Arial, sans-serif; background:#F0F4F8}
-    
-    header{
-      background:#004AAD; color:white; padding:15px 30px; 
-      display:flex; align-items:center; gap:15px;
-      box-shadow:0 3px 10px rgba(0,74,173,0.3); position:sticky; top:0;
-    }
+    body{font-family:'Segoe UI', Arial, sans-serif; background:#F0F4F8; color:#333}
+    header{background:#004AAD; color:white; padding:15px 30px; display:flex; align-items:center; gap:15px; box-shadow:0 3px 10px rgba(0,74,173,0.3); position:sticky; top:0; z-index:10}
     header img{height:55px; background:white; padding:5px; border-radius:10px}
     header h1{font-size:22px; margin:0; font-weight:700}
-
-    .container{max-width:900px; margin:40px auto; padding:20px}
-    h2{text-align:center; color:#004AAD; margin-bottom:30px; font-size:28px}
-
-    .cours-card{
-      background:white; padding:20px; margin:15px 0; border-radius:12px; 
-      box-shadow:0 3px 12px rgba(0,74,173,0.1); 
-      border-left:6px solid #004AAD;
-      transition:transform 0.2s;
-    }
-    .cours-card:hover{transform:translateX(5px)}
+    header a{color:white; text-decoration:none; margin-left:auto; font-weight:600}
+    .container{max-width:1000px; margin:30px auto; padding:20px; display:grid; grid-template-columns: 1fr 350px; gap:25px}
+    h2{color:#004AAD; margin-bottom:20px; font-size:24px; border-bottom:2px solid #004AAD; padding-bottom:8px}
+    .cours-card{background:white; padding:20px; margin:15px 0; border-radius:12px; box-shadow:0 3px 12px rgba(0,74,173,0.1); border-left:6px solid #004AAD}
     .cours-card b{font-size:20px; color:#004AAD}
-    .cours-card p{margin:8px 0 0 0; color:#333; font-size:15px}
-    .no-cours{text-align:center; padding:40px; color:#666; background:white; border-radius:12px}
+    .tableau-blanc{background:white; padding:25px; border-radius:12px; box-shadow:0 4px 15px rgba(0,74,173,0.15); position:sticky; top:100px; height:fit-content; border:2px dashed #004AAD}
+    .tableau-blanc h3{text-align:center; color:#004AAD; margin-bottom:15px}
+    .annonce{background:#E6F0FF; padding:15px; border-radius:8px; margin-bottom:15px; border-left:4px solid #004AAD; font-size:14px}
+    .info-salle{background:#004AAD; color:white; padding:15px; border-radius:8px; text-align:center}
+    @media(max-width:900px){.container{grid-template-columns: 1fr}.tableau-blanc{position:static}}
   </style>
 </head>
 <body>
   <header>
-    <img src="logo-ista.jpg" alt="Logo ISTA">
+    <img src="wa_image_6252039400060238608.jpeg" alt="Logo ISTA">
     <h1>ISTA-GC | Emploi du Temps</h1>
+    <a href="admin-panel.html">Connexion Admin</a>
   </header>
 
   <div class="container">
-    <h2>Liste des cours du jour</h2>
-    <div id="listeCoursPublic">Chargement des cours...</div>
+    <div>
+      <h2>Liste des cours du jour</h2>
+      <div id="listeCoursPublic">Chargement des cours...</div>
+    </div>
+    <div class="tableau-blanc">
+      <h3>📢 Tableau Blanc</h3>
+      <div class="annonce"><b>Info:</b> Les salles peuvent changer. Vérifiez ici avant chaque cours.</div>
+      <div class="info-salle"><p>Prochain cours en</p><b id="salleActuelle">-</b></div>
+      <div class="annonce" style="margin-top:15px"><b>Cours:</b> <span id="prochainCours">-</span></div>
+    </div>
   </div>
 
 <script type="module">
@@ -61,18 +61,18 @@
   async function chargerCoursPublic(){
     const q = query(collection(db, "cours"), orderBy("createdAt", "desc"));
     const snap = await getDocs(q);
-    let html = "";
+    let html = ""; let premierCours = null;
     snap.forEach(docSnap => {
       const c = docSnap.data();
+      if(!premierCours) premierCours = c;
       const nomCours = c.nom || c.name || "Sans nom";
-      html += `
-        <div class="cours-card">
-          <b>${nomCours}</b>
-          <p><b>Salle:</b> ${c.salle || '-'} | <b>Heure:</b> ${c.heure || '-'}</p>
-        </div>
-      `;
+      html += `<div class="cours-card"><b>${nomCours}</b><p><b>Salle:</b> ${c.salle || '-'} | <b>Heure:</b> ${c.heure || '-'}</p></div>`;
     });
-    document.getElementById('listeCoursPublic').innerHTML = html || '<div class="no-cours">Aucun cours programmé pour le moment</div>';
+    document.getElementById('listeCoursPublic').innerHTML = html || '<div style="text-align:center; padding:40px; background:white; border-radius:12px">Aucun cours programmé</div>';
+    if(premierCours){
+      document.getElementById('salleActuelle').innerText = premierCours.salle || '-';
+      document.getElementById('prochainCours').innerText = `${premierCours.nom || premierCours.name} à ${premierCours.heure}`;
+    }
   }
   chargerCoursPublic();
 </script>
