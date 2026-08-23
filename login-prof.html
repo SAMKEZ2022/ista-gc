@@ -2,21 +2,21 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Connexion ISTAGC</title>
+  <title>ISTAGC - Connexion Prof</title>
   <style>
-    body{font-family:Arial;background:linear-gradient(135deg,#007BFF,#00C853);display:flex;justify-content:center;align-items:center;height:100vh;margin:0}
-    .box{background:white;padding:30px;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.2);width:350px}
-    h2{text-align:center;color:#007BFF}
-    input{width:100%;padding:12px;margin:10px 0;border:1px solid #ccc;border-radius:8px}
-    button{width:100%;padding:12px;background:#007BFF;color:white;border:none;border-radius:8px;cursor:pointer;font-size:16px}
+    body{margin:0;font-family:Arial;background:linear-gradient(135deg,#007BFF,#00C853);height:100vh;display:flex;justify-content:center;align-items:center}
+    .box{background:white;padding:40px;border-radius:16px;width:400px;box-shadow:0 8px 30px rgba(0,0,0,0.2)}
+    h2{text-align:center;color:#007BFF;margin-bottom:25px}
+    input{width:100%;padding:14px;margin:12px 0;border:1px solid #ddd;border-radius:8px;font-size:15px}
+    button{width:100%;padding:14px;background:#007BFF;color:white;border:none;border-radius:8px;font-size:16px;font-weight:bold;cursor:pointer}
     button:hover{background:#0056b3}
-    .error{color:red;text-align:center;margin-top:10px}
+    .error{color:#DC3545;text-align:center;margin-top:15px;font-weight:bold}
   </style>
 </head>
 <body>
   <div class="box">
     <h2>ISTAGC - Connexion</h2>
-    <input type="email" id="email" placeholder="Email">
+    <input type="email" id="email" placeholder="Email" value="prof.test@ista.gc.tg">
     <input type="password" id="password" placeholder="Mot de passe">
     <button onclick="login()">Se connecter</button>
     <p class="error" id="error"></p>
@@ -27,12 +27,12 @@
     import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
     import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+    // 1. COLLE ICI TA VRAIE CONFIG FIREBASE
     const firebaseConfig = {
-      // COLLE ICI TA CONFIG FIREBASE
-      apiKey: "TA_CLE",
-      authDomain: "TON_PROJET.firebaseapp.com",
-      projectId: "TON_PROJET",
-      storageBucket: "TON_PROJET.appspot.com",
+      apiKey: "REMPLACE_MOI",
+      authDomain: "REMPLACE_MOI.firebaseapp.com",
+      projectId: "REMPLACE_MOI",
+      storageBucket: "REMPLACE_MOI.appspot.com",
       messagingSenderId: "XXX",
       appId: "XXX"
     };
@@ -51,30 +51,29 @@
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
 
-        // On récupère le role dans Firestore
+        // 2. On vérifie le role dans Firestore
         const userDoc = await getDoc(doc(db, "users", user.uid));
         
         if (!userDoc.exists()) {
-          errorEl.innerText = "Compte non trouvé dans la base. Contactez l'admin.";
+          errorEl.innerText = "Compte non trouvé dans la base users";
           await auth.signOut();
           return;
         }
 
         const role = userDoc.data().role;
 
-        // REDIRECTION SELON LE ROLE
         if (role === "prof") {
           window.location.href = "admin-panel.html";
-        } else if (role === "etudiant") {
-          window.location.href = "espace-etudiant.html";
         } else {
-          errorEl.innerText = "Role non défini";
+          window.location.href = "espace-etudiant.html";
         }
 
       } catch (error) {
-        errorEl.innerText = "Email ou mot de passe incorrect";
+        errorEl.innerText = error.message; // pour voir l’erreur exacte
+        console.log(error.code);
       }
     }
+    window.login = login; // important pour onclick
   </script>
 </body>
 </html>
