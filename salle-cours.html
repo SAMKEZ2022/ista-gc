@@ -1,80 +1,48 @@
 <!DOCTYPE html>
 <html lang="fr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ISTA-GC | Emploi du Temps</title>
-  <style>
-    *{box-sizing:border-box; margin:0; padding:0}
-    body{font-family:'Segoe UI', Arial, sans-serif; background:#F0F4F8; color:#333}
-    header{background:#004AAD; color:white; padding:15px 30px; display:flex; align-items:center; gap:15px; box-shadow:0 3px 10px rgba(0,74,173,0.3); position:sticky; top:0; z-index:10}
-    header img{height:55px; background:white; padding:5px; border-radius:10px}
-    header h1{font-size:22px; margin:0; font-weight:700}
-    header a{color:white; text-decoration:none; margin-left:auto; font-weight:600}
-    .container{max-width:1000px; margin:30px auto; padding:20px; display:grid; grid-template-columns: 1fr 350px; gap:25px}
-    h2{color:#004AAD; margin-bottom:20px; font-size:24px; border-bottom:2px solid #004AAD; padding-bottom:8px}
-    .cours-card{background:white; padding:20px; margin:15px 0; border-radius:12px; box-shadow:0 3px 12px rgba(0,74,173,0.1); border-left:6px solid #004AAD}
-    .cours-card b{font-size:20px; color:#004AAD}
-    .tableau-blanc{background:white; padding:25px; border-radius:12px; box-shadow:0 4px 15px rgba(0,74,173,0.15); position:sticky; top:100px; height:fit-content; border:2px dashed #004AAD}
-    .tableau-blanc h3{text-align:center; color:#004AAD; margin-bottom:15px}
-    .annonce{background:#E6F0FF; padding:15px; border-radius:8px; margin-bottom:15px; border-left:4px solid #004AAD; font-size:14px}
-    .info-salle{background:#004AAD; color:white; padding:15px; border-radius:8px; text-align:center}
-    @media(max-width:900px){.container{grid-template-columns: 1fr}.tableau-blanc{position:static}}
-  </style>
+<head><meta charset="UTF-8"><title>Salle de cours</title>
+<style>body{font-family:'Segoe UI'; text-align:center; padding:50px; background:#F0F4F8}
+.box{background:white; padding:30px; border-radius:12px; max-width:500px; margin:auto}
+input{padding:12px; width:90%; margin:10px 0; border:1px solid #ccc}
+.btn{padding:14px; width:90%; background:#004AAD; color:white; border:none; border-radius:8px; font-size:16px; cursor:pointer}</style>
 </head>
 <body>
-  <header>
-    <img src="wa_image_6252039400060238608.jpeg" alt="Logo ISTA">
-    <h1>ISTA-GC | Emploi du Temps</h1>
-    <a href="admin-panel.html">Connexion Admin</a>
-  </header>
-
-  <div class="container">
-    <div>
-      <h2>Liste des cours du jour</h2>
-      <div id="listeCoursPublic">Chargement des cours...</div>
-    </div>
-    <div class="tableau-blanc">
-      <h3>📢 Tableau Blanc</h3>
-      <div class="annonce"><b>Info:</b> Les salles peuvent changer. Vérifiez ici avant chaque cours.</div>
-      <div class="info-salle"><p>Prochain cours en</p><b id="salleActuelle">-</b></div>
-      <div class="annonce" style="margin-top:15px"><b>Cours:</b> <span id="prochainCours">-</span></div>
-    </div>
+<div class="box">
+  <h2 id="titre">Chargement...</h2>
+  <div id="form">
+    <p>Entre tes infos pour pointer</p>
+    <input id="nom" placeholder="Nom complet">
+    <input id="mat" placeholder="Matricule">
+    <button class="btn" onclick="entrer()">Entrer en salle</button>
   </div>
-
+  <div id="salle" style="display:none">
+    <p>🟢 Tu es en cours</p>
+    <p>Temps: <b id="timer">0</b> min</p>
+    <a id="lienMeet" target="_blank" class="btn">REJOINDRE MEET/ZOOM</a>
+  </div>
+</div>
 <script type="module">
-  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-  import { getFirestore, collection, getDocs, orderBy, query } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+import { getFirestore, doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+const app = initializeApp({apiKey: "AIzaSyCv3W6M3RmbipblwJ65Q0uw99a2H3tStU0", authDomain: "ista-gc.firebaseapp.com", projectId: "ista-gc"});
+const db = getFirestore(app);
+const urlParams = new URLSearchParams(window.location.search);
+const coursId = urlParams.get('id'); let etuId = null; let timer = 0; let interval;
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyCv3W6M3RmbipblwJ65Q0uw99a2H3tStU0",
-    authDomain: "ista-gc.firebaseapp.com",
-    projectId: "ista-gc",
-    storageBucket: "ista-gc.firebasestorage.app",
-    messagingSenderId: "75501350048",
-    appId: "1:75501350048:web:8def71328c58dd6b7d6dc5",
-    measurementId: "G-B2Y89V3X35"
-  };
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+async function init(){
+  const c = await getDoc(doc(db,"cours",coursId));
+  titre.innerText = c.data().nom;
+  lienMeet.href = c.data().lien;
+}
+init();
 
-  async function chargerCoursPublic(){
-    const q = query(collection(db, "cours"), orderBy("createdAt", "desc"));
-    const snap = await getDocs(q);
-    let html = ""; let premierCours = null;
-    snap.forEach(docSnap => {
-      const c = docSnap.data();
-      if(!premierCours) premierCours = c;
-      const nomCours = c.nom || c.name || "Sans nom";
-      html += `<div class="cours-card"><b>${nomCours}</b><p><b>Salle:</b> ${c.salle || '-'} | <b>Heure:</b> ${c.heure || '-'}</p></div>`;
-    });
-    document.getElementById('listeCoursPublic').innerHTML = html || '<div style="text-align:center; padding:40px; background:white; border-radius:12px">Aucun cours programmé</div>';
-    if(premierCours){
-      document.getElementById('salleActuelle').innerText = premierCours.salle || '-';
-      document.getElementById('prochainCours').innerText = `${premierCours.nom || premierCours.name} à ${premierCours.heure}`;
-    }
-  }
-  chargerCoursPublic();
+async function entrer(){
+  etuId = mat.value;
+  await setDoc(doc(db,"cours",coursId,"etudiants",etuId),{nom:nom.value,matricule:mat.value,statut:"enLigne",debut:serverTimestamp()});
+  form.style.display="none"; salle.style.display="block";
+  interval = setInterval(()=>{timer++; timer.innerText=timer; updateDoc(doc(db,"cours",coursId,"etudiants",etuId),{temps:timer})},60000);
+}
+window.addEventListener('beforeunload', async ()=>{ if(etuId) await updateDoc(doc(db,"cours",coursId,"etudiants",etuId),{statut:"deconnecte"}) });
 </script>
 </body>
 </html>
