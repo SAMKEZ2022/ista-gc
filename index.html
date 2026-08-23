@@ -1,168 +1,76 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ISTA GC - Génie Civil</title>
-  <style>
-    * { margin:0; padding:0; box-sizing:border-box; }
-    body { font-family: 'Segoe UI', Arial, sans-serif; background:#f4f4f4; color:#333; }
-    
-    /* HEADER */
-    header { 
-      background: linear-gradient(135deg, #003366, #0066cc); 
-      color:white; 
-      padding:40px 20px; 
-      text-align:center; 
-      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-    }
-    header img { width:100px; margin-bottom:15px; border-radius:50%; border:3px solid white; }
-    header h1 { font-size:28px; margin-bottom:8px; }
-    header p { font-size:16px; opacity:0.9; }
-
-    /* NAV */
-    nav { background:#002244; padding:15px; text-align:center; }
-    nav a { color:white; text-decoration:none; margin:0 15px; font-weight:bold; }
-    nav a:hover { color:#ffcc00; }
-
-    /* CONTAINER */
-    .container { padding:40px 20px; max-width:1200px; margin:auto; }
-    
-    /* SECTION BIENVENUE */
-    .welcome { text-align:center; margin-bottom:40px; }
-    .welcome h2 { color:#003366; font-size:26px; margin-bottom:10px; }
-    .welcome p { color:#555; font-size:16px; }
-
-    /* CARTES MODULES */
-    .modules { 
-      display:grid; 
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); 
-      gap:25px; 
-      margin-bottom:40px;
-    }
-    .card { 
-      background:white; 
-      padding:25px; 
-      border-radius:12px; 
-      box-shadow:0 4px 12px rgba(0,0,0,0.1); 
-      transition: transform 0.3s;
-      border-top: 4px solid #0066cc;
-    }
-    .card:hover { transform: translateY(-5px); }
-    .card h3 { color:#003366; margin-bottom:10px; font-size:20px; }
-    .card p { color:#666; margin-bottom:15px; font-size:14px; }
-    .card a { 
-      display:inline-block; 
-      background:#0066cc; 
-      color:white; 
-      padding:10px 20px; 
-      border-radius:6px; 
-      text-decoration:none; 
-      font-weight:bold;
-    }
-    .card a:hover { background:#004999; }
-
-    /* BOUTON CONTACT */
-    .contact-section { text-align:center; margin:50px 0; }
-    .btn { 
-      background:#0066cc; 
-      color:white; 
-      padding:16px 35px; 
-      border:none; 
-      border-radius:8px; 
-      font-size:17px; 
-      font-weight:bold; 
-      cursor:pointer; 
-      text-decoration:none;
-      display:inline-block;
-      transition: background 0.3s;
-    }
-    .btn:hover { background:#004999; }
-
-    /* FOOTER */
-    footer { 
-      background:#003366; 
-      color:white; 
-      padding:25px; 
-      text-align:center; 
-      margin-top:40px; 
-    }
-    footer p { margin:5px 0; }
-
-    @media(max-width:768px) {
-      header h1 { font-size:22px; }
-      nav a { display:block; margin:10px 0; }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ISTA-GC - Accueil Étudiants</title>
+<style>
+  body { font-family: 'Segoe UI', sans-serif; background: #F0F4F8; margin: 0; padding: 20px; }
+  .container { max-width: 600px; margin: auto; }
+  h1 { color: #004AAD; text-align: center; }
+  .card { background: white; padding: 15px; border-radius: 12px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+  .cours { background: #E6F4EA; border-left: 5px solid #28a745; }
+  .btn { display: block; width: 100%; padding: 12px; background: #004AAD; color: white; text-align: center; text-decoration: none; border-radius: 8px; margin-top: 10px; font-weight: bold; }
+  .btn:hover { opacity: 0.9; }
+</style>
 </head>
 <body>
-  <header>
-    <img src="logo-ista.jpg" alt="Logo ISTA">
-    <h1>ISTA - Institut des Sciences et Techniques Appliquées</h1>
-    <p>Département Génie Civil - Kara, Togo</p>
-  </header>
+<div class="container">
+  <h1>ISTA-GC Génie Civil</h1>
 
-  <nav>
-    <a href="index.html">Accueil</a>
-    <a href="login.html">Espace Étudiant</a>
-    <a href="contact.html">Contact</a>
-  </nav>
-
-  <div class="container">
-    <div class="welcome">
-      <h2>🎓 Bienvenue sur la Plateforme ISTA GC</h2>
-      <p>Accédez aux cours, ressources et informations de votre département</p>
-    </div>
-
-    <div class="modules">
-      <div class="card">
-        <h3>📐 Résistance des Matériaux</h3>
-        <p>Cours, TD, TP et examens sur RDM. Téléchargez les supports de cours.</p>
-        <a href="#">Accéder au cours</a>
-      </div>
-
-      <div class="card">
-        <h3>🏗️ Béton Armé</h3>
-        <p>Dimensionnement, calculs BAEL et Eurocode. Projets et exercices corrigés.</p>
-        <a href="#">Accéder au cours</a>
-      </div>
-
-      <div class="card">
-        <h3>📏 Topographie</h3>
-        <p>Levés topographiques, plans, nivellement. Matériel et méthodes.</p>
-        <a href="#">Accéder au cours</a>
-      </div>
-
-      <div class="card">
-        <h3>🚧 Routes et VRD</h3>
-        <p>Dimensionnement des chaussées, assainissement et réseaux divers.</p>
-        <a href="#">Accéder au cours</a>
-      </div>
-
-      <div class="card">
-        <h3>📊 DAO - AutoCAD</h3>
-        <p>Apprendre AutoCAD, plans 2D/3D et techniques de dessin.</p>
-        <a href="#">Accéder au cours</a>
-      </div>
-
-      <div class="card">
-        <h3>📚 Bibliothèque</h3>
-        <p>Tous les PDF, livres et documents du département en téléchargement.</p>
-        <a href="#">Voir la bibliothèque</a>
-      </div>
-    </div>
-
-    <div class="contact-section">
-      <h2 style="color:#003366; margin-bottom:15px;">Besoin d'aide ?</h2>
-      <p style="color:#666; margin-bottom:20px;">Contactez l'administration du département</p>
-      <a href="contact.html" class="btn">📩 Nous Contacter</a>
-    </div>
+  <div class="card cours">
+    <h3>📢 Cours en Direct</h3>
+    <div id="listeCours">Chargement...</div>
   </div>
 
-  <footer>
-    <p><b>ISTA GC</b> - Institut des Sciences et Techniques Appliquées</p>
-    <p>Kara, Togo | Tel: +228 90 12 34 56 | Email: contact@ista-gc.tg</p>
-    <p>© 2026 Tous droits réservés</p>
-  </footer>
+  <div class="card">
+    <h3>👥 Étudiants Connectés</h3>
+    <div id="listeEtudiants">Chargement...</div>
+  </div>
+
+</div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+import { getFirestore, collection, onSnapshot, query, orderBy } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+const app = initializeApp({
+  apiKey: "AIzaSyCv3W6M3RmbipblwJ65Q0uw99a2H3tStU0", 
+  authDomain: "ista-gc.firebaseapp.com", 
+  projectId: "ista-gc"
+});
+const db = getFirestore(app);
+
+// 1. AFFICHER LES COURS EN DIRECT
+const qCours = query(collection(db, "cours"), orderBy("created", "desc"));
+onSnapshot(qCours, (snapshot) => {
+  const listeCours = document.getElementById('listeCours');
+  listeCours.innerHTML = '';
+  if(snapshot.empty){ 
+    listeCours.innerHTML = "<p>Aucun cours en cours pour le moment</p>" 
+  } else {
+    snapshot.forEach(doc => {
+      const c = doc.data();
+      listeCours.innerHTML += `
+        <div style="background:white; padding:12px; margin:10px 0; border-radius:8px">
+          <b style="font-size:18px">${c.nom}</b><br>
+          <small>Par: ${c.profEmail}</small><br>
+          <a href="${c.lien}" target="_blank" class="btn">Rejoindre le Meet</a>
+        </div>
+      `;
+    })
+  }
+})
+
+// 2. AFFICHER LA LISTE DES ÉTUDIANTS
+onSnapshot(collection(db, "etudiants"), (snapshot) => {
+  const listeEtudiants = document.getElementById('listeEtudiants');
+  listeEtudiants.innerHTML = '';
+  snapshot.forEach(doc => {
+    const e = doc.data();
+    listeEtudiants.innerHTML += `<p>• ${e.nom} ${e.prenom}</p>`;
+  })
+})
+</script>
 </body>
 </html>
