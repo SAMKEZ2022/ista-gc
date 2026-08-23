@@ -2,143 +2,68 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ISTAGC - Espace Étudiant</title>
+  <title>Connexion Étudiant - ISTAGC</title>
   <style>
-    :root {
-      --bleu-ista: #0056b3;
-      --vert-ista: #00a859;
-      --gris-bg: #f4f6f9;
-    }
-    body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--gris-bg); margin: 0; padding: 0; }
-    
-    .header {
-      background: linear-gradient(135deg, var(--bleu-ista) 0%, var(--vert-ista) 100%);
-      color: white;
-      padding: 20px;
-      text-align: center;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-    }
-    .header h1 { margin: 0; font-size: 24px; }
-    .header p { margin: 5px 0 0; font-size: 14px; opacity: 0.9; }
-
-    .container { max-width: 800px; margin: 30px auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
-    
-    input { width: 100%; padding: 12px; margin: 10px 0; border: 2px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 15px; }
-    input:focus { border-color: var(--bleu-ista); outline: none; }
-    
-    button { width: 100%; padding: 14px; background: var(--bleu-ista); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; }
-    button:hover { background: #004494; transform: translateY(-2px); }
-    
-    .note { background: #f0f9ff; padding: 18px; margin: 12px 0; border-left: 6px solid var(--vert-ista); border-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
-    .note b { color: var(--bleu-ista); font-size: 16px; }
-    .note .semestre { background: var(--vert-ista); color: white; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; }
-    
-    .error { color: #dc3545; text-align: center; margin-top: 10px; font-weight: bold; }
-    .hidden { display: none; }
-    .header-notes { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--gris-bg); padding-bottom: 15px; margin-bottom: 20px; }
-    .btn-logout { background: #dc3545; width: auto; padding: 10px 20px; font-size: 14px; }
-    .btn-logout:hover { background: #c82333; }
-    .welcome { color: var(--bleu-ista); margin-bottom: 20px; }
+    body{margin:0;font-family:'Segoe UI',Arial;background:linear-gradient(135deg,#007BFF,#00C853);height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center}
+    header{color:white;text-align:center;margin-bottom:30px}
+    header h1{font-size:22px}
+    .box{background:white;padding:40px;border-radius:16px;width:400px;box-shadow:0 10px 40px rgba(0,0,0,0.2)}
+    .box h2{text-align:center;color:#007BFF;margin-bottom:25px}
+    input{width:100%;padding:14px;margin:12px 0;border:2px solid #e0e0e0;border-radius:10px;font-size:15px}
+    button{width:100%;padding:14px;background:#007BFF;color:white;border:none;border-radius:10px;font-size:16px;font-weight:bold;cursor:pointer}
+    button:hover{background:#0056b3}
+    .error{color:#DC3545;text-align:center;margin-top:15px;font-weight:600}
   </style>
 </head>
 <body>
-
-<div class="header">
-  <h1>INSTITUT SUPÉRIEUR DE TECHNOLOGIE AGROPASTORALE</h1>
-  <p>ISTAGC - Plateforme Académique Étudiante</p>
-</div>
-
-<div class="container">
-  
-  <div id="login-box">
-    <h2 style="color: var(--bleu-ista); text-align: center;">Connexion Étudiant</h2>
-    <input type="email" id="email" placeholder="Email institutionnel" value="etudiant1@ista.gc">
-    <input type="password" id="password" placeholder="Mot de passe" value="Etudiant123">
+  <header>
+    <h1>INSTITUT SUPÉRIEUR DE TECHNOLOGIE AGROPASTORALE</h1>
+    <p>ISTAGC - Plateforme Académique Étudiante</p>
+  </header>
+  <div class="box">
+    <h2>Connexion Étudiant</h2>
+    <input type="email" id="email" placeholder="Email étudiant">
+    <input type="password" id="password" placeholder="Mot de passe">
     <button onclick="login()">Se connecter</button>
-    <p id="error-msg" class="error"></p>
+    <p class="error" id="error"></p>
   </div>
 
-  <div id="notes-box" class="hidden">
-    <div class="header-notes">
-      <div>
-        <h2 class="welcome">Bienvenue</h2>
-        <h3 style="margin:0;">Mes Notes Académiques</h3>
-      </div>
-      <button class="btn-logout" onclick="logout()">Déconnexion</button>
-    </div>
-    <div id="notes-list">Chargement...</div>
-  </div>
-</div>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-  import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    const firebaseConfig = {
+      apiKey: "AIzaSyCv3W6M3RmbipblwJ65Q0uw99a2H3tStU0",
+      authDomain: "ista-gc.firebaseapp.com",
+      projectId: "ista-gc",
+      storageBucket: "ista-gc.firebasestorage.app",
+      messagingSenderId: "75501350048",
+      appId: "1:75501350048:web:8def71328c58dd6b7d6dc5",
+      measurementId: "G-B2Y89V3X35"
+    };
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyCv3W6M3RmbipblwJ65Q0uw99a2H3tStU0",
-    authDomain: "ista-gc.firebaseapp.com",
-    projectId: "ista-gc",
-    storageBucket: "ista-gc.firebasestorage.app",
-    messagingSenderId: "75501350048",
-    appId: "1:75501350048:web:8def71328c58dd6b7d6dc5",
-    measurementId: "G-B2Y89V3X35"
-  };
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
 
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
-
-  onAuthStateChanged(auth, (user) => {
-    if (user) {
-      document.getElementById('login-box').classList.add('hidden');
-      document.getElementById('notes-box').classList.remove('hidden');
-      document.querySelector('.welcome').innerText = `Bienvenue, ${user.email}`;
-      loadNotes(user.email);
-    } else {
-      document.getElementById('login-box').classList.remove('hidden');
-      document.getElementById('notes-box').classList.add('hidden');
+    async function login() {
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const errorEl = document.getElementById('error');
+      errorEl.innerText = "";
+      try {
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (!userDoc.exists()) { throw new Error("Compte non trouvé dans la base"); }
+        const role = userDoc.data().role;
+        if (role === "etudiant") { window.location.href = "espace-etudiant.html"; }
+        else if (role === "prof") { window.location.href = "admin-panel.html"; }
+        else { errorEl.innerText = "Role non défini"; await auth.signOut(); }
+      } catch (error) { errorEl.innerText = error.message; }
     }
-  });
-
-  window.login = () => {
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-    document.getElementById('error-msg').innerText = "";
-    signInWithEmailAndPassword(auth, email, password)
-      .catch((error) => {
-        document.getElementById('error-msg').innerText = "Email ou mot de passe incorrect";
-      });
-  }
-
-  window.logout = () => { signOut(auth); }
-
-  async function loadNotes(studentEmail) {
-    const notesList = document.getElementById('notes-list');
-    const q = query(collection(db, "notes"), where("email", "==", studentEmail));
-    const querySnapshot = await getDocs(q);
-    notesList.innerHTML = "";
-    
-    if(querySnapshot.empty){
-      notesList.innerHTML = `<p style="text-align:center; color:#888;">Aucune note disponible pour le moment.</p>`;
-      return;
-    }
-
-    querySnapshot.forEach((doc) => {
-      const note = doc.data();
-      notesList.innerHTML += `
-        <div class="note">
-          <div>
-            <b>${note.cours}</b> <br>
-            Note : <b>${note.note}/20</b>
-          </div>
-          <span class="semestre">${note.semestre}</span>
-        </div>
-      `;
-    });
-  }
-</script>
-
+    window.login = login;
+  </script>
 </body>
 </html>

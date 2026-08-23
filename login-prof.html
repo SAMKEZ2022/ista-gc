@@ -1,48 +1,79 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <title>ISTA-GC - Connexion Prof</title>
-    <style>
-        body{font-family:Arial;background:#f0f2f5;display:flex;justify-content:center;align-items:center;height:100vh;margin:0}
-       .box{background:white;padding:30px;border-radius:10px;box-shadow:0 0 20px rgba(0,0,0,0.1);width:350px}
-        h2{color:#dc3545;text-align:center}
-        input{width:100%;padding:12px;margin:10px 0;border:1px solid #ddd;border-radius:5px;box-sizing:border-box}
-        button{width:100%;padding:12px;background:#dc3545;color:white;border:none;border-radius:5px;font-size:16px;cursor:pointer}
-        button:hover{background:#b02a37}
-       .error{color:red;text-align:center;margin-top:10px}
-    </style>
+  <meta charset="UTF-8">
+  <title>ISTAGC - Connexion Prof</title>
+  <style>
+    body{margin:0;font-family:Arial;background:linear-gradient(135deg,#007BFF,#00C853);height:100vh;display:flex;justify-content:center;align-items:center}
+    .box{background:white;padding:40px;border-radius:16px;width:400px;box-shadow:0 8px 30px rgba(0,0,0,0.2)}
+    h2{text-align:center;color:#007BFF;margin-bottom:25px}
+    input{width:100%;padding:14px;margin:12px 0;border:1px solid #ddd;border-radius:8px;font-size:15px}
+    button{width:100%;padding:14px;background:#007BFF;color:white;border:none;border-radius:8px;font-size:16px;font-weight:bold;cursor:pointer}
+    button:hover{background:#0056b3}
+    .error{color:#DC3545;text-align:center;margin-top:15px;font-weight:bold}
+  </style>
 </head>
 <body>
-    <div class="box">
-        <h2>ISTA-GC Professeur</h2>
-        <input type="email" id="email" placeholder="Email prof">
-        <input type="password" id="password" placeholder="Mot de passe">
-        <button onclick="login()">Se connecter</button>
-        <p class="error" id="error"></p>
-    </div>
+  <div class="box">
+    <h2>ISTAGC - Connexion</h2>
+    <input type="email" id="email" placeholder="Email" value="prof.test@ista.gc.tg">
+    <input type="password" id="password" placeholder="Mot de passe">
+    <button onclick="login()">Se connecter</button>
+    <p class="error" id="error"></p>
+  </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-        const firebaseConfig = {
-            apiKey: "METS_TA_VRAIE_CLE_ICI",
-            authDomain: "ista-gc.firebaseapp.com",
-            projectId: "ista-gc",
-            storageBucket: "ista-gc.appspot.com",
-            appId: "1:XXXX:web:XXXX"
-        };
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
+    // 1. COLLE ICI TA VRAIE CONFIG FIREBASE
+    const firebaseConfig = {
+      apiKey: "REMPLACE_MOI",
+      authDomain: "REMPLACE_MOI.firebaseapp.com",
+      projectId: "REMPLACE_MOI",
+      storageBucket: "REMPLACE_MOI.appspot.com",
+      messagingSenderId: "XXX",
+      appId: "XXX"
+    };
 
-        window.login = function() {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            signInWithEmailAndPassword(auth, email, password)
-           .then(() => { window.location.href = 'admin-panel.html'; })
-           .catch((error) => { document.getElementById('error').innerText = "Email ou mot de passe incorrect"; });
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    async function login() {
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const errorEl = document.getElementById('error');
+      errorEl.innerText = "";
+
+      try {
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+
+        // 2. On vérifie le role dans Firestore
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        
+        if (!userDoc.exists()) {
+          errorEl.innerText = "Compte non trouvé dans la base users";
+          await auth.signOut();
+          return;
         }
-    </script>
+
+        const role = userDoc.data().role;
+
+        if (role === "prof") {
+          window.location.href = "admin-panel.html";
+        } else {
+          window.location.href = "espace-etudiant.html";
+        }
+
+      } catch (error) {
+        errorEl.innerText = error.message; // pour voir l’erreur exacte
+        console.log(error.code);
+      }
+    }
+    window.login = login; // important pour onclick
+  </script>
 </body>
 </html>

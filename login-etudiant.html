@@ -1,48 +1,149 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <title>ISTA-GC - Connexion Étudiant</title>
-    <style>
-        body{font-family:Arial;background:#f0f2f5;display:flex;justify-content:center;align-items:center;height:100vh;margin:0}
-       .box{background:white;padding:30px;border-radius:10px;box-shadow:0 0 20px rgba(0,0,0,0.1);width:350px}
-        h2{color:#0056b3;text-align:center}
-        input{width:100%;padding:12px;margin:10px 0;border:1px solid #ddd;border-radius:5px;box-sizing:border-box}
-        button{width:100%;padding:12px;background:#0056b3;color:white;border:none;border-radius:5px;font-size:16px;cursor:pointer}
-        button:hover{background:#004494}
-       .error{color:red;text-align:center;margin-top:10px}
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Connexion Étudiant - ISTAGC</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; }
+    body {
+      background: linear-gradient(135deg, #007BFF 0%, #00C853 100%);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+    header {
+      color: white;
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    header h1 { font-size: 22px; font-weight: 700; }
+    header p { font-size: 14px; opacity: 0.9; }
+    .box {
+      background: white;
+      padding: 40px 35px;
+      border-radius: 16px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      width: 90%;
+      max-width: 420px;
+    }
+    .box h2 {
+      text-align: center;
+      color: #007BFF;
+      margin-bottom: 25px;
+      font-size: 24px;
+    }
+    input {
+      width: 100%;
+      padding: 14px;
+      margin: 12px 0;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 15px;
+      transition: 0.3s;
+    }
+    input:focus {
+      border-color: #007BFF;
+      outline: none;
+    }
+    button {
+      width: 100%;
+      padding: 14px;
+      background: #007BFF;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: 0.3s;
+    }
+    button:hover { background: #0056b3; }
+    .error {
+      color: #DC3545;
+      text-align: center;
+      margin-top: 15px;
+      font-weight: 600;
+      font-size: 14px;
+    }
+  </style>
 </head>
 <body>
-    <div class="box">
-        <h2>ISTA-GC Étudiant</h2>
-        <input type="email" id="email" placeholder="Email étudiant">
-        <input type="password" id="password" placeholder="Mot de passe">
-        <button onclick="login()">Se connecter</button>
-        <p class="error" id="error"></p>
-    </div>
+  <header>
+    <h1>INSTITUT SUPÉRIEUR DE TECHNOLOGIE AGROPASTORALE</h1>
+    <p>ISTAGC - Plateforme Académique Étudiante</p>
+  </header>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+  <div class="box">
+    <h2>Connexion Étudiant</h2>
+    <input type="email" id="email" placeholder="Email étudiant" value="etudiant1@ista.gc">
+    <input type="password" id="password" placeholder="Mot de passe" value="123456">
+    <button onclick="login()">Se connecter</button>
+    <p class="error" id="error"></p>
+  </div>
 
-        const firebaseConfig = {
-            apiKey: "METS_TA_VRAIE_CLE_ICI",
-            authDomain: "ista-gc.firebaseapp.com",
-            projectId: "ista-gc",
-            storageBucket: "ista-gc.appspot.com",
-            appId: "1:XXXX:web:XXXX"
-        };
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-        window.login = function() {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            signInWithEmailAndPassword(auth, email, password)
-           .then(() => { window.location.href = 'index.html'; })
-           .catch((error) => { document.getElementById('error').innerText = "Email ou mot de passe incorrect"; });
+    // ⚠️ REMPLACE PAR TA VRAIE CONFIG FIREBASE
+    const firebaseConfig = {
+      apiKey: "TA_CLE_API",
+      authDomain: "TON_PROJET.firebaseapp.com",
+      projectId: "TON_PROJET",
+      storageBucket: "TON_PROJET.appspot.com",
+      messagingSenderId: "TON_ID",
+      appId: "TON_APP_ID"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    async function login() {
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const errorEl = document.getElementById('error');
+      errorEl.innerText = "";
+
+      try {
+        // 1. Connexion Firebase Auth
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+
+        // 2. Vérification du role dans Firestore
+        const userDocRef = doc(db, "users", user.uid);
+        const userDoc = await getDoc(userDocRef);
+        
+        if (!userDoc.exists()) {
+          errorEl.innerText = "Erreur: Compte non trouvé dans la base de données";
+          await auth.signOut();
+          return;
         }
-    </script>
+
+        const role = userDoc.data().role;
+
+        // 3. Redirection selon le role
+        if (role === "etudiant") {
+          window.location.href = "espace-etudiant.html";
+        } else if (role === "prof") {
+          window.location.href = "admin-panel.html";
+        } else {
+          errorEl.innerText = "Erreur: Role non défini pour ce compte";
+          await auth.signOut();
+        }
+
+      } catch (error) {
+        // Affiche l'erreur exacte de Firebase
+        errorEl.innerText = error.message; 
+        console.error("Erreur Firebase:", error.code, error.message);
+      }
+    }
+    window.login = login; // pour que onclick marche
+  </script>
 </body>
 </html>

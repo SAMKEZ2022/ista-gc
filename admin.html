@@ -58,3 +58,31 @@ async function chargerCours(){
 function logout(){signOut(auth)} window.logout=logout; window.ajouterCours=ajouterCours; window.ajouterDevoir=ajouterDevoir;
 </script>
 </body></html>
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Admin ISTAGC</title>
+<style>body{margin:0;background:#1a1a1a;color:white;font-family:Arial} header{background:black;padding:20px;text-align:center} .container{max-width:800px;margin:20px auto;background:#2a2a2a;padding:30px;border-radius:12px} input,select{width:100%;padding:12px;margin:8px 0;border-radius:8px;border:none}</style></head>
+<body>
+<header><h1>ISTAGC - Espace Administrateur</h1></header>
+<div class="container">
+  <h2>Créer un Compte</h2>
+  <input id="email" placeholder="Email">
+  <input id="password" placeholder="Mot de passe" type="password">
+  <select id="role"><option value="etudiant">Etudiant</option><option value="prof">Professeur</option></select>
+  <button onclick="creerCompte()">Créer le Compte</button>
+  <p id="msg"></p>
+</div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+const firebaseConfig = {apiKey: "AIzaSyCv3W6M3RmbipblwJ65Q0uw99a2H3tStU0",authDomain: "ista-gc.firebaseapp.com",projectId: "ista-gc",storageBucket: "ista-gc.firebasestorage.app",messagingSenderId: "75501350048",appId: "1:75501350048:web:8def71328c58dd6b7d6dc5"};
+const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
+async function creerCompte(){
+  const email=document.getElementById('email').value; const password=document.getElementById('password').value; const role=document.getElementById('role').value;
+  const userCred = await createUserWithEmailAndPassword(auth,email,password);
+  await setDoc(doc(db,"users",userCred.user.uid),{email:email,role:role});
+  document.getElementById('msg').innerText = "Compte créé !";
+}
+window.creerCompte=creerCompte;
+</script>
+</body></html>
