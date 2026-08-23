@@ -1,71 +1,60 @@
 <!DOCTYPE html>
 <html lang="fr">
-<head><meta charset="UTF-8"><title>Panel Prof</title>
+<head>
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Espace Étudiant - ISTA-GC</title>
 <style>
-body{font-family:'Segoe UI'; padding:20px; background:#F0F4F8}
-.box{max-width:500px; margin:auto; background:white; padding:20px; border-radius:12px}
-input,button{width:100%; padding:14px; margin:10px 0; border-radius:8px; border:1px solid #ccc; box-sizing:border-box; font-size:16px}
-button{background:#004AAD; color:white; border:none}
+body{font-family:Arial; background:#f0f2f5; margin:0; padding:20px;}
+.header{display:flex; justify-content:space-between; align-items:center; background:white; padding:15px; border-radius:10px; margin-bottom:20px;}
+.btn-logout{background:#dc3545; color:white; border:none; padding:10px 15px; border-radius:5px; cursor:pointer;}
+.cours-actif{background:#d4edda; border:1px solid #c3e6cb; padding:20px; border-radius:10px; margin-bottom:20px;}
+.btn-rejoindre{display:block; width:100%; padding:15px; background:#28a745; color:white; text-align:center; text-decoration:none; border-radius:5px; font-size:18px; margin-top:15px;}
+#liste-etudiants div{background:white; padding:10px; margin:5px 0; border-radius:5px;}
 </style>
 </head>
 <body>
-<div class="box">
-  <h2>Panel Professeur ISTA-GC</h2>
-  <div id="login">
-    <input id="email" type="email" placeholder="Email Prof" autocomplete="off">
-    <input id="pass" type="password" placeholder="Mot de passe" autocomplete="new-password">
-    <button type="button" id="btnLogin">Se connecter</button>
-    <p id="erreur" style="color:red"></p>
-  </div>
-  <div id="admin" style="display:none">
-    <p>Connecté: <b id="profEmail"></b></p>
-    <button type="button" id="btnLogout">Déconnexion</button>
-    <hr>
-    <h3>Lancer un cours</h3>
-    <input id="nomCours" placeholder="Nom du cours">
-    <input id="lien" placeholder="Lien Google Meet">
-    <button type="button" id="btnAjouter">Lancer le cours</button>
-    <p id="ok" style="color:green"></p>
-  </div>
+<div class="header">
+  <h2>ISTA-GC Étudiant</h2>
+  <button class="btn-logout" id="btnLogout">Déconnexion</button>
 </div>
+
+<div id="cours-container"><p>Chargement du cours...</p></div>
+<h3>Liste des étudiants connectés</h3>
+<div id="liste-etudiants">Chargement...</div>
+
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
-import { getFirestore, collection, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+import { getFirestore, collection, onSnapshot, query, orderBy, limit } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
-const app = initializeApp({apiKey: "AIzaSyCv3W6M3RmbipblwJ65Q0uw99a2H3tStU0", authDomain: "ista-gc.firebaseapp.com", projectId: "ista-gc"});
-const auth = getAuth(app); const db = getFirestore(app);
+const firebaseConfig = { apiKey: "COLLE_TA_NOUVELLE_CLE_ICI", authDomain: "ista-gc.firebaseapp.com", projectId: "ista-gc" };
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
-document.getElementById('btnLogin').onclick = ()=>{
-  erreur.innerText='';
-  signInWithEmailAndPassword(auth, email.value.trim(), pass.value)
-  .catch(e=>{ erreur.innerText = "Erreur: " + e.message })
-}
-
-document.getElementById('btnLogout').onclick = ()=>{ signOut(auth) }
-
-document.getElementById('btnAjouter').onclick = async ()=>{
-  ok.innerText='';
-  if(!nomCours.value || !lien.value) {ok.innerText="Remplis tout"; ok.style.color="red"; return}
-  await addDoc(collection(db,"cours"),{
-    nom:nomCours.value, 
-    lien:lien.value, 
-    profId:auth.currentUser.uid,
-    profEmail:auth.currentUser.email,
-    created:serverTimestamp()
-  })
-  ok.innerText="✅ Cours lancé avec succès!"; 
-  nomCours.value=''; lien.value='';
-}
-
-onAuthStateChanged(auth, user=>{
-  if(user){
-    login.style.display='none'; admin.style.display='block'; profEmail.innerText=user.email;
-  } else {
-    login.style.display='block'; admin.style.display='none';
-  }
+onAuthStateChanged(auth, user => {
+  if (!user) window.location.href = "login-etudiant.html";
+  else { chargerCours(); chargerEtudiants(); }
 });
+
+document.getElementById('btnLogout').onclick = () => signOut(auth).then(() => window.location.href = "login-etudiant.html");
+
+function chargerCours() {
+  const q = query(collection(db, "cours_actifs"), orderBy("created", "desc"), limit(1));
+  onSnapshot(q, (snapshot) => {
+    const container = document.getElementById('cours-container');
+    if (snapshot.empty) { container.innerHTML = '<p style="text-align:center; padding:40px;">Aucun cours en direct.</p>'; return; }
+    const cours = snapshot.docs[0].data();
+    container.innerHTML = `<div class="cours-actif"><h2>📢 Cours en Direct</h2><p><b>Matière:</b> ${cours.nom}</p><p><b>Prof:</b> ${cours.profEmail}</p><a href="${cours.lien}" target="_blank" class="btn-rejoindre">Rejoindre le Meet</a></div>`;
+  });
+}
+function chargerEtudiants() {
+  onSnapshot(collection(db, "etudiants"), (snapshot) => {
+    const liste = document.getElementById('liste-etudiants'); liste.innerHTML = '';
+    snapshot.forEach(doc => { const etu = doc.data(); liste.innerHTML += `<div>${etu.nom} ${etu.prenom}</div>`; });
+  });
+}
 </script>
 </body>
 </html>

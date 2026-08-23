@@ -5,44 +5,42 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Connexion Étudiant - ISTA-GC</title>
 <style>
-body{font-family:'Segoe UI'; background:#F0F4F8; display:flex; justify-content:center; align-items:center; height:100vh; margin:0}
-.box{background:white; padding:30px; border-radius:12px; width:90%; max-width:400px; box-shadow:0 4px 12px rgba(0,0,0,0.1)}
-h2{color:#004AAD; text-align:center}
-input,button{width:100%; padding:14px; margin:10px 0; border-radius:8px; border:1px solid #ccc; box-sizing:border-box; font-size:16px}
-button{background:#004AAD; color:white; border:none; font-weight:bold}
-.erreur{color:red; text-align:center}
+body{font-family:Arial; background:#f0f2f5; display:flex; justify-content:center; align-items:center; height:100vh; margin:0;}
+.login-box{background:white; padding:30px; border-radius:10px; box-shadow:0 4px 10px rgba(0,0,0,0.1); width:350px;}
+h2{text-align:center; color:#0056b3;}
+input{width:100%; padding:12px; margin:10px 0; border:1px solid #ddd; border-radius:5px; box-sizing:border-box;}
+button{width:100%; padding:12px; background:#0056b3; color:white; border:none; border-radius:5px; cursor:pointer; font-size:16px;}
+button:hover{background:#003d82;}
+.error{color:red; text-align:center; margin-top:10px;}
 </style>
 </head>
 <body>
-<div class="box">
-  <h2>Espace Étudiant ISTA-GC</h2>
-  <input id="email" type="email" placeholder="Email Étudiant" autocomplete="email">
-  <input id="pass" type="password" placeholder="Mot de passe" autocomplete="current-password">
-  <button id="btnLogin">Se connecter</button>
-  <p id="erreur" class="erreur"></p>
+<div class="login-box">
+  <h2>ISTA-GC Étudiant</h2>
+  <input type="email" id="email" placeholder="Email étudiant">
+  <input type="password" id="password" placeholder="Mot de passe">
+  <button onclick="login()">Se connecter</button>
+  <p class="error" id="error"></p>
 </div>
 
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
 import { getAuth, signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
 
-const app = initializeApp({
-  apiKey: "AIzaSyCv3W6M3RmbipblwJ65Q0uw99a2H3tStU0", 
-  authDomain: "ista-gc.firebaseapp.com", 
+const firebaseConfig = {
+  apiKey: "COLLE_TA_NOUVELLE_CLE_ICI",
+  authDomain: "ista-gc.firebaseapp.com",
   projectId: "ista-gc"
-});
+};
+const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
-document.getElementById('btnLogin').onclick = ()=>{
-  erreur.innerText='';
-  signInWithEmailAndPassword(auth, email.value.trim(), pass.value)
-  .then(()=>{
-    // Si connexion ok, redirige vers index.html
-    window.location.href = "index.html";
-  })
-  .catch(e=>{ 
-    erreur.innerText = "Email ou mot de passe incorrect" 
-  })
+window.login = () => {
+  const email = document.getElementById('email').value;
+  const password = document.getElementById('password').value;
+  signInWithEmailAndPassword(auth, email, password)
+   .then(() => { window.location.href = "index.html"; })
+   .catch((error) => { document.getElementById('error').innerText = "Email ou mot de passe incorrect"; });
 }
 </script>
 </body>
