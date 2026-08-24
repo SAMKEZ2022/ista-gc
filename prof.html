@@ -6,18 +6,18 @@
   <style>
     * { box-sizing: border-box; font-family: Arial, sans-serif; }
     body { background: linear-gradient(135deg, #28a745, #20c997); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
-  .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 8px 25px rgba(0,0,0,0.2); width: 600px; }
+   .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 8px 25px rgba(0,0,0,0.2); width: 600px; }
     h2 { text-align: center; color: #28a745; }
     input, select, textarea, button { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 8px; font-size: 15px; }
     button { background: #28a745; color: white; border: none; cursor: pointer; font-weight: bold; }
     button:hover { background: #218838; }
-  .tabs { display: flex; gap: 10px; }
-  .tabs button { width: 50%; background: #ccc; color: black; }
-  .tabs button.active { background: #28a745; color: white; }
-  .hidden { display: none; }
-  .item { border: 1px solid #ddd; padding: 15px; border-radius: 8px; margin-top: 10px; background: #f8f9fa; }
+   .tabs { display: flex; gap: 10px; }
+   .tabs button { width: 50%; background: #ccc; color: black; }
+   .tabs button.active { background: #28a745; color: white; }
+   .hidden { display: none; }
+   .item { border: 1px solid #ddd; padding: 15px; border-radius: 8px; margin-top: 10px; background: #f8f9fa; }
     a { color: #007bff; text-decoration: none; }
-   #success { text-align: center; font-weight: bold; margin-top: 10px; }
+    #success { text-align: center; font-weight: bold; margin-top: 10px; min-height: 20px; }
   </style>
 </head>
 <body>
@@ -74,7 +74,7 @@
       apiKey: "AIzaSyCv3W6M3RmbipblwJ65Q0uw99a2H3tStU0",
       authDomain: "ista-gc.firebaseapp.com",
       projectId: "ista-gc",
-      storageBucket: "ista-gc.firebasestorage.app",
+      storageBucket: "ista-gc.appspot.com", // <-- CORRIGÉ ICI
       messagingSenderId: "75501350048",
       appId: "1:75501350048:web:8def71328c58dd6b7d6dc5"
     };
@@ -86,12 +86,12 @@
     function login() {
       document.getElementById('login-error').innerText = "";
       auth.signInWithEmailAndPassword(document.getElementById('email').value, document.getElementById('password').value)
-     .then(() => {
+       .then(() => {
           document.getElementById('login-container').classList.add('hidden');
           document.getElementById('prof-container').classList.remove('hidden');
           chargerItems();
         })
-     .catch(error => {
+       .catch(error => {
           document.getElementById('login-error').innerText = "Erreur: " + error.message;
         });
     }
@@ -135,6 +135,7 @@
       } catch (error) {
         document.getElementById('success').style.color = "red";
         document.getElementById('success').innerText = "Erreur: " + error.message;
+        console.error(error);
       }
     }
 
@@ -155,12 +156,13 @@
       } catch (error) {
         document.getElementById('success').style.color = "red";
         document.getElementById('success').innerText = "Erreur: " + error.message;
+        console.error(error);
       }
     }
 
     function chargerItems() {
       db.collection("publications").where("profId", "==", auth.currentUser.uid).orderBy("dateCreation", "desc")
-     .onSnapshot((snapshot) => {
+       .onSnapshot((snapshot) => {
           let html = "";
           snapshot.forEach(doc => {
             const d = doc.data();
