@@ -20,32 +20,77 @@ const DEVOIRS = [
 ];
 
 const USERS = [
+    { email: "admin@ista-gc.com", password: "admin123", role: "admin" },
     { email: "prof.math@ista-gc.com", password: "1234", role: "prof" },
     { email: "etudiant.gc@ista-gc.com", password: "1234", role: "etudiant" }
 ];
 
-// ================== 2. LOGIQUE ==================
+
+// ================== 2. CONNEXION ==================
 document.addEventListener('DOMContentLoaded', () => {
     
-    // CONNEXION
     const loginForm = document.getElementById('loginForm');
     if(loginForm){
         loginForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value.trim();
+            const errorDiv = document.getElementById('error');
             const user = USERS.find(u => u.email === email && u.password === password);
             
             if(user){
+                errorDiv.innerText = "";
                 localStorage.setItem('currentUser', JSON.stringify(user));
-                window.location.href = user.role === 'prof' ? 'prof.html' : 'etudiant.html';
+                
+                // Redirection selon le rôle
+                if(user.role === 'admin'){
+                    window.location.href = 'admin.html';
+                } else if(user.role === 'prof'){
+                    window.location.href = 'prof.html';
+                } else {
+                    window.location.href = 'etudiant.html';
+                }
+                
             } else {
-                document.getElementById('error').innerText = '❌ Email ou mot de passe incorrect';
+                errorDiv.innerText = '❌ Email ou mot de passe incorrect';
+                errorDiv.style.color = 'red';
             }
         });
     }
 
-    // AFFICHAGE ÉTUDIANT
+
+    // ================== 3. AFFICHAGE ADMIN ==================
+    if(document.getElementById('listeCoursAdmin')){
+        document.getElementById('totalCours').innerText = COURS.length;
+        document.getElementById('totalDevoirs').innerText = DEVOIRS.length;
+        
+        document.getElementById('listeCoursAdmin').innerHTML = COURS.map(c => `
+            <div class="card">
+                <h4>${c.titre}</h4>
+                <p>📅 ${c.date}</p>
+                <a href="${c.lien}" target="_blank" class="btn-secondary">Voir le lien</a>
+            </div>
+        `).join('');
+    }
+
+
+    // ================== 4. AFFICHAGE PROF ==================
+    if(document.getElementById('listeCoursProf')){
+        document.getElementById('listeCoursProf').innerHTML = COURS.map(c => `
+            <div class="card">
+                <h4>${c.titre}</h4>
+                <p>📅 ${c.date}</p>
+                <a href="${c.lien}" target="_blank" class="btn-secondary">Voir le lien</a>
+            </div>
+        `).join('');
+        
+        document.getElementById('listeDevoirsProf').innerHTML = DEVOIRS.map(d => `
+            <div class="card"><h4>${d.titre}</h4><p>${d.desc}</p></div>
+        `).join('');
+    }
+
+
+    // ================== 5. AFFICHAGE ÉTUDIANT ==================
     if(document.getElementById('listeCours')){
         if(COURS.length === 0) {
             document.getElementById('listeCours').innerHTML = '<p>Aucun cours programmé</p>';
@@ -58,27 +103,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             `).join('');
         }
+        
         document.getElementById('listeDevoirs').innerHTML = DEVOIRS.map(d => `
             <div class="card"><h4>${d.titre}</h4><p>${d.desc}</p></div>
         `).join('');
     }
 
-    // AFFICHAGE PROF
-    if(document.getElementById('listeCoursProf')){
-        document.getElementById('listeCoursProf').innerHTML = COURS.map(c => `
-            <div class="card">
-                <h4>${c.titre}</h4>
-                <p>${c.date}</p>
-                <a href="${c.lien}" target="_blank" class="btn-secondary">Voir le lien</a>
-            </div>
-        `).join('');
-        document.getElementById('listeDevoirsProf').innerHTML = DEVOIRS.map(d => `
-            <div class="card"><h4>${d.titre}</h4><p>${d.desc}</p></div>
-        `).join('');
-    }
 });
 
-// DECONNEXION
+
+// ================== 6. DECONNEXION ==================
 function logout(){
     localStorage.removeItem('currentUser');
     window.location.href = 'login.html';
