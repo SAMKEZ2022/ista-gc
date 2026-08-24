@@ -14,9 +14,11 @@
     .tab { flex: 1; padding: 14px; background: #ddd; border: none; cursor: pointer; font-weight: bold; font-size: 16px; color: #555; }
     .tab.active { background: #1a73e8; color: white; }
     .card { background: white; padding: 25px; margin-bottom: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-    .btn-download { display: inline-block; padding: 10px 20px; background: #34a853; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; }
+    .btn-download { display: inline-block; padding: 10px 20px; background: #34a853; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; margin-right: 10px; }
     .btn-deposer { display: inline-block; padding: 10px 20px; background: #1a73e8; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+    .btn-deposer:disabled { background: #aaa; cursor: not-allowed; }
     .date-limite { color: #d93025; font-weight: bold; }
+    input[type="file"] { margin: 10px 0; }
   </style>
 </head>
 <body>
@@ -30,8 +32,8 @@
       <button class="tab active" id="tab-cours" onclick="showTab('cours')">Cours</button>
       <button class="tab" id="tab-devoirs" onclick="showTab('devoirs')">Devoirs</button>
     </div>
-    <div id="liste-cours">Chargement...</div>
-    <div id="liste-devoirs" style="display:none;">Chargement...</div>
+    <div id="liste-cours">Chargement des cours...</div>
+    <div id="liste-devoirs" style="display:none;">Chargement des devoirs...</div>
   </div>
 
   <script type="module">
@@ -73,14 +75,14 @@
       try {
         const q = query(collection(db, "cours"), orderBy("date", "desc"));
         const snap = await getDocs(q);
-        let html = snap.empty? "<p>Aucun cours publié.</p>" : "";
+        let html = snap.empty? "<p>Aucun cours publié pour le moment.</p>" : "";
         snap.forEach(doc => {
           const c = doc.data();
           html += `<div class="card"><h3>${c.titre}</h3><p><b>Matière:</b> ${c.matiere}</p><a href="${c.lien}" target="_blank" class="btn-download">📥 Télécharger le PDF</a></div>`;
         });
         document.getElementById('liste-cours').innerHTML = html;
       } catch(e) { 
-        document.getElementById('liste-cours').innerHTML = "❌ Erreur: " + e.message; 
+        document.getElementById('liste-cours').innerHTML = "❌ Erreur: " + e.message + ". Vérifie les règles Firestore"; 
       }
     }
 
@@ -88,29 +90,70 @@
       try {
         const q = query(collection(db, "devoirs"), orderBy("date", "desc"));
         const snap = await getDocs(q);
-        let html = snap.empty? "<p>Aucun devoir publié.</p>" : "";
+        let html = snap.empty? "<p>Aucun devoir publié pour le moment.</p>" : "";
         snap.forEach(doc => {
           const d = doc.data();
-          html += `<div class="card"><h3>${d.titre}</h3><p><b>Matière:</b> ${d.matiere}</p><p>${d.description}</p><p class="date-limite">📅 Date limite: ${d.dateLimite}</p>${d.lienPDF?`<a href="${d.lienPDF}" target="_blank" class="btn-download">📥 Sujet</a>`:""}<div style="margin-top:15px;"><input type="file" id="file-${doc.id}" accept=".pdf"><button class="btn-deposer" onclick="deposerCopie('${doc.id}', '${d.titre}')">📤 Déposer</button></div></div>`;
+          html += `<div class="card">
+            <h3>${d.titre}</h3>
+            <p><b>Matière:</b> ${d.matiere}</p>
+            <p>${d.description}</p>
+            <p class="date-limite">📅 Date limite: ${d.dateLimite}</p>
+            ${d.lienPDF?`<a href="${d.lienPDF}" target="_blank" class="btn-download">📥 Télécharger le sujet</a>`:""}
+            <div style="margin-top:15px; border-top: 1px solid #eee; padding-top: 15px;">
+              <label><b>Rendre mon devoir:</b></label><br>
+              <input type="file" id="file-${doc.id}" accept=".pdf,.doc,.docx">
+              <button class="btn-deposer" id="btn-${doc.id}" onclick="deposerCopie('${doc.id}', '${d.titre}')">📤 Déposer</button>
+            </div>
+          </div>`;
         });
         document.getElementById('liste-devoirs').innerHTML = html;
       } catch(e) { 
-        document.getElementById('liste-devoirs').innerHTML = "❌ Erreur: " + e.message; 
+        document.getElementById('liste-devoirs').innerHTML = "❌ Erreur: " + e.message + ". Vérifie les règles Firestore"; 
       }
     }
 
     window.deposerCopie = async (devoirId, titreDevoir) => {
       const fileInput = document.getElementById(`file-${devoirId}`);
+      const btn = document.getElementById(`btn-${devoirId}`);
       const file = fileInput.files[0];
-      if(!file){ alert("Veuillez choisir un fichier PDF"); return; }
+      
+      if(!file){ 
+        alert("❌ Veuillez choisir un fichier PDF à déposer"); 
+        return; 
+      }
+      
+      btn.innerHTML = "⏳ Envoi en cours...";
+      btn.disabled = true;
+
       try {
-        const storageRef = ref(storage, `copies/${devoirId}/${userEmail}_${file.name}`);
-        await uploadBytes(storageRef, file);
-        const url = await getDownloadURL(storageRef);
-        await addDoc(collection(db, "copies"), { devoirId, titreDevoir, emailEtudiant: userEmail, lienCopie: url, dateDepot: serverTimestamp() });
+        // 1. Upload dans Firebase Storage
+        const fileName = `${Date.now()}_${userEmail}_${file.name}`;
+        const storageRef = ref(storage, `copies/${devoirId}/${fileName}`);
+        const snapshot = await uploadBytes(storageRef, file);
+        
+        // 2. Récupère le lien public
+        const url = await getDownloadURL(snapshot.ref);
+        
+        // 3. Enregistre les infos dans Firestore
+        await addDoc(collection(db, "copies"), { 
+          devoirId, 
+          titreDevoir, 
+          emailEtudiant: userEmail, 
+          nomFichier: file.name,
+          lienCopie: url, 
+          dateDepot: serverTimestamp() 
+        });
+        
         alert("✅ Copie déposée avec succès!");
-      } catch(e) {
-        alert("❌ Erreur upload: " + e.message);
+        fileInput.value = "";
+        btn.innerHTML = "📤 Déposer";
+        btn.disabled = false;
+
+      } catch(e) { 
+        console.error("Erreur dépôt:", e);
+        alert("❌ Erreur lors du dépôt: " + e.message); 
+        btn.innerHTML = "📤 Déposer";
+        btn.disabled = false;
       }
     }
   </script>
