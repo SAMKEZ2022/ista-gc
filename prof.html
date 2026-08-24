@@ -4,7 +4,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ISTA-GC | Espace Prof</title>
-    <link rel="stylesheet" href="./style.css">
+    <style>
+        :root { --primary: #003366; --accent: #28a745; --danger: #dc3545; --bg: #f4f7f9; --text: #333; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; }
+        header { background: var(--primary); color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .container { max-width: 1200px; margin: 20px auto; padding: 20px; }
+        h1, h3 { color: var(--primary); }
+        h3 { border-bottom: 2px solid var(--primary); padding-bottom: 10px; margin-top: 30px; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .card-live { border-left: 5px solid var(--accent); }
+        button { background: var(--accent); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        button:hover { opacity: 0.9; }
+        .btn-live { background: #007bff; }
+        .btn-logout { background: var(--danger); }
+        .btn-danger { background: var(--danger); }
+        input, select, textarea { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+        form { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        a { color: #007bff; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+    </style>
 </head>
 <body>
     <header>
