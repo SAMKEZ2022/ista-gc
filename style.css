@@ -7,4 +7,6 @@ input, select, textarea, button{width: 100%; padding: 10px; margin: 5px 0; borde
 .login-body{display: flex; justify-content: center; align-items: center; height: 100vh;}.login-container{background: white; padding: 30px; border-radius: 10px; width: 350px; text-align: center;}
 .error{color: red;}.live{color: red; font-weight: bold; animation: clignote 1s infinite;} @keyframes clignote{50%{opacity: 0.5;}}
 .btn-live{background: red; color: white; padding: 15px; font-size: 18px; display: block; text-align: center; border-radius: 8px; text-decoration: none; font-weight: bold;}
-.live-card{border: 3px solid red; background: #ffe6e6;}.success{color: green;}.warning{color: orange;}
+.live-card{border: 3px solid red; background: #ffe6e6;}.success{color: green;}.warning{color: o
+    .btn-logout{background: #c0392b; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer;}
+.btn-logout:hover{background: #e74c3c;}range;}
