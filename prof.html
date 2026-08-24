@@ -8,40 +8,28 @@
 </head>
 <body>
 <div class="container">
-  <h2>👨‍🏫 Espace Professeur</h2>
-  <button onclick="logout()" class="btn btn-secondary">Déconnexion</button>
+    <h1>👨‍🏫 Espace Professeur</h1>
+    <button onclick="logout()">Déconnexion</button>
+    
+    <div class="tabs">
+        <button class="tab-btn active" onclick="showTab('cours')">Ajouter Cours</button>
+        <button class="tab-btn" onclick="showTab('devoirs')">Ajouter Devoir</button>
+    </div>
 
-  <div class="tabs">
-    <button class="tab-btn active" onclick="showTab('publier')">📝 Publier Devoir</button>
-    <button class="tab-btn" onclick="showTab('copies')">📂 Voir les Copies</button>
-    <button class="tab-btn" onclick="showTab('live')">📡 Cours en Live</button>
-  </div>
+    <div id="cours" class="tab-content">
+        <h3>Nouveau Cours Live</h3>
+        <input type="text" id="titreCours" placeholder="Titre du cours">
+        <input type="text" id="dateCours" placeholder="Ex: Lundi 25 Août - 10h00">
+        <input type="text" id="lienCours" placeholder="Lien Google Meet / Zoom">
+        <button onclick="ajouterCours()">Publier le cours</button>
+    </div>
 
-  <div id="publier" class="tab-content active">
-    <h3>Publier un Devoir</h3>
-    <input type="text" id="titreDevoir" placeholder="Titre du devoir">
-    <textarea id="descDevoir" placeholder="Description"></textarea>
-    <input type="datetime-local" id="dateDevoir">
-    <input type="text" id="lienSujet" placeholder="Lien Google Drive du sujet - Lecture seule">
-    <button onclick="publierDevoir()">Publier</button>
-    <div id="listeDevoirsProf"></div>
-  </div>
-
-  <div id="copies" class="tab-content">
-    <h3>Copies Déposées</h3>
-    <div id="listeCopies"></div>
-  </div>
-
-  <div id="live" class="tab-content">
-    <h3>Créer un Cours en Live</h3>
-    <input type="text" id="liveTitre" placeholder="Titre du cours: Ex: RDM Chapitre 3">
-    <input type="datetime-local" id="liveDate">
-    <input type="text" id="liveLien" placeholder="Colle le lien Google Meet ici">
-    <button onclick="creerLive()">📡 Programmer / Lancer le Live</button>
-    <hr>
-    <h4>Lives Programmés</h4>
-    <div id="listeLivesProf"></div>
-  </div>
+    <div id="devoirs" class="tab-content" style="display:none">
+        <h3>Nouveau Devoir</h3>
+        <input type="text" id="titreDevoir" placeholder="Titre du devoir">
+        <textarea id="descDevoir" placeholder="Description"></textarea>
+        <button onclick="ajouterDevoir()">Publier le devoir</button>
+    </div>
 </div>
 <script src="script.js"></script>
 </body>

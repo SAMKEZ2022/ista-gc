@@ -1,121 +1,22 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <title>ISTAGC - Espace Étudiant</title>
-  <style>
-    * { box-sizing: border-box; font-family: Arial, sans-serif; }
-    body { background: linear-gradient(135deg, #007bff, #6610f2); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
-  .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 8px 25px rgba(0,0,0,0.2); width: 650px; }
-    h2 { text-align: center; color: #007bff; }
-    input, button { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 8px; font-size: 15px; }
-    button { background: #007bff; color: white; border: none; cursor: pointer; font-weight: bold; }
-  .tabs button { width: 49%; background: #ccc; color: black; }
-  .tabs button.active { background: #007bff; color: white; }
-  .hidden { display: none; }
-  .item { border: 1px solid #ddd; padding: 15px; border-radius: 8px; margin-top: 10px; background: #f8f9fa; }
-    a { color: #007bff; }
-  .rendre-btn { background: #28a745; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Espace Étudiant - ISTA-GC</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
+<div class="container">
+    <h1>🎓 Espace Étudiant</h1>
+    <button onclick="logout()">Déconnexion</button>
 
-  <div class="container" id="login-container">
-    <h2>Connexion Étudiant</h2>
-    <input type="email" id="email" placeholder="Email de l'Étudiant">
-    <input type="password" id="password" placeholder="Mot de passe">
-    <button onclick="login()">Se connecter</button>
-  </div>
+    <h2>📚 Devoirs</h2>
+    <div id="listeDevoirs">Chargement...</div>
 
-  <div class="container hidden" id="etu-container">
-    <h2>Bonjour Étudiant</h2>
-    <button onclick="logout()" style="background: red;">Se déconnecter</button>
-
-    <div class="tabs">
-      <button id="btnCours" class="active" onclick="showTab('cours')">Mes Cours</button>
-      <button id="btnDevoir" onclick="showTab('devoir')">Mes Devoirs</button>
-    </div>
-
-    <div id="tab-cours"><h3>Documents de Cours</h3><div id="liste-cours">Chargement...</div></div>
-    <div id="tab-devoir" class="hidden"><h3>Devoirs à rendre</h3><div id="liste-devoirs">Chargement...</div></div>
-  </div>
-
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
-
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyCv3W6M3RmbipblwJ65Q0uw99a2H3tStU0",
-      authDomain: "ista-gc.firebaseapp.com",
-      projectId: "ista-gc",
-      storageBucket: "ista-gc.firebasestorage.app",
-      messagingSenderId: "75501350048",
-      appId: "1:75501350048:web:8def71328c58dd6b7d6dc5"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
-    const storage = firebase.storage();
-
-    function login() {
-      auth.signInWithEmailAndPassword(document.getElementById('email').value, document.getElementById('password').value)
-     .then(() => {
-          document.getElementById('login-container').classList.add('hidden');
-          document.getElementById('etu-container').classList.remove('hidden');
-          chargerCours(); chargerDevoirs();
-        });
-    }
-    function logout() { auth.signOut().then(() => location.reload()); }
-    function showTab(tab) {
-      document.getElementById('tab-cours').classList.add('hidden');
-      document.getElementById('tab-devoir').classList.add('hidden');
-      document.getElementById('btnCours').classList.remove('active');
-      document.getElementById('btnDevoir').classList.remove('active');
-      document.getElementById('tab-'+tab).classList.remove('hidden');
-      document.getElementById('btn'+tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
-    }
-
-    async function rendreDevoir(devoirId) {
-      const input = document.getElementById('rendu_'+devoirId);
-      const fichier = input.files[0];
-      if(!fichier) return alert("Choisis un fichier d'abord");
-
-      const ref = storage.ref(`rendus/${devoirId}_${auth.currentUser.uid}_${fichier.name}`);
-      await ref.put(fichier);
-
-      db.collection("rendus").add({
-        devoirId: devoirId, etudiantId: auth.currentUser.uid,
-        dateRendu: new Date(), nomFichier: fichier.name
-      }).then(() => alert("Devoir rendu avec succès!"));
-    }
-
-    function chargerCours() {
-      db.collection("publications").where("type", "==", "cours").where("classe", "==", "L1")
-     .onSnapshot((snapshot) => {
-          let html = "";
-          snapshot.forEach(doc => {
-            const d = doc.data();
-            html += `<div class="item"><b>${d.titre}</b><br><a href="${d.fichierUrl}" target="_blank">📄 Télécharger le cours</a></div>`;
-          });
-          document.getElementById('liste-cours').innerHTML = html || "Aucun cours";
-        });
-    }
-
-    function chargerDevoirs() {
-      db.collection("publications").where("type", "==", "devoir").where("classe", "==", "L1")
-     .onSnapshot((snapshot) => {
-          let html = "";
-          snapshot.forEach(doc => {
-            const d = doc.data();
-            html += `<div class="item"><b>${d.titre}</b><br>${d.description}<br><b>Limite: ${d.dateLimite}</b>`;
-            if(d.fichierUrl) html += `<br><a href="${d.fichierUrl}" target="_blank">📎 Sujet du devoir</a>`;
-            html += `<br><input type="file" id="rendu_${doc.id}"><button class="rendre-btn" onclick="rendreDevoir('${doc.id}')">Rendre mon devoir</button></div>`;
-          });
-          document.getElementById('liste-devoirs').innerHTML = html || "Aucun devoir";
-        });
-    }
-  </script>
+    <h2>📡 Cours en Live</h2>
+    <div id="listeCours">Chargement...</div>
+</div>
+<script src="script.js"></script>
 </body>
 </html>
