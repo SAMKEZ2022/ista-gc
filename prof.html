@@ -1,13 +1,11 @@
-<section><h2>📁 Envoyer un Support de Cours</h2>
-    <form id="formAddSupport" class="card">
-        <select id="supportCours" required></select>
-        <input type="text" id="supportNom" placeholder="Nom du fichier: Chapitre 1.pdf" required>
-        <input type="file" id="supportFile" accept=".pdf,.docx,.pptx" required>
-        <button type="submit" class="btn-primary">Envoyer</button>
-    </form>
-    <div id="listeSupportsProf"></div>
-</section>
-
-<section><h2>📥 Copies Rendues</h2>
-    <div id="listeDepotsProf"></div>
-</section>
+<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="UTF-8"><title>Prof ISTA-GC</title><link rel="stylesheet" href="style.css"></head>
+<body>
+<header><h1>👨‍🏫 Espace Prof</h1><button onclick="logout()" class="btn-logout">Déconnexion</button></header>
+<main>
+    <section><h2>🔴 Mes Cours</h2><div id="listeCoursProf"></div></section>
+    <section><h2>📁 Envoyer un Support de Cours</h2><form id="formAddSupport" class="card"><select id="supportCours" required></select><input type="text" id="supportNom" placeholder="Nom du fichier" required><input type="file" id="supportFile" accept=".pdf,.docx,.pptx" required><button type="submit" class="btn-primary">Envoyer</button></form><div id="listeSupportsProf"></div></section>
+    <section><h2>📥 Copies Rendues</h2><div id="listeDepotsProf"></div></section>
+</main>
+<script src="script.js"></script></body></html>

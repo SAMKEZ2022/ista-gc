@@ -1,11 +1,11 @@
-<section><h2>📁 Supports de Cours</h2><div id="listeSupportsEtudiant"></div></section>
-
-<section><h2>📝 Mes Devoirs</h2>
-    <div id="listeDevoirsEtudiant"></div>
-    <form id="formDepot" class="card">
-        <h4>Déposer une copie</h4>
-        <select id="depotDevoir" required></select>
-        <input type="file" id="depotFile" accept=".pdf,.docx" required>
-        <button type="submit" class="btn-success">Envoyer la copie</button>
-    </form>
-</section>
+<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="UTF-8"><title>Etudiant ISTA-GC</title><link rel="stylesheet" href="style.css"></head>
+<body>
+<header><h1>🎓 Espace Étudiant</h1><button onclick="logout()" class="btn-logout">Déconnexion</button></header>
+<main>
+    <section><h2>🔴 Cours en Direct</h2><div id="listeCours"></div></section>
+    <section><h2>📁 Supports de Cours</h2><div id="listeSupportsEtudiant"></div></section>
+    <section><h2>📝 Mes Devoirs</h2><div id="listeDevoirsEtudiant"></div><form id="formDepot" class="card"><h4>Déposer une copie</h4><select id="depotDevoir" required></select><input type="file" id="depotFile" accept=".pdf,.docx" required><button type="submit" class="btn-success">Envoyer la copie</button></form></section>
+</main>
+<script src="script.js"></script></body></html>
