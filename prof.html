@@ -8,24 +8,26 @@
 </head>
 <body>
     <header>
-        <h1>👨‍🏫 Espace Prof</h1>
+        <h1>👨‍🏫 Espace Professeur</h1>
         <button class="btn-logout">Déconnexion</button>
     </header>
     <div class="container">
-        <h3>Mes Cours</h3>
+        
+        <h3>Mes Cours & Live</h3>
         <div id="listeCoursProf"></div>
 
         <h3>📤 Envoyer un Support de Cours</h3>
         <form id="formAddSupport">
             <select id="supportCours" required></select>
-            <input type="text" id="supportNom" placeholder="Nom du fichier: Chapitre 1 PDF" required>
+            <input type="text" id="supportNom" placeholder="Nom du fichier: Chapitre 1.pdf" required>
             <input type="file" id="supportFile" required>
-            <button type="submit">Envoyer</button>
+            <button type="submit">Envoyer aux Etudiants</button>
         </form>
         <div id="listeSupportsProf"></div>
 
-        <h3>📥 Copies des Étudiants</h3>
+        <h3>📥 Copies des Devoirs</h3>
         <div id="listeDepotsProf"></div>
+
     </div>
     <script src="script.js"></script>
 </body>
