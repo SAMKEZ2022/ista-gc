@@ -9,16 +9,16 @@
     header { background: #1a73e8; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
     header h2 { margin: 0; }
     #logout { background: red; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; }
-    .container { max-width: 1000px; margin: 30px auto; padding: 20px; }
-    .tabs { display: flex; margin-bottom: 20px; border-radius: 8px; overflow: hidden; background: #eee; }
-    .tab { flex: 1; padding: 14px; background: #ddd; border: none; cursor: pointer; font-weight: bold; font-size: 16px; color: #555; }
-    .tab.active { background: #1a73e8; color: white; }
-    .card { background: white; padding: 25px; margin-bottom: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-    .btn-download { display: inline-block; padding: 10px 20px; background: #34a853; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; margin-right: 10px; }
-    .btn-deposer { display: inline-block; padding: 10px 20px; background: #1a73e8; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-    .btn-deposer:disabled { background: #aaa; cursor: not-allowed; }
-    .date-limite { color: #d93025; font-weight: bold; }
-    input[type="file"] { margin: 10px 0; }
+   .container { max-width: 1000px; margin: 30px auto; padding: 20px; }
+   .tabs { display: flex; margin-bottom: 20px; border-radius: 8px; overflow: hidden; background: #eee; }
+   .tab { flex: 1; padding: 14px; background: #ddd; border: none; cursor: pointer; font-weight: bold; font-size: 16px; color: #555; }
+   .tab.active { background: #1a73e8; color: white; }
+   .card { background: white; padding: 25px; margin-bottom: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+   .btn-download { display: inline-block; padding: 10px 20px; background: #34a853; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; margin-right: 10px; }
+   .btn-deposer { display: inline-block; padding: 10px 20px; background: #1a73e8; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+   .date-limite { color: #d93025; font-weight: bold; }
+    input { width: 100%; padding: 10px; margin: 10px 0; border-radius: 6px; border: 1px solid #ddd; box-sizing: border-box; }
+   .info { background: #e8f0fe; padding: 10px; border-radius: 6px; font-size: 14px; margin: 10px 0; }
   </style>
 </head>
 <body>
@@ -39,14 +39,12 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getFirestore, collection, getDocs, query, orderBy, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-    import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
     const firebaseConfig = {apiKey: "AIzaSyCv3W6M3RmbipblwJ65Q0uw99a2H3tStU0",authDomain: "ista-gc.firebaseapp.com",projectId: "ista-gc",storageBucket: "ista-gc.firebasestorage.app",messagingSenderId: "75501350048",appId: "1:75501350048:web:8def71328c58dd6b7d6dc5",measurementId: "G-B2Y89V3X35"};
     
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-    const storage = getStorage(app);
     const auth = getAuth(app);
     let userEmail = "";
 
@@ -71,89 +69,70 @@
       document.getElementById('tab-devoirs').classList.toggle('active', tab === 'devoirs');
     }
 
+    function convertirLienDrive(lien) { 
+      if(lien && lien.includes("drive.google.com/file/d/")){ 
+        const fileId = lien.split("/d/")[1].split("/")[0]; 
+        return `https://drive.google.com/uc?export=download&id=${fileId}`; 
+      } 
+      return lien; 
+    }
+
     async function chargerCours() {
-      try {
-        const q = query(collection(db, "cours"), orderBy("date", "desc"));
-        const snap = await getDocs(q);
-        let html = snap.empty? "<p>Aucun cours publié pour le moment.</p>" : "";
-        snap.forEach(doc => {
-          const c = doc.data();
-          html += `<div class="card"><h3>${c.titre}</h3><p><b>Matière:</b> ${c.matiere}</p><a href="${c.lien}" target="_blank" class="btn-download">📥 Télécharger le PDF</a></div>`;
-        });
-        document.getElementById('liste-cours').innerHTML = html;
-      } catch(e) { 
-        document.getElementById('liste-cours').innerHTML = "❌ Erreur: " + e.message + ". Vérifie les règles Firestore"; 
-      }
+      const q = query(collection(db, "cours"), orderBy("date", "desc"));
+      const snap = await getDocs(q);
+      let html = snap.empty? "<p>Aucun cours publié.</p>" : "";
+      snap.forEach(doc => {
+        const c = doc.data();
+        html += `<div class="card"><h3>${c.titre}</h3><p><b>Matière:</b> ${c.matiere}</p><a href="${c.lien}" target="_blank" class="btn-download">📥 Télécharger le PDF</a></div>`;
+      });
+      document.getElementById('liste-cours').innerHTML = html;
     }
 
     async function chargerDevoirs() {
-      try {
-        const q = query(collection(db, "devoirs"), orderBy("date", "desc"));
-        const snap = await getDocs(q);
-        let html = snap.empty? "<p>Aucun devoir publié pour le moment.</p>" : "";
-        snap.forEach(doc => {
-          const d = doc.data();
-          html += `<div class="card">
-            <h3>${d.titre}</h3>
-            <p><b>Matière:</b> ${d.matiere}</p>
-            <p>${d.description}</p>
-            <p class="date-limite">📅 Date limite: ${d.dateLimite}</p>
-            ${d.lienPDF?`<a href="${d.lienPDF}" target="_blank" class="btn-download">📥 Télécharger le sujet</a>`:""}
-            <div style="margin-top:15px; border-top: 1px solid #eee; padding-top: 15px;">
-              <label><b>Rendre mon devoir:</b></label><br>
-              <input type="file" id="file-${doc.id}" accept=".pdf,.doc,.docx">
-              <button class="btn-deposer" id="btn-${doc.id}" onclick="deposerCopie('${doc.id}', '${d.titre}')">📤 Déposer</button>
-            </div>
-          </div>`;
-        });
-        document.getElementById('liste-devoirs').innerHTML = html;
-      } catch(e) { 
-        document.getElementById('liste-devoirs').innerHTML = "❌ Erreur: " + e.message + ". Vérifie les règles Firestore"; 
-      }
+      const q = query(collection(db, "devoirs"), orderBy("date", "desc"));
+      const snap = await getDocs(q);
+      let html = snap.empty? "<p>Aucun devoir publié.</p>" : "";
+      snap.forEach(doc => {
+        const d = doc.data();
+        html += `<div class="card">
+          <h3>${d.titre}</h3>
+          <p><b>Matière:</b> ${d.matiere}</p>
+          <p>${d.description}</p>
+          <p class="date-limite">📅 Date limite: ${d.dateLimite}</p>
+          ${d.lienPDF?`<a href="${d.lienPDF}" target="_blank" class="btn-download">📥 Sujet</a>`:""}
+          <div style="margin-top:15px; border-top: 1px solid #eee; padding-top: 15px;">
+            <label><b>Rendre mon devoir:</b></label>
+            <div class="info">1. Uploade ton PDF sur Google Drive > 2. Clique droit > Partager > Général > Lecteur > 3. Copie le lien ici</div>
+            <input type="url" id="lien-${doc.id}" placeholder="Colle le lien Google Drive de ta copie ici">
+            <button class="btn-deposer" onclick="deposerCopie('${doc.id}', '${d.titre}')">📤 Envoyer le lien</button>
+          </div>
+        </div>`;
+      });
+      document.getElementById('liste-devoirs').innerHTML = html;
     }
 
     window.deposerCopie = async (devoirId, titreDevoir) => {
-      const fileInput = document.getElementById(`file-${devoirId}`);
-      const btn = document.getElementById(`btn-${devoirId}`);
-      const file = fileInput.files[0];
+      const lienInput = document.getElementById(`lien-${devoirId}`);
+      const lien = lienInput.value;
       
-      if(!file){ 
-        alert("❌ Veuillez choisir un fichier PDF à déposer"); 
+      if(!lien){ 
+        alert("❌ Colle le lien Google Drive de ta copie"); 
         return; 
       }
       
-      btn.innerHTML = "⏳ Envoi en cours...";
-      btn.disabled = true;
-
       try {
-        // 1. Upload dans Firebase Storage
-        const fileName = `${Date.now()}_${userEmail}_${file.name}`;
-        const storageRef = ref(storage, `copies/${devoirId}/${fileName}`);
-        const snapshot = await uploadBytes(storageRef, file);
-        
-        // 2. Récupère le lien public
-        const url = await getDownloadURL(snapshot.ref);
-        
-        // 3. Enregistre les infos dans Firestore
         await addDoc(collection(db, "copies"), { 
           devoirId, 
           titreDevoir, 
           emailEtudiant: userEmail, 
-          nomFichier: file.name,
-          lienCopie: url, 
+          lienCopie: convertirLienDrive(lien), 
           dateDepot: serverTimestamp() 
         });
         
-        alert("✅ Copie déposée avec succès!");
-        fileInput.value = "";
-        btn.innerHTML = "📤 Déposer";
-        btn.disabled = false;
-
+        alert("✅ Lien envoyé avec succès!");
+        lienInput.value = "";
       } catch(e) { 
-        console.error("Erreur dépôt:", e);
-        alert("❌ Erreur lors du dépôt: " + e.message); 
-        btn.innerHTML = "📤 Déposer";
-        btn.disabled = false;
+        alert("❌ Erreur: " + e.message); 
       }
     }
   </script>

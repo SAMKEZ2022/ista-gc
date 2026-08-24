@@ -2,104 +2,78 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Espace Prof - ISTA-GC</title>
   <style>
     body { font-family: 'Segoe UI', Arial; background: #f4f4f4; margin: 0; }
     header { background: #1a73e8; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
-    header h2 { margin: 0; }
     #logout { background: red; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; }
-   .container { max-width: 900px; margin: 30px auto; background: white; padding: 35px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+   .container { max-width: 1000px; margin: 30px auto; padding: 20px; }
    .tabs { display: flex; margin-bottom: 20px; border-radius: 8px; overflow: hidden; background: #eee; }
-   .tab { flex: 1; padding: 14px; background: #ddd; border: none; cursor: pointer; font-weight: bold; font-size: 16px; color: #555; }
-   .tab.active { background: #34a853; color: white; }
-   .sous-tabs { display: flex; margin-bottom: 20px; border-radius: 8px; overflow: hidden; background: #eee; }
-    input, textarea { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; }
-    button.btn-publier { width: 100%; padding: 14px; background: #34a853; color: white; border: none; font-weight: bold; cursor: pointer; border-radius: 8px; font-size: 16px; }
-    #status { margin-top: 15px; font-weight: bold; color: #34a853; }
-   .copie-card { border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 8px; background: #fafafa; }
-   .copie-card a { color: #1a73e8; font-weight: bold; text-decoration: none; }
+   .tab { flex: 1; padding: 14px; background: #ddd; border: none; cursor: pointer; font-weight: bold; font-size: 16px; }
+   .tab.active { background: #1a73e8; color: white; }
+   .card { background: white; padding: 20px; margin-bottom: 15px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    input, textarea { width: 100%; padding: 10px; margin: 8px 0; border-radius: 6px; border: 1px solid #ddd; box-sizing: border-box; }
+   .btn { padding: 12px 25px; background: #1a73e8; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+   .btn-download { display: inline-block; padding: 10px 20px; background: #34a853; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; }
   </style>
 </head>
 <body>
   <header>
-    <h2>📚 Espace Professeur</h2>
+    <h2>👨‍🏫 Espace Professeur</h2>
     <button id="logout">Déconnexion</button>
   </header>
   
   <div class="container">
     <div class="tabs">
-      <button class="tab active" id="tab-publier" onclick="showTab('publier')">Publier</button>
-      <button class="tab" id="tab-copies" onclick="showTab('copies')">Voir les Copies</button>
+      <button class="tab active" onclick="showTab('publier')">Publier</button>
+      <button class="tab" onclick="showTab('copies')">Voir les Copies</button>
     </div>
 
-    <div id="publier-form">
-      <div class="sous-tabs">
-        <button class="tab active" id="tab-cours" onclick="showSousTab('cours')">Cours</button>
-        <button class="tab" id="tab-devoir" onclick="showSousTab('devoir')">Devoir</button>
-      </div>
-      
-      <div id="cours-form">
+    <div id="publier">
+      <div class="card">
+        <h3>Publier un Cours PDF</h3>
         <input id="titreCours" placeholder="Titre du cours">
         <input id="matiereCours" placeholder="Matière">
         <input id="lienCours" placeholder="Lien Google Drive du PDF">
-        <button class="btn-publier" onclick="publier('cours')">Publier le Cours</button>
+        <button class="btn" onclick="publierCours()">Publier le Cours</button>
       </div>
-
-      <div id="devoir-form" style="display:none;">
+      <div class="card">
+        <h3>Publier un Devoir</h3>
         <input id="titreDevoir" placeholder="Titre du devoir">
         <input id="matiereDevoir" placeholder="Matière">
-        <input type="date" id="dateLimite">
-        <textarea id="description" placeholder="Consignes du devoir" rows="4"></textarea>
-        <input id="lienDevoir" placeholder="Lien Drive du sujet - optionnel">
-        <button class="btn-publier" onclick="publier('devoir')">Publier le Devoir</button>
+        <textarea id="descDevoir" placeholder="Description/Consigne"></textarea>
+        <input id="dateLimite" type="date">
+        <input id="lienDevoir" placeholder="Lien Google Drive du sujet PDF - Optionnel">
+        <button class="btn" onclick="publierDevoir()">Publier le Devoir</button>
       </div>
     </div>
 
-    <div id="copies-form" style="display:none;">
-      <h3>📥 Copies rendues par les étudiants</h3>
-      <div id="liste-copies">Chargement...</div>
+    <div id="copies" style="display:none;">
+      <h3>Copies des Étudiants</h3>
+      <div id="listeCopies">Chargement...</div>
     </div>
-    
-    <div id="status"></div>
   </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getFirestore, collection, addDoc, getDocs, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    
+
     const firebaseConfig = {apiKey: "AIzaSyCv3W6M3RmbipblwJ65Q0uw99a2H3tStU0",authDomain: "ista-gc.firebaseapp.com",projectId: "ista-gc",storageBucket: "ista-gc.firebasestorage.app",messagingSenderId: "75501350048",appId: "1:75501350048:web:8def71328c58dd6b7d6dc5",measurementId: "G-B2Y89V3X35"};
     
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
 
-    onAuthStateChanged(auth, (user) => { 
-      if (!user) { 
-        window.location.href = "login.html"; 
-      } else { 
-        chargerCopies(); 
-      } 
-    });
-
-    document.getElementById('logout').addEventListener('click', () => { 
-      signOut(auth).then(() => window.location.href = "login.html"); 
-    });
-
+    onAuthStateChanged(auth, (user) => { if (!user) window.location.href = "login.html"; });
+    document.getElementById('logout').addEventListener('click', () => signOut(auth).then(() => window.location.href = "login.html"));
+    
     window.showTab = (tab) => { 
-      document.getElementById('publier-form').style.display = tab === 'publier'? 'block' : 'none'; 
-      document.getElementById('copies-form').style.display = tab === 'copies'? 'block' : 'none'; 
-      document.getElementById('tab-publier').classList.toggle('active', tab === 'publier');
-      document.getElementById('tab-copies').classList.toggle('active', tab === 'copies');
+      document.getElementById('publier').style.display = tab === 'publier'? 'block' : 'none'; 
+      document.getElementById('copies').style.display = tab === 'copies'? 'block' : 'none'; 
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      event.target.classList.add('active');
       if(tab === 'copies') chargerCopies();
-    }
-
-    window.showSousTab = (tab) => { 
-      document.getElementById('cours-form').style.display = tab === 'cours'? 'block' : 'none'; 
-      document.getElementById('devoir-form').style.display = tab === 'devoir'? 'block' : 'none'; 
-      document.getElementById('tab-cours').classList.toggle('active', tab === 'cours');
-      document.getElementById('tab-devoir').classList.toggle('active', tab === 'devoir');
     }
 
     function convertirLienDrive(lien) { 
@@ -110,65 +84,34 @@
       return lien; 
     }
 
-    window.publier = async (type) => {
-      const status = document.getElementById('status');
-      status.innerHTML = "Publication...";
-      try {
-        if (type === 'cours') {
-          const titre = document.getElementById('titreCours').value;
-          const matiere = document.getElementById('matiereCours').value;
-          const lien = document.getElementById('lienCours').value;
-          if(!titre ||!matiere ||!lien){ status.innerHTML = "❌ Remplis tous les champs"; return; }
-          await addDoc(collection(db, "cours"), { titre, matiere, lien: convertirLienDrive(lien), date: serverTimestamp() });
-          status.innerHTML = "✅ Cours publié!";
-          document.getElementById('titreCours').value = "";
-          document.getElementById('matiereCours').value = "";
-          document.getElementById('lienCours').value = "";
-        } else {
-          const titre = document.getElementById('titreDevoir').value;
-          const matiere = document.getElementById('matiereDevoir').value;
-          const dateLimite = document.getElementById('dateLimite').value;
-          const description = document.getElementById('description').value;
-          const lienPDF = document.getElementById('lienDevoir').value;
-          if(!titre ||!matiere ||!dateLimite){ status.innerHTML = "❌ Remplis Titre, Matière et Date limite"; return; }
-          await addDoc(collection(db, "devoirs"), { titre, matiere, description, dateLimite, lienPDF: convertirLienDrive(lienPDF), date: serverTimestamp() });
-          status.innerHTML = "✅ Devoir publié!";
-          document.getElementById('titreDevoir').value = "";
-          document.getElementById('matiereDevoir').value = "";
-          document.getElementById('dateLimite').value = "";
-          document.getElementById('description').value = "";
-          document.getElementById('lienDevoir').value = "";
-        }
-      } catch (e) { 
-        status.innerHTML = "❌ Erreur: " + e.message; 
-      }
+    window.publierCours = async () => {
+      const t = titreCours.value, m = matiereCours.value, l = convertirLienDrive(lienCours.value);
+      if(!t ||!m ||!l){ alert("Remplis tout"); return; }
+      await addDoc(collection(db, "cours"), { titre: t, matiere: m, lien: l, date: serverTimestamp() });
+      alert("✅ Cours publié!"); titreCours.value = ""; matiereCours.value = ""; lienCours.value = "";
+    }
+    
+    window.publierDevoir = async () => {
+      const t = titreDevoir.value, m = matiereDevoir.value, d = descDevoir.value, dl = dateLimite.value, l = convertirLienDrive(lienDevoir.value);
+      if(!t ||!m ||!d ||!dl){ alert("Remplis tout sauf le lien"); return; }
+      await addDoc(collection(db, "devoirs"), { titre: t, matiere: m, description: d, dateLimite: dl, lienPDF: l, date: serverTimestamp() });
+      alert("✅ Devoir publié!"); titreDevoir.value = ""; matiereDevoir.value = ""; descDevoir.value = ""; dateLimite.value = ""; lienDevoir.value = "";
     }
 
     async function chargerCopies() {
-      const liste = document.getElementById('liste-copies');
-      liste.innerHTML = "Chargement...";
-      try {
-        const q = query(collection(db, "copies"), orderBy("dateDepot", "desc"));
-        const snap = await getDocs(q);
-        if(snap.empty){ 
-          liste.innerHTML = "<p>Aucune copie rendue pour le moment.</p>"; 
-          return;
-        }
-        let html = "";
-        snap.forEach(doc => {
-          const c = doc.data();
-          const date = c.dateDepot? new Date(c.dateDepot.seconds * 1000).toLocaleDateString('fr-FR') : "Date inconnue";
-          html += `<div class="copie-card">
-            <p><b>Devoir:</b> ${c.titreDevoir}</p>
-            <p><b>Étudiant:</b> ${c.emailEtudiant}</p>
-            <p><b>Date de dépôt:</b> ${date}</p>
-            <a href="${c.lienCopie}" target="_blank">📥 Télécharger la copie</a>
-          </div>`;
-        });
-        liste.innerHTML = html;
-      } catch(e) {
-        liste.innerHTML = "❌ Erreur de chargement. Vérifie les règles Firebase.";
-      }
+      const q = query(collection(db, "copies"), orderBy("dateDepot", "desc"));
+      const snap = await getDocs(q);
+      let html = snap.empty? "<p>Aucune copie déposée pour le moment.</p>" : "";
+      snap.forEach(doc => {
+        const c = doc.data();
+        html += `<div class="card">
+          <h4>${c.titreDevoir}</h4>
+          <p><b>Étudiant:</b> ${c.emailEtudiant}</p>
+          <p><b>Date de dépôt:</b> ${c.dateDepot? new Date(c.dateDepot.seconds * 1000).toLocaleString('fr-FR') : '...'}</p>
+          <a href="${c.lienCopie}" target="_blank" class="btn-download">📥 Ouvrir la copie Drive</a>
+        </div>`;
+      });
+      document.getElementById('listeCopies').innerHTML = html;
     }
   </script>
 </body>
