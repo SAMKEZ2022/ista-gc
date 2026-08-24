@@ -1,41 +1,40 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Espace Admin - ISTA-GC</title>
-    <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Espace Admin - ISTA-GC</title><link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
-        <header>
-            <h1>👑 Espace Administrateur</h1>
-            <button class="btn-danger" onclick="logout()">Déconnexion</button>
-        </header>
+        <header><h1>👑 Espace Administrateur</h1><button class="btn-danger" onclick="logout()">Déconnexion</button></header>
         
-        <section>
-            <h2>📊 Tableau de Bord</h2>
-            <div class="card">
+        <section><h2>📊 Tableau de Bord</h2>
+            <div class="card stats">
                 <p><b>Total Cours:</b> <span id="totalCours">0</span></p>
                 <p><b>Total Devoirs:</b> <span id="totalDevoirs">0</span></p>
+                <p><b>Total Profs:</b> <span id="totalProfs">0</span></p>
+                <p><b>Total Étudiants:</b> <span id="totalEtudiants">0</span></p>
             </div>
         </section>
 
-        <section>
-            <h2>📢 Tous les Cours</h2>
-            <div id="listeCoursAdmin" class="liste"></div>
+        <section><h2>👥 Gestion des Utilisateurs</h2>
+            <form id="formAddUser" class="card">
+                <h4>Ajouter un utilisateur</h4>
+                <input type="email" id="newEmail" placeholder="Email" required>
+                <input type="text" id="newPassword" placeholder="Mot de passe" required>
+                <select id="newRole" required>
+                    <option value="">Choisir le rôle</option>
+                    <option value="prof">Professeur</option>
+                    <option value="etudiant">Étudiant</option>
+                </select>
+                <button type="submit" class="btn-primary">Ajouter</button>
+            </form>
+            <div id="listeUsers" class="liste"></div>
         </section>
+
+        <section><h2>📢 Tous les Cours</h2><div id="listeCoursAdmin" class="liste"></div></section>
     </div>
     <script src="script.js"></script>
-    <script>
-    // Compteur pour Admin
-    document.addEventListener('DOMContentLoaded', () => {
-        document.getElementById('totalCours').innerText = COURS.length;
-        document.getElementById('totalDevoirs').innerText = DEVOIRS.length;
-        document.getElementById('listeCoursAdmin').innerHTML = COURS.map(c => `
-            <div class="card"><h4>${c.titre}</h4><p>${c.date}</p></div>
-        `).join('');
-    });
-    </script>
+    <script>document.addEventListener('DOMContentLoaded', () => { afficherCours('listeCoursAdmin', false); });</script>
 </body>
 </html>
