@@ -1,22 +1,37 @@
-if(!localStorage.getItem('ISTAGC_V102')){
+// FORCER LES DONNEES PAR DEFAUT AU 1ER CHARGEMENT
+if(!localStorage.getItem('ISTAGC_V103')){
     localStorage.clear();
     const DATA = {
-        COURS: [{id: 1, titre: "Mathématiques Générales", date: "2026-08-25T14:00", lien: "https://meet.google.com/ista-gc-math", en_live: false},{id: 2, titre: "Physique Batiment", date: "2026-08-26T10:00", lien: "https://meet.google.com/ista-gc-physique", en_live: false}],
-        DEVOIRS: [{id: 1, titre: "TD1 - Matrices", desc: "Faire les exos 1 à 5 page 12"},{id: 2, titre: "TP1 - Béton Armé", desc: "Rendu rapport + photos"}],
-        SUPPORTS: [], DEPOTS: [],
-        USERS: [{ email: "admin@ista-gc.com", password: "admin123", role: "admin" },{ email: "prof.math@ista-gc.com", password: "1234", role: "prof" },{ email: "etudiant.gc@ista-gc.com", password: "1234", role: "etudiant" }]
+        COURS: [
+            {id: 1, titre: "Mathématiques Générales", date: "2026-08-25T14:00", lien: "https://meet.google.com/ista-gc-math", en_live: false},
+            {id: 2, titre: "Physique Batiment", date: "2026-08-26T10:00", lien: "https://meet.google.com/ista-gc-physique", en_live: false}
+        ],
+        DEVOIRS: [
+            {id: 1, titre: "TD1 - Matrices", desc: "Faire les exos 1 à 5 page 12"},
+            {id: 2, titre: "TP1 - Béton Armé", desc: "Rendu rapport + photos"}
+        ],
+        SUPPORTS: [],
+        DEPOTS: [],
+        USERS: [
+            { email: "admin@ista-gc.com", password: "admin123", role: "admin" },
+            { email: "prof.math@ista-gc.com", password: "1234", role: "prof" },
+            { email: "etudiant.gc@ista-gc.com", password: "1234", role: "etudiant" }
+        ]
     }
     localStorage.setItem('COURS', JSON.stringify(DATA.COURS));
     localStorage.setItem('DEVOIRS', JSON.stringify(DATA.DEVOIRS));
     localStorage.setItem('SUPPORTS', JSON.stringify([]));
     localStorage.setItem('DEPOTS', JSON.stringify([]));
     localStorage.setItem('USERS', JSON.stringify(DATA.USERS));
-    localStorage.setItem('ISTAGC_V102', 'true');
+    localStorage.setItem('ISTAGC_V103', 'true');
 }
+
 function getData(){ return { COURS: JSON.parse(localStorage.getItem('COURS')), DEVOIRS: JSON.parse(localStorage.getItem('DEVOIRS')), SUPPORTS: JSON.parse(localStorage.getItem('SUPPORTS')), DEPOTS: JSON.parse(localStorage.getItem('DEPOTS')), USERS: JSON.parse(localStorage.getItem('USERS')) }}
 function saveData(d){ localStorage.setItem('COURS', JSON.stringify(d.COURS)); localStorage.setItem('DEVOIRS', JSON.stringify(d.DEVOIRS)); localStorage.setItem('SUPPORTS', JSON.stringify(d.SUPPORTS)); localStorage.setItem('DEPOTS', JSON.stringify(d.DEPOTS)); localStorage.setItem('USERS', JSON.stringify(d.USERS)); }
+
 const currentUser = JSON.parse(localStorage.getItem('currentUser'));
 setInterval(() => { if(document.getElementById('listeCours')) afficherCoursEtudiant(); if(document.getElementById('listeCoursProf')) afficherCoursProf(); }, 2000);
+
 document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.btn-logout').forEach(btn => { btn.addEventListener('click', logout); });
     if(document.getElementById('loginForm')){ loginForm.addEventListener('submit', (e) => { e.preventDefault(); let data = getData(); const user = data.USERS.find(u => u.email === email.value && u.password === password.value); if(user){ localStorage.setItem('currentUser', JSON.stringify(user)); window.location.href = user.role + '.html'; } else { error.innerText = '❌ Email ou mot de passe incorrect'; } }); }
@@ -24,6 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if(document.getElementById('listeCoursProf')){ afficherCoursProf(); remplirSelectCours('supportCours'); afficherSupportsProf(); afficherDepotsProf(); formAddSupport.addEventListener('submit', (e) => { e.preventDefault(); let data = getData(); const file = supportFile.files[0]; const reader = new FileReader(); reader.onload = () => { data.SUPPORTS.push({id: Date.now(), cours: supportCours.value, nom: supportNom.value, fichier: reader.result}); saveData(data); afficherSupportsProf(); e.target.reset(); } reader.readAsDataURL(file); }); }
     if(document.getElementById('listeCours')){ afficherCoursEtudiant(); afficherSupportsEtudiant(); afficherDevoirsEtudiant(); remplirSelectDevoir('depotDevoir'); formDepot.addEventListener('submit', (e) => { e.preventDefault(); let data = getData(); const file = depotFile.files[0]; const reader = new FileReader(); reader.onload = () => { data.DEPOTS.push({id: Date.now(), devoir: depotDevoir.value, etudiant: currentUser.email, fichier: reader.result, note: ""}); saveData(data); afficherDevoirsEtudiant(); e.target.reset(); alert("✅ Copie déposée!"); } reader.readAsDataURL(file); }); }
 });
+
 function afficherUsers(){ let data = getData(); if(document.getElementById('listeUsers')) listeUsers.innerHTML = data.USERS.map((u, i) => `<div class="card"><p><b>${u.email}</b> - ${u.role}</p>${u.role!== 'admin'? `<button onclick="supprimerUser(${i})" class="btn-danger">Supprimer</button>` : ''}</div>`).join(''); }
 function supprimerUser(i){ if(confirm("Supprimer?")){ let data = getData(); data.USERS.splice(i, 1); saveData(data); afficherUsers(); afficherStats(); } }
 function afficherCoursAdmin(){ let data = getData(); if(document.getElementById('listeCoursAdmin')) listeCoursAdmin.innerHTML = data.COURS.map((c, i) => `<div class="card"><h4>${c.titre}</h4><p>📅 ${c.date} ${c.en_live? '🔴 LIVE' : ''}</p><button onclick="supprimerCours(${i})" class="btn-danger">Supprimer</button></div>`).join(''); }

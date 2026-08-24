@@ -1,11 +1,33 @@
 <!DOCTYPE html>
 <html lang="fr">
-<head><meta charset="UTF-8"><title>Etudiant ISTA-GC</title><link rel="stylesheet" href="style.css"></head>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ISTA-GC | Espace Etudiant</title>
+    <link rel="stylesheet" href="style.css">
+</head>
 <body>
-<header><h1>🎓 Espace Étudiant</h1><button onclick="logout()" class="btn-logout">Déconnexion</button></header>
-<main>
-    <section><h2>🔴 Cours en Direct</h2><div id="listeCours"></div></section>
-    <section><h2>📁 Supports de Cours</h2><div id="listeSupportsEtudiant"></div></section>
-    <section><h2>📝 Mes Devoirs</h2><div id="listeDevoirsEtudiant"></div><form id="formDepot" class="card"><h4>Déposer une copie</h4><select id="depotDevoir" required></select><input type="file" id="depotFile" accept=".pdf,.docx" required><button type="submit" class="btn-success">Envoyer la copie</button></form></section>
-</main>
-<script src="script.js"></script></body></html>
+    <header>
+        <h1>🎓 Espace Etudiant</h1>
+        <button class="btn-logout">Déconnexion</button>
+    </header>
+    <div class="container">
+        <h3>🔴 Cours en Live</h3>
+        <div id="listeCours"></div>
+
+        <h3>📚 Supports de Cours</h3>
+        <div id="listeSupportsEtudiant"></div>
+
+        <h3>📝 Mes Devoirs</h3>
+        <div id="listeDevoirsEtudiant"></div>
+
+        <h3>📤 Déposer une Copie</h3>
+        <form id="formDepot">
+            <select id="depotDevoir" required></select>
+            <input type="file" id="depotFile" required>
+            <button type="submit">Déposer</button>
+        </form>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
