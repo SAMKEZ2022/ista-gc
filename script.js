@@ -1,15 +1,12 @@
-// ====== BASE DE DONNÉES FAKE ======
 const users = [
   { email: "prof.math@ista-gc.com", password: "1234", role: "prof" },
   { email: "etudiant.gc@ista-gc.com", password: "1234", role: "etudiant" }
 ];
 
-// ====== CONNEXION / DECONNEXION ======
 function login() {
   const email = document.getElementById('email').value;
   const password = document.getElementById('password').value;
   const user = users.find(u => u.email === email && u.password === password);
-  
   if(user) {
     localStorage.setItem('currentUser', JSON.stringify(user));
     if(user.role === 'prof') window.location.href = 'prof.html';
@@ -30,7 +27,6 @@ function checkAuth() {
   }
 }
 
-// ====== ONGLETS ======
 function showTab(tabName) {
   document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -38,14 +34,12 @@ function showTab(tabName) {
   event.target.classList.add('active');
 }
 
-// ====== MODULE DEVOIRS ======
 function publierDevoir() {
   const titre = document.getElementById('titreDevoir').value;
   const desc = document.getElementById('descDevoir').value;
   const date = document.getElementById('dateDevoir').value;
   const lienSujet = document.getElementById('lienSujet').value;
   if(!titre || !date || !lienSujet) return alert("Remplis Titre, Date et Lien Sujet");
-
   const devoirs = JSON.parse(localStorage.getItem('devoirs')) || [];
   devoirs.push({id: Date.now(), titre, desc, date, lienSujet});
   localStorage.setItem('devoirs', JSON.stringify(devoirs));
@@ -115,15 +109,13 @@ function afficherCopies() {
   `}).join('') || "<p>Aucune copie déposée</p>";
 }
 
-// ====== MODULE COURS EN LIVE ======
 function creerLive() {
   const titre = document.getElementById('liveTitre').value;
   const date = document.getElementById('liveDate').value;
   const lien = document.getElementById('liveLien').value;
   if(!titre || !date || !lien) return alert("Remplis tout stp");
-
   const lives = JSON.parse(localStorage.getItem('lives')) || [];
-  lives.push({id: Date.now(), titre, date, lien, statut: "programmé"});
+  lives.push({id: Date.now(), titre, date, lien});
   localStorage.setItem('lives', JSON.stringify(lives));
   alert("Live programmé avec succès");
   document.getElementById('liveTitre').value = '';
@@ -149,12 +141,10 @@ function afficherLivesEtudiant() {
   if(!div) return;
   const lives = JSON.parse(localStorage.getItem('lives')) || [];
   const now = new Date();
-  
   div.innerHTML = lives.sort((a,b) => new Date(a.date) - new Date(b.date)).map(l => {
     const dateLive = new Date(l.date);
     const diffMin = (dateLive - now) / 1000 / 60;
     let btn = '';
-
     if(diffMin > 10) {
       btn = `<button class="btn" disabled>À venir dans ${Math.floor(diffMin)} min</button>`;
     } else if(diffMin > 0 && diffMin <= 10) {
@@ -168,12 +158,10 @@ function afficherLivesEtudiant() {
     } else {
       btn = `<button class="btn" disabled>Terminé</button>`;
     }
-    
     return `<div class="card"><h4>${l.titre}</h4><p><b>Date:</b> ${dateLive.toLocaleString()}</p>${btn}</div>`
   }).join('') || "<p>Aucun cours en live prévu</p>";
 }
 
-// ====== LANCEMENT ======
 window.onload = function() {
   checkAuth();
   afficherDevoirsProf();
@@ -181,5 +169,5 @@ window.onload = function() {
   afficherCopies();
   afficherLivesProf();
   afficherLivesEtudiant();
-  setInterval(afficherLivesEtudiant, 60000); // actualise toutes les 1min pour la notif
+  setInterval(afficherLivesEtudiant, 60000);
 }
