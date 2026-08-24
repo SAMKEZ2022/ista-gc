@@ -6,18 +6,20 @@
     <title>Connexion - ISTA-GC</title>
     <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="body-login">
     <div class="container login-box">
         <h1>🎓 ISTA-GC</h1>
-        <h2>Espace de Connexion</h2>
+        <p class="subtitle">Plateforme de Cours en Ligne</p>
         <form id="loginForm">
-            <label for="email">Email</label>
-            <input type="email" id="email" required>
-
-            <label for="password">Mot de passe</label>
-            <input type="password" id="password" required>
-
-            <button type="submit">Se connecter</button>
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" placeholder="votre.email@ista-gc.com" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Mot de passe</label>
+                <input type="password" id="password" placeholder="••••••" required>
+            </div>
+            <button type="submit" class="btn-primary">Se connecter</button>
         </form>
         <p id="error"></p>
         <div class="info-box">

@@ -3,22 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Espace Professeur</title>
+    <title>Espace Professeur - ISTA-GC</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
         <header>
             <h1>👨‍🏫 Espace Professeur</h1>
-            <button class="btn-logout" onclick="logout()">Déconnexion</button>
+            <button class="btn-danger" onclick="logout()">Déconnexion</button>
         </header>
         
-        <h2>📢 Cours Programmés</h2>
-        <p>Pour ajouter un cours, modifiez le fichier `script.js` ligne `const COURS = [...]`</p>
-        <div id="listeCoursProf" class="liste"></div>
+        <section>
+            <h2>📢 Cours Programmés</h2>
+            <p class="help-text">Pour ajouter un cours, modifiez `script.js` ligne `const COURS = [...]` puis faites `git push`</p>
+            <div id="listeCoursProf" class="liste"></div>
+        </section>
 
-        <h2>📝 Devoirs Donnés</h2>
-        <div id="listeDevoirsProf" class="liste"></div>
+        <section>
+            <h2>📝 Devoirs Donnés</h2>
+            <div id="listeDevoirsProf" class="liste"></div>
+        </section>
     </div>
     <script src="script.js"></script>
 </body>

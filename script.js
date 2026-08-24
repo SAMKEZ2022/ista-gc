@@ -1,5 +1,4 @@
 // ================== 1. DONNEES ==================
-// POUR AJOUTER UN COURS : AJOUTE UN BLOC ICI ET FAIS GIT PUSH
 const COURS = [
     {
         titre: "Mathématiques Générales",
@@ -41,20 +40,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 localStorage.setItem('currentUser', JSON.stringify(user));
                 window.location.href = user.role === 'prof' ? 'prof.html' : 'etudiant.html';
             } else {
-                document.getElementById('error').innerText = 'Email ou mot de passe incorrect';
+                document.getElementById('error').innerText = '❌ Email ou mot de passe incorrect';
             }
         });
     }
 
     // AFFICHAGE ÉTUDIANT
     if(document.getElementById('listeCours')){
-        document.getElementById('listeCours').innerHTML = COURS.map(c => `
-            <div class="card">
-                <h4>${c.titre}</h4>
-                <p>📅 ${c.date}</p>
-                <a href="${c.lien}" target="_blank" class="btn-join">Rejoindre le Meet</a>
-            </div>
-        `).join('');
+        if(COURS.length === 0) {
+            document.getElementById('listeCours').innerHTML = '<p>Aucun cours programmé</p>';
+        } else {
+            document.getElementById('listeCours').innerHTML = COURS.map(c => `
+                <div class="card">
+                    <h4>${c.titre}</h4>
+                    <p>📅 ${c.date}</p>
+                    <a href="${c.lien}" target="_blank" class="btn-success">▶️ Rejoindre le Meet</a>
+                </div>
+            `).join('');
+        }
         document.getElementById('listeDevoirs').innerHTML = DEVOIRS.map(d => `
             <div class="card"><h4>${d.titre}</h4><p>${d.desc}</p></div>
         `).join('');
@@ -63,7 +66,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // AFFICHAGE PROF
     if(document.getElementById('listeCoursProf')){
         document.getElementById('listeCoursProf').innerHTML = COURS.map(c => `
-            <div class="card"><h4>${c.titre}</h4><p>${c.date}</p></div>
+            <div class="card">
+                <h4>${c.titre}</h4>
+                <p>${c.date}</p>
+                <a href="${c.lien}" target="_blank" class="btn-secondary">Voir le lien</a>
+            </div>
         `).join('');
         document.getElementById('listeDevoirsProf').innerHTML = DEVOIRS.map(d => `
             <div class="card"><h4>${d.titre}</h4><p>${d.desc}</p></div>
