@@ -1,29 +1,13 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Espace Professeur - ISTA-GC</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <div class="container">
-        <header>
-            <h1>👨‍🏫 Espace Professeur</h1>
-            <button class="btn-danger" onclick="logout()">Déconnexion</button>
-        </header>
-        
-        <section>
-            <h2>📢 Cours Programmés</h2>
-            <p class="help-text">Pour ajouter un cours, modifiez `script.js` ligne `const COURS = [...]` puis faites `git push`</p>
-            <div id="listeCoursProf" class="liste"></div>
-        </section>
+<section><h2>📁 Envoyer un Support de Cours</h2>
+    <form id="formAddSupport" class="card">
+        <select id="supportCours" required></select>
+        <input type="text" id="supportNom" placeholder="Nom du fichier: Chapitre 1.pdf" required>
+        <input type="file" id="supportFile" accept=".pdf,.docx,.pptx" required>
+        <button type="submit" class="btn-primary">Envoyer</button>
+    </form>
+    <div id="listeSupportsProf"></div>
+</section>
 
-        <section>
-            <h2>📝 Devoirs Donnés</h2>
-            <div id="listeDevoirsProf" class="liste"></div>
-        </section>
-    </div>
-    <script src="script.js"></script>
-</body>
-</html>
+<section><h2>📥 Copies Rendues</h2>
+    <div id="listeDepotsProf"></div>
+</section>

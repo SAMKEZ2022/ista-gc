@@ -1,28 +1,11 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Espace Étudiant - ISTA-GC</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <div class="container">
-        <header>
-            <h1>👨‍🎓 Espace Étudiant</h1>
-            <button class="btn-danger" onclick="logout()">Déconnexion</button>
-        </header>
-        
-        <section>
-            <h2>🔴 Cours en Live</h2>
-            <div id="listeCours" class="liste"></div>
-        </section>
+<section><h2>📁 Supports de Cours</h2><div id="listeSupportsEtudiant"></div></section>
 
-        <section>
-            <h2>📝 Devoirs à Rendre</h2>
-            <div id="listeDevoirs" class="liste"></div>
-        </section>
-    </div>
-    <script src="script.js"></script>
-</body>
-</html>
+<section><h2>📝 Mes Devoirs</h2>
+    <div id="listeDevoirsEtudiant"></div>
+    <form id="formDepot" class="card">
+        <h4>Déposer une copie</h4>
+        <select id="depotDevoir" required></select>
+        <input type="file" id="depotFile" accept=".pdf,.docx" required>
+        <button type="submit" class="btn-success">Envoyer la copie</button>
+    </form>
+</section>
