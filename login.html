@@ -2,17 +2,24 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Connexion - ISTA GC</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <title>Connexion - ISTA-GC</title>
+  <style>
+    body { font-family: Arial; background: #1a73e8; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+    .box { background: white; padding: 40px; border-radius: 10px; width: 350px; text-align: center; }
+    input, button { width: 100%; padding: 12px; margin: 10px 0; border-radius: 5px; border: 1px solid #ddd; box-sizing: border-box; }
+    button { background: #1a73e8; color: white; border: none; font-weight: bold; cursor: pointer; }
+    .role-btn { background: #34a853; }
+    #msg { color: red; min-height: 20px; }
+  </style>
 </head>
-<body class="bg-gray-100 flex items-center justify-center h-screen">
-  <div class="bg-white p-8 rounded shadow-md w-96">
-    <h2 class="text-2xl font-bold mb-6 text-center">Connexion</h2>
-    <input id="email" type="email" placeholder="Email" class="w-full p-2 border rounded mb-4">
-    <input id="password" type="password" placeholder="Mot de passe" class="w-full p-2 border rounded mb-4">
-    <button onclick="login()" class="w-full bg-green-600 text-white p-2 rounded hover:bg-green-700">Se connecter</button>
-    <p class="mt-4 text-center">Pas de compte ? <a href="register.html" class="text-blue-600">S'inscrire</a></p>
-    <p id="error" class="text-red-500 mt-2"></p>
+<body>
+  <div class="box">
+    <h2>ISTA-GC Plateforme</h2>
+    <input type="email" id="email" placeholder="Votre Email" required>
+    <input type="password" id="password" placeholder="Mot de passe" required>
+    <button class="role-btn" onclick="login('prof')">Se connecter en tant que Prof</button>
+    <button onclick="login('etudiant')">Se connecter en tant qu'Étudiant</button>
+    <p id="msg"></p>
   </div>
 
   <script type="module">
@@ -31,12 +38,23 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
 
-    window.login = () => {
+    window.login = (role) => {
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
+      const msg = document.getElementById('msg');
+      msg.textContent = "Connexion...";
+
       signInWithEmailAndPassword(auth, email, password)
-        .then(() => window.location.href = "espace-etudiant.html")
-        .catch(error => document.getElementById('error').innerText = error.message);
+        .then(() => {
+          if(role === 'prof'){
+            window.location.href = "prof.html";
+          } else {
+            window.location.href = "espace-etudiant.html";
+          }
+        })
+        .catch((error) => {
+          msg.textContent = "Email ou mot de passe incorrect";
+        });
     }
   </script>
 </body>
