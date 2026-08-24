@@ -1,22 +1,24 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Espace Étudiant - ISTA-GC</title>
-<link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Espace Étudiant</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div class="container">
-    <h1>🎓 Espace Étudiant</h1>
-    <button onclick="logout()">Déconnexion</button>
+    <div class="container">
+        <header>
+            <h1>👨‍🎓 Espace Étudiant</h1>
+            <button class="btn-logout" onclick="logout()">Déconnexion</button>
+        </header>
+        
+        <h2>🔴 Cours en Live</h2>
+        <div id="listeCours" class="liste"></div>
 
-    <h2>📚 Devoirs</h2>
-    <div id="listeDevoirs">Chargement...</div>
-
-    <h2>📡 Cours en Live</h2>
-    <div id="listeCours">Chargement...</div>
-</div>
-<script src="script.js"></script>
+        <h2>📝 Devoirs à Rendre</h2>
+        <div id="listeDevoirs" class="liste"></div>
+    </div>
+    <script src="script.js"></script>
 </body>
 </html>

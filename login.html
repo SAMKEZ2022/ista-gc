@@ -7,28 +7,24 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
+    <div class="container login-box">
         <h1>🎓 ISTA-GC</h1>
-        <h2>Connexion Plateforme</h2>
-        
+        <h2>Espace de Connexion</h2>
         <form id="loginForm">
-            <label>Email</label>
-            <input type="email" id="email" placeholder="prof.math@ista-gc.com" required>
-            
-            <label>Mot de passe</label>
-            <input type="password" id="password" placeholder="1234" required>
-            
+            <label for="email">Email</label>
+            <input type="email" id="email" required>
+
+            <label for="password">Mot de passe</label>
+            <input type="password" id="password" required>
+
             <button type="submit">Se connecter</button>
         </form>
-        
-        <p id="error" class="error"></p>
-        
-        <div class="info">
-            <p><b>Prof:</b> prof.math@ista-gc.com / 1234</p>
-            <p><b>Étudiant:</b> etudiant.gc@ista-gc.com / 1234</p>
+        <p id="error"></p>
+        <div class="info-box">
+            <p><b>Prof:</b> prof.math@ista-gc.com | 1234</p>
+            <p><b>Étudiant:</b> etudiant.gc@ista-gc.com | 1234</p>
         </div>
     </div>
-    
     <script src="script.js"></script>
 </body>
 </html>

@@ -1,66 +1,77 @@
-// ================== DONNEES ==================
+// ================== 1. DONNEES ==================
+// POUR AJOUTER UN COURS : AJOUTE UN BLOC ICI ET FAIS GIT PUSH
+const COURS = [
+    {
+        titre: "Mathématiques Générales",
+        date: "Lundi 24 Août - De 7:00 à 8:00",
+        lien: "https://meet.google.com/uza-ifet-gxj"
+    },
+    {
+        titre: "Génie Civil - Béton Armé",
+        date: "Mercredi 26 Août - De 10:00 à 12:00",
+        lien: "https://meet.google.com/abc-defg-hij"
+    }
+];
+
+const DEVOIRS = [
+    {
+        titre: "Devoir 1: Dimensionnement Poutre",
+        desc: "Rendu: Vendredi 29 Août 23h59"
+    }
+];
+
 const USERS = [
     { email: "prof.math@ista-gc.com", password: "1234", role: "prof" },
     { email: "etudiant.gc@ista-gc.com", password: "1234", role: "etudiant" }
 ];
 
-const COURS = [
-    {
-        titre: "Sans titre",
-        date: "Lundi 24 Août - De 7:00 à 8:00",
-        lien: "https://meet.google.com/uza-ifet-gxj"
-    }
-];
-
-const DEVOIRS = [];
-
-// ================== CONNEXION ==================
+// ================== 2. LOGIQUE ==================
 document.addEventListener('DOMContentLoaded', () => {
-    const form = document.getElementById('loginForm');
     
-    if(form){
-        form.addEventListener('submit', (e) => {
-            e.preventDefault(); // Bloque le rechargement
-            
+    // CONNEXION
+    const loginForm = document.getElementById('loginForm');
+    if(loginForm){
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value.trim();
-            const errorDiv = document.getElementById('error');
-            
             const user = USERS.find(u => u.email === email && u.password === password);
             
             if(user){
-                errorDiv.innerText = "";
                 localStorage.setItem('currentUser', JSON.stringify(user));
-                
-                // Redirection
-                if(user.role === 'prof'){
-                    window.location.href = 'prof.html';
-                } else {
-                    window.location.href = 'etudiant.html';
-                }
-                
+                window.location.href = user.role === 'prof' ? 'prof.html' : 'etudiant.html';
             } else {
-                errorDiv.innerText = '❌ Email ou mot de passe incorrect';
+                document.getElementById('error').innerText = 'Email ou mot de passe incorrect';
             }
         });
     }
+
+    // AFFICHAGE ÉTUDIANT
+    if(document.getElementById('listeCours')){
+        document.getElementById('listeCours').innerHTML = COURS.map(c => `
+            <div class="card">
+                <h4>${c.titre}</h4>
+                <p>📅 ${c.date}</p>
+                <a href="${c.lien}" target="_blank" class="btn-join">Rejoindre le Meet</a>
+            </div>
+        `).join('');
+        document.getElementById('listeDevoirs').innerHTML = DEVOIRS.map(d => `
+            <div class="card"><h4>${d.titre}</h4><p>${d.desc}</p></div>
+        `).join('');
+    }
+
+    // AFFICHAGE PROF
+    if(document.getElementById('listeCoursProf')){
+        document.getElementById('listeCoursProf').innerHTML = COURS.map(c => `
+            <div class="card"><h4>${c.titre}</h4><p>${c.date}</p></div>
+        `).join('');
+        document.getElementById('listeDevoirsProf').innerHTML = DEVOIRS.map(d => `
+            <div class="card"><h4>${d.titre}</h4><p>${d.desc}</p></div>
+        `).join('');
+    }
 });
 
-
-// ================== AFFICHAGE ÉTUDIANT ==================
-if(document.getElementById('listeCours')){
-    const divCours = document.getElementById('listeCours');
-    divCours.innerHTML = COURS.length > 0 ? COURS.map(c => `
-        <div class="card">
-            <h4>${c.titre}</h4>
-            <p>📅 ${c.date}</p>
-            <a href="${c.lien}" target="_blank" class="btn">Rejoindre le cours</a>
-        </div>
-    `).join('') : '<p>Aucun cours en live prévu</p>';
-}
-
-
-// ================== DECONNEXION ==================
+// DECONNEXION
 function logout(){
     localStorage.removeItem('currentUser');
     window.location.href = 'login.html';
