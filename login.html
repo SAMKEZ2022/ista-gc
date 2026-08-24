@@ -6,12 +6,12 @@
   <title>Connexion - ISTA-GC</title>
   <style>
     body { font-family: 'Segoe UI', Arial; background: linear-gradient(135deg, #1a73e8, #34a853); display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-  .box { background: white; padding: 40px; border-radius: 15px; width: 380px; text-align: center; box-shadow: 0 8px 25px rgba(0,0,0,0.2); }
+ .box { background: white; padding: 40px; border-radius: 15px; width: 380px; text-align: center; box-shadow: 0 8px 25px rgba(0,0,0,0.2); }
     h2 { color: #1a73e8; margin-bottom: 25px; }
     input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; }
     button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; font-size: 16px; }
-  .btn-prof { background: #34a853; color: white; }
-  .btn-etudiant { background: #1a73e8; color: white; }
+ .btn-prof { background: #34a853; color: white; }
+ .btn-etudiant { background: #1a73e8; color: white; }
     #msg { color: red; min-height: 20px; margin-top: 10px; }
   </style>
 </head>
@@ -28,27 +28,16 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyCv3W6M3RmbipblwJ65Q0uw99a2H3tStU0",
-      authDomain: "ista-gc.firebaseapp.com",
-      projectId: "ista-gc",
-      storageBucket: "ista-gc.firebasestorage.app",
-      messagingSenderId: "75501350048",
-      appId: "1:75501350048:web:8def71328c58dd6b7d6dc5",
-      measurementId: "G-B2Y89V3X35"
-    };
+    const firebaseConfig = {apiKey: "AIzaSyCv3W6M3RmbipblwJ65Q0uw99a2H3tStU0",authDomain: "ista-gc.firebaseapp.com",projectId: "ista-gc",storageBucket: "ista-gc.firebasestorage.app",messagingSenderId: "75501350048",appId: "1:75501350048:web:8def71328c58dd6b7d6dc5",measurementId: "G-B2Y89V3X35"};
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
-
     window.login = (role) => {
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
       const msg = document.getElementById('msg');
-      msg.textContent = "Connexion...";
       signInWithEmailAndPassword(auth, email, password)
-     .then(() => { window.location.href = role === 'prof'? "prof.html" : "espace-etudiant.html"; })
-     .catch(() => { msg.textContent = "❌ Email ou mot de passe incorrect"; });
+    .then(() => { window.location.href = role === 'prof'? "prof.html" : "espace-etudiant.html"; })
+    .catch(() => { msg.textContent = "❌ Email ou mot de passe incorrect"; });
     }
   </script>
 </body>
