@@ -22,19 +22,33 @@
                 <h4>Ajouter un utilisateur</h4>
                 <input type="email" id="newEmail" placeholder="Email" required>
                 <input type="text" id="newPassword" placeholder="Mot de passe" required>
-                <select id="newRole" required>
-                    <option value="">Choisir le rôle</option>
-                    <option value="prof">Professeur</option>
-                    <option value="etudiant">Étudiant</option>
-                </select>
+                <select id="newRole" required><option value="">Choisir le rôle</option><option value="prof">Professeur</option><option value="etudiant">Étudiant</option></select>
                 <button type="submit" class="btn-primary">Ajouter</button>
             </form>
             <div id="listeUsers" class="liste"></div>
         </section>
 
-        <section><h2>📢 Tous les Cours</h2><div id="listeCoursAdmin" class="liste"></div></section>
+        <section><h2>📢 Gestion des Cours</h2>
+            <form id="formAddCours" class="card">
+                <h4>Ajouter un cours</h4>
+                <input type="text" id="newTitre" placeholder="Titre du cours" required>
+                <input type="text" id="newDate" placeholder="Ex: Lundi 25 Août - De 8:00 à 10:00" required>
+                <input type="url" id="newLien" placeholder="Lien Google Meet https://..." required>
+                <button type="submit" class="btn-primary">Ajouter le cours</button>
+            </form>
+            <div id="listeCoursAdmin" class="liste"></div>
+        </section>
+
+        <section><h2>📝 Gestion des Devoirs</h2>
+            <form id="formAddDevoir" class="card">
+                <h4>Ajouter un devoir</h4>
+                <input type="text" id="newTitreDevoir" placeholder="Titre du devoir" required>
+                <input type="text" id="newDescDevoir" placeholder="Date de rendu + Consignes" required>
+                <button type="submit" class="btn-primary">Ajouter le devoir</button>
+            </form>
+            <div id="listeDevoirsAdmin" class="liste"></div>
+        </section>
     </div>
     <script src="script.js"></script>
-    <script>document.addEventListener('DOMContentLoaded', () => { afficherCours('listeCoursAdmin', false); });</script>
 </body>
 </html>
