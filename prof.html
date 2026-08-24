@@ -2,178 +2,106 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>ISTAGC - Espace Prof</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Espace Prof - ISTA-GC</title>
   <style>
-    * { box-sizing: border-box; font-family: Arial, sans-serif; }
-    body { background: linear-gradient(135deg, #28a745, #20c997); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
-   .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 8px 25px rgba(0,0,0,0.2); width: 600px; }
-    h2 { text-align: center; color: #28a745; }
-    input, select, textarea, button { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 8px; font-size: 15px; }
-    button { background: #28a745; color: white; border: none; cursor: pointer; font-weight: bold; }
-    button:hover { background: #218838; }
-   .tabs { display: flex; gap: 10px; }
-   .tabs button { width: 50%; background: #ccc; color: black; }
-   .tabs button.active { background: #28a745; color: white; }
-   .hidden { display: none; }
-   .item { border: 1px solid #ddd; padding: 15px; border-radius: 8px; margin-top: 10px; background: #f8f9fa; }
-    a { color: #007bff; text-decoration: none; }
-    #success { text-align: center; font-weight: bold; margin-top: 10px; min-height: 20px; }
+    body { font-family: Arial, sans-serif; background: #f4f4f4; padding: 20px; }
+    .container { max-width: 600px; margin: auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    h1 { color: #1a73e8; text-align: center; }
+    input, select, button { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
+    button { background: #1a73e8; color: white; font-weight: bold; cursor: pointer; border: none; }
+    button:hover { background: #1558b0; }
+    #message { text-align: center; font-weight: bold; margin-top: 15px; }
+    small { color: #555; }
   </style>
 </head>
 <body>
 
-  <div class="container" id="login-container">
-    <h2>Connexion Prof</h2>
-    <input type="email" id="email" placeholder="Email du Prof" value="prof.math@ista-gc.com">
-    <input type="password" id="password" placeholder="Mot de passe" value="Prof123">
-    <button onclick="login()">Se connecter</button>
-    <p id="login-error" style="color:red; text-align:center;"></p>
+  <div class="container">
+    <h1>Publier un Cours</h1>
+    <p>1. Mettez votre PDF sur Google Drive 2. Mettez en "Lecteur" 3. Collez le lien ici</p>
+    
+    <form id="form-cours">
+      <input type="text" id="titre" placeholder="Titre du cours: Ex: Chapitre 1 - Matrice" required>
+      
+      <select id="matiere" required>
+        <option value="">-- Choisir la matière --</option>
+        <option value="Mathematiques">Mathématiques</option>
+        <option value="Physique">Physique</option>
+        <option value="Informatique">Informatique</option>
+        <option value="Electronique">Electronique</option>
+      </select>
+
+      <input type="url" id="lien" placeholder="Collez le lien de partage Google Drive ici" required>
+      <small><b>Important:</b> Sur Drive: Clic droit > Partager > Général > "Toute personne disposant du lien" > Rôle: Lecteur</small>
+
+      <button type="submit">Publier le Cours</button>
+    </form>
+    <p id="message"></p>
   </div>
 
-  <div class="container hidden" id="prof-container">
-    <h2>Espace Professeur</h2>
-    <button onclick="logout()" style="background: red;">Se déconnecter</button>
+  <script type="module">
+    // 1. IMPORT FIREBASE
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-    <div class="tabs">
-      <button id="btnDevoir" class="active" onclick="showTab('devoir')">Créer Devoir</button>
-      <button id="btnCours" onclick="showTab('cours')">Uploader Cours</button>
-    </div>
-
-    <div id="tab-devoir">
-      <h3>Nouveau Devoir</h3>
-      <input type="text" id="titreDevoir" placeholder="Titre du devoir">
-      <textarea id="descDevoir" placeholder="Consignes" rows="3"></textarea>
-      <select id="classeDevoir"><option value="L1">L1</option><option value="L2">L2</option><option value="L3">L3</option></select>
-      <input type="date" id="dateLimite">
-      <label>Fichier du devoir: </label>
-      <input type="file" id="fichierDevoir">
-      <button onclick="creerDevoir()">Publier le Devoir</button>
-    </div>
-
-    <div id="tab-cours" class="hidden">
-      <h3>Nouveau Cours</h3>
-      <input type="text" id="titreCours" placeholder="Titre du cours">
-      <select id="classeCours"><option value="L1">L1</option><option value="L2">L2</option><option value="L3">L3</option></select>
-      <label>Fichier du cours PDF/PPT: </label>
-      <input type="file" id="fichierCours">
-      <button onclick="uploaderCours()">Publier le Cours</button>
-    </div>
-    <p id="success"></p>
-
-    <h3>Mes Publications</h3>
-    <div id="liste-items">Chargement...</div>
-  </div>
-
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
-
-  <script>
+    // 2. COLLE TA CONFIG FIREBASE ICI
     const firebaseConfig = {
-      apiKey: "AIzaSyCv3W6M3RmbipblwJ65Q0uw99a2H3tStU0",
+      apiKey: "TA_CLE_API",
       authDomain: "ista-gc.firebaseapp.com",
       projectId: "ista-gc",
-      storageBucket: "ista-gc.appspot.com", // <-- CORRIGÉ ICI
-      messagingSenderId: "75501350048",
-      appId: "1:75501350048:web:8def71328c58dd6b7d6dc5"
+      storageBucket: "ista-gc.appspot.com",
+      messagingSenderId: "TON_ID",
+      appId: "TON_APP_ID"
     };
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
-    const storage = firebase.storage();
 
-    function login() {
-      document.getElementById('login-error').innerText = "";
-      auth.signInWithEmailAndPassword(document.getElementById('email').value, document.getElementById('password').value)
-       .then(() => {
-          document.getElementById('login-container').classList.add('hidden');
-          document.getElementById('prof-container').classList.remove('hidden');
-          chargerItems();
-        })
-       .catch(error => {
-          document.getElementById('login-error').innerText = "Erreur: " + error.message;
-        });
-    }
+    // 3. INITIALISATION
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth();
 
-    function logout() { auth.signOut().then(() => location.reload()); }
+    const form = document.getElementById('form-cours');
+    const msg = document.getElementById('message');
 
-    function showTab(tab) {
-      document.getElementById('tab-devoir').classList.add('hidden');
-      document.getElementById('tab-cours').classList.add('hidden');
-      document.getElementById('btnDevoir').classList.remove('active');
-      document.getElementById('btnCours').classList.remove('active');
-      document.getElementById('tab-'+tab).classList.remove('hidden');
-      document.getElementById('btn'+tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
-      document.getElementById('success').innerText = "";
-    }
+    // 4. SECURITE: Redirige si pas connecté
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        window.location.href = "login.html"; 
+      }
+    });
 
-    async function uploadFile(inputId, folder) {
-      const fichier = document.getElementById(inputId).files[0];
-      if(!fichier) throw new Error("Aucun fichier sélectionné");
+    // 5. LOGIQUE D'ENVOI
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      msg.textContent = "Publication en cours...";
+      msg.style.color = "orange";
 
-      const ref = storage.ref(`${folder}/${Date.now()}_${fichier.name}`);
-      const snap = await ref.put(fichier);
-      return await snap.ref.getDownloadURL();
-    }
+      const titre = document.getElementById('titre').value;
+      const lien = document.getElementById('lien').value;
+      const matiere = document.getElementById('matiere').value;
 
-    async function creerDevoir() {
-      document.getElementById('success').style.color = "blue";
-      document.getElementById('success').innerText = "Publication en cours...";
       try {
-        const url = await uploadFile('fichierDevoir', 'devoirs');
-        const data = {
-          type: "devoir", titre: document.getElementById('titreDevoir').value,
-          description: document.getElementById('descDevoir').value, classe: document.getElementById('classeDevoir').value,
-          dateLimite: document.getElementById('dateLimite').value, fichierUrl: url,
-          profId: auth.currentUser.uid, dateCreation: new Date()
-        };
-        await db.collection("publications").add(data);
-        document.getElementById('success').style.color = "green";
-        document.getElementById('success').innerText = "Devoir publié avec succès!";
-        chargerItems();
+        // On enregistre SEULEMENT dans Firestore
+        await addDoc(collection(db, "cours"), {
+          titre: titre,
+          lienPDF: lien, // Le lien Drive
+          matiere: matiere,
+          date: serverTimestamp(),
+          profId: auth.currentUser.uid
+        });
+        
+        msg.textContent = "✅ Cours publié avec succès!";
+        msg.style.color = "green";
+        form.reset();
+
       } catch (error) {
-        document.getElementById('success').style.color = "red";
-        document.getElementById('success').innerText = "Erreur: " + error.message;
+        msg.textContent = "❌ Erreur: " + error.message;
+        msg.style.color = "red";
         console.error(error);
       }
-    }
-
-    async function uploaderCours() {
-      document.getElementById('success').style.color = "blue";
-      document.getElementById('success').innerText = "Upload en cours...";
-      try {
-        const url = await uploadFile('fichierCours', 'cours');
-        const data = {
-          type: "cours", titre: document.getElementById('titreCours').value,
-          classe: document.getElementById('classeCours').value, fichierUrl: url,
-          profId: auth.currentUser.uid, dateCreation: new Date()
-        };
-        await db.collection("publications").add(data);
-        document.getElementById('success').style.color = "green";
-        document.getElementById('success').innerText = "Cours publié avec succès!";
-        chargerItems();
-      } catch (error) {
-        document.getElementById('success').style.color = "red";
-        document.getElementById('success').innerText = "Erreur: " + error.message;
-        console.error(error);
-      }
-    }
-
-    function chargerItems() {
-      db.collection("publications").where("profId", "==", auth.currentUser.uid).orderBy("dateCreation", "desc")
-       .onSnapshot((snapshot) => {
-          let html = "";
-          snapshot.forEach(doc => {
-            const d = doc.data();
-            html += `<div class="item"><b>[${d.type.toUpperCase()}] ${d.titre}</b><br>Classe: ${d.classe}`;
-            if(d.dateLimite) html += `<br>Limite: ${d.dateLimite}`;
-            if(d.fichierUrl) html += `<br><a href="${d.fichierUrl}" target="_blank">📎 Télécharger le fichier</a>`;
-            html += `</div>`;
-          });
-          document.getElementById('liste-items').innerHTML = html || "Aucune publication";
-        });
-    }
+    });
   </script>
+
 </body>
 </html>
