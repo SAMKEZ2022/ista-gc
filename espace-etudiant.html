@@ -1,30 +1,4 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8">
-  <title>Espace Étudiant - ISTA-GC</title>
-  <style>
-    body { font-family: 'Segoe UI', Arial; background: #f4f4f4; margin: 0; }
-    header { background: #1a73e8; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
-.container { max-width: 1000px; margin: 30px auto; padding: 20px; }
- .tabs { display: flex; margin-bottom: 20px; border-radius: 8px; overflow: hidden; }
- .tab { flex: 1; padding: 12px; background: #ddd; border: none; cursor: pointer; font-weight: bold; font-size: 16px; }
- .tab.active { background: #1a73e8; color: white; }
-.card { background: white; padding: 25px; margin-bottom: 20px; border-radius: 12px; }
-.btn-download { display: inline-block; padding: 10px 20px; background: #34a853; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; }
-.btn-deposer { display: inline-block; padding: 10px 20px; background: #1a73e8; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
-.date-limite { color: #d93025; font-weight: bold; }
-  #logout { width: auto; background: red; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; }
-  </style>
-</head>
-<body>
-  <header><h2>📖 Espace Étudiant</h2><button id="logout">Déconnexion</button></header>
-  <div class="container">
-    <div class="tabs"><button class="tab active" onclick="showTab('cours')">Cours</button><button class="tab" onclick="showTab('devoirs')">Devoirs</button></div>
-    <div id="liste-cours">Chargement...</div>
-    <div id="liste-devoirs" style="display:none;">Chargement...</div>
-  </div>
-  <script type="module">
+<script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getFirestore, collection, getDocs, query, orderBy, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
     import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
@@ -38,22 +12,48 @@
     let userEmail = "";
 
     onAuthStateChanged(auth, (user) => {
-      if (user) { userEmail = user.email; chargerCours(); chargerDevoirs(); } else { window.location.href = "login.html"; }
+      if (user) { 
+        userEmail = user.email; 
+        chargerCours(); 
+        chargerDevoirs(); 
+      } else { 
+        window.location.href = "login.html"; 
+      }
     });
-    document.getElementById('logout').addEventListener('click', () => { signOut(auth).then(() => window.location.href = "login.html"); });
-    window.showTab = (tab) => { document.getElementById('liste-cours').style.display = tab === 'cours'? 'block' : 'none'; document.getElementById('liste-devoirs').style.display = tab === 'devoirs'? 'block' : 'none'; }
 
-    async function chargerCours() { /*... même code que avant... */ }
-    async function chargerDevoirs() {
-      const q = query(collection(db, "devoirs"), orderBy("date", "desc"));
-      const snap = await getDocs(q);
-      let html = snap.empty? "<p>Aucun devoir.</p>" : "";
-      snap.forEach(doc => {
-        const d = doc.data();
-        html += `<div class="card"><h3>${d.titre}</h3><p><b>Matière:</b> ${d.matiere}</p><p>${d.description}</p><p class="date-limite">📅 Date limite: ${d.dateLimite}</p>${d.lienPDF?`<a href="${d.lienPDF}" target="_blank" class="btn-download">📥 Sujet</a>`:""}<div style="margin-top:15px;"><input type="file" id="file-${doc.id}" accept=".pdf"><button class="btn-deposer" onclick="deposerCopie('${doc.id}', '${d.titre}')">📤 Déposer</button></div></div>`;
-      });
-      document.getElementById('liste-devoirs').innerHTML = html;
+    document.getElementById('logout').addEventListener('click', () => { signOut(auth).then(() => window.location.href = "login.html"); });
+    
+    window.showTab = (tab) => { 
+      document.getElementById('liste-cours').style.display = tab === 'cours'? 'block' : 'none'; 
+      document.getElementById('liste-devoirs').style.display = tab === 'devoirs'? 'block' : 'none'; 
     }
+
+    async function chargerCours() {
+      try {
+        const q = query(collection(db, "cours"), orderBy("date", "desc"));
+        const snap = await getDocs(q);
+        let html = snap.empty? "<p>Aucun cours publié.</p>" : "";
+        snap.forEach(doc => {
+          const c = doc.data();
+          html += `<div class="card"><h3>${c.titre}</h3><p><b>Matière:</b> ${c.matiere}</p><a href="${c.lien}" target="_blank" class="btn-download">📥 Télécharger le PDF</a></div>`;
+        });
+        document.getElementById('liste-cours').innerHTML = html;
+      } catch(e) { document.getElementById('liste-cours').innerHTML = "❌ Erreur: Vérifie les règles Firebase"; }
+    }
+
+    async function chargerDevoirs() {
+      try {
+        const q = query(collection(db, "devoirs"), orderBy("date", "desc"));
+        const snap = await getDocs(q);
+        let html = snap.empty? "<p>Aucun devoir publié.</p>" : "";
+        snap.forEach(doc => {
+          const d = doc.data();
+          html += `<div class="card"><h3>${d.titre}</h3><p><b>Matière:</b> ${d.matiere}</p><p>${d.description}</p><p class="date-limite">📅 Date limite: ${d.dateLimite}</p>${d.lienPDF?`<a href="${d.lienPDF}" target="_blank" class="btn-download">📥 Sujet</a>`:""}<div style="margin-top:15px;"><input type="file" id="file-${doc.id}" accept=".pdf"><button class="btn-deposer" onclick="deposerCopie('${doc.id}', '${d.titre}')">📤 Déposer</button></div></div>`;
+        });
+        document.getElementById('liste-devoirs').innerHTML = html;
+      } catch(e) { document.getElementById('liste-devoirs').innerHTML = "❌ Erreur: Vérifie les règles Firebase"; }
+    }
+
     window.deposerCopie = async (devoirId, titreDevoir) => {
       const fileInput = document.getElementById(`file-${devoirId}`);
       const file = fileInput.files[0];
@@ -65,5 +65,3 @@
       alert("✅ Copie déposée avec succès!");
     }
   </script>
-</body>
-</html>
