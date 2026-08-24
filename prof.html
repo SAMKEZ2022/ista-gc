@@ -4,25 +4,49 @@
   <meta charset="UTF-8">
   <title>Espace Prof - ISTA-GC</title>
   <style>
-    body { font-family: Arial; background: #f4f4f4; margin: 0; }
-    header { background: #1a73e8; color: white; padding: 15px 20px; display: flex; justify-content: space-between; }
-    .container { max-width: 600px; margin: 30px auto; background: white; padding: 30px; border-radius: 8px; }
-    input, button { width: 100%; padding: 12px; margin: 10px 0; border-radius: 5px; border: 1px solid #ddd; box-sizing: border-box; }
-    button { background: #34a853; color: white; border: none; font-weight: bold; cursor: pointer; }
-    #logout { width: auto; background: red; }
+    body { font-family: 'Segoe UI', Arial; background: #f4f4f4; margin: 0; }
+    header { background: #1a73e8; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
+ .container { max-width: 700px; margin: 30px auto; background: white; padding: 35px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+  .tabs { display: flex; margin-bottom: 20px; border-radius: 8px; overflow: hidden; }
+  .tab { flex: 1; padding: 12px; background: #ddd; border: none; cursor: pointer; font-weight: bold; font-size: 16px; }
+  .tab.active { background: #34a853; color: white; }
+    input, textarea { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; font-size: 15px; }
+    button { width: 100%; padding: 14px; background: #34a853; color: white; border: none; font-weight: bold; cursor: pointer; border-radius: 8px; font-size: 16px; }
+    #logout { width: auto; background: red; padding: 10px 20px; }
+    #status { margin-top: 15px; font-weight: bold; text-align: center; min-height: 20px; }
+ .info { font-size: 13px; color: #555; margin-top: -5px; }
   </style>
 </head>
 <body>
   <header>
-    <h2>📚 Espace Prof</h2>
+    <h2>📚 Espace Professeur</h2>
     <button id="logout">Déconnexion</button>
   </header>
+
   <div class="container">
-    <h3>Publier un Nouveau Cours</h3>
-    <input type="text" id="titre" placeholder="Titre du cours">
-    <input type="text" id="matiere" placeholder="Matière">
-    <input type="url" id="lienPDF" placeholder="Lien Google Drive du PDF">
-    <button id="btnPublier">Publier le Cours</button>
+    <div class="tabs">
+      <button class="tab active" onclick="showTab('cours')">Publier un Cours</button>
+      <button class="tab" onclick="showTab('devoir')">Publier un Devoir</button>
+    </div>
+
+    <div id="cours-form">
+      <h3>Nouveau Cours</h3>
+      <input type="text" id="titreCours" placeholder="Titre du cours">
+      <input type="text" id="matiereCours" placeholder="Matière">
+      <input type="url" id="lienCours" placeholder="Lien Google Drive du PDF">
+      <p class="info">Collez le lien normal de partage. Il sera converti automatiquement.</p>
+      <button onclick="publier('cours')">Publier le Cours</button>
+    </div>
+
+    <div id="devoir-form" style="display:none;">
+      <h3>Nouveau Devoir</h3>
+      <input type="text" id="titreDevoir" placeholder="Titre du devoir">
+      <input type="text" id="matiereDevoir" placeholder="Matière">
+      <input type="date" id="dateLimite">
+      <textarea id="description" placeholder="Description / Consignes du devoir" rows="4"></textarea>
+      <input type="url" id="lienDevoir" placeholder="Lien Google Drive du sujet PDF - optionnel">
+      <button onclick="publier('devoir')">Publier le Devoir</button>
+    </div>
     <div id="status"></div>
   </div>
 
@@ -44,28 +68,55 @@
     const db = getFirestore(app);
     const auth = getAuth(app);
 
-    onAuthStateChanged(auth, (user) => {
-      if (!user) { window.location.href = "login.html"; }
-    });
+    onAuthStateChanged(auth, (user) => { if (!user) { window.location.href = "login.html"; } });
+    document.getElementById('logout').addEventListener('click', () => { signOut(auth).then(() => window.location.href = "login.html"); });
 
-    document.getElementById('logout').addEventListener('click', () => {
-      signOut(auth).then(() => window.location.href = "login.html");
-    });
+    window.showTab = (tab) => {
+      document.getElementById('cours-form').style.display = tab === 'cours'? 'block' : 'none';
+      document.getElementById('devoir-form').style.display = tab === 'devoir'? 'block' : 'none';
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      event.target.classList.add('active');
+    }
 
-    document.getElementById('btnPublier').addEventListener('click', async () => {
-      const status = document.getElementById('status');
-      try {
-        await addDoc(collection(db, "cours"), {
-          titre: document.getElementById('titre').value,
-          matiere: document.getElementById('matiere').value,
-          lienPDF: document.getElementById('lienPDF').value,
-          date: serverTimestamp()
-        });
-        status.style.color = "green"; status.textContent = "✅ Cours publié!";
-      } catch (error) {
-        status.style.color = "red"; status.textContent = "❌ Erreur: " + error.message;
+    function convertirLienDrive(lien) {
+      if(lien && lien.includes("drive.google.com/file/d/")){
+        const fileId = lien.split("/d/")[1].split("/")[0];
+        return `https://drive.google.com/uc?export=download&id=${fileId}`;
       }
-    });
+      return lien;
+    }
+
+    window.publier = async (type) => {
+      const status = document.getElementById('status');
+      status.textContent = "Publication...";
+      try {
+        if(type === 'cours'){
+          await addDoc(collection(db, "cours"), {
+            titre: document.getElementById('titreCours').value,
+            matiere: document.getElementById('matiereCours').value,
+            lienPDF: convertirLienDrive(document.getElementById('lienCours').value),
+            date: serverTimestamp()
+          });
+          status.textContent = "✅ Cours publié!";
+          document.getElementById('titreCours').value = ""; document.getElementById('matiereCours').value = ""; document.getElementById('lienCours').value = "";
+        } else {
+          await addDoc(collection(db, "devoirs"), {
+            titre: document.getElementById('titreDevoir').value,
+            matiere: document.getElementById('matiereDevoir').value,
+            description: document.getElementById('description').value,
+            dateLimite: document.getElementById('dateLimite').value,
+            lienPDF: convertirLienDrive(document.getElementById('lienDevoir').value),
+            date: serverTimestamp()
+          });
+          status.textContent = "✅ Devoir publié!";
+          document.getElementById('titreDevoir').value = ""; document.getElementById('matiereDevoir').value = ""; document.getElementById('description').value = ""; document.getElementById('dateLimite').value = ""; document.getElementById('lienDevoir').value = "";
+        }
+        status.style.color = "green";
+      } catch (error) {
+        status.style.color = "red";
+        status.textContent = "❌ Erreur: " + error.message;
+      }
+    }
   </script>
 </body>
 </html>

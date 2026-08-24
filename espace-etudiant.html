@@ -4,22 +4,32 @@
   <meta charset="UTF-8">
   <title>Espace Étudiant - ISTA-GC</title>
   <style>
-    body { font-family: Arial; background: #f4f4f4; margin: 0; }
-    header { background: #1a73e8; color: white; padding: 15px 20px; display: flex; justify-content: space-between; }
-    .container { max-width: 900px; margin: 20px auto; padding: 20px; }
-    .cours-card { background: white; padding: 20px; margin-bottom: 15px; border-radius: 8px; }
-    .btn-download { padding: 10px 15px; background: #34a853; color: white; text-decoration: none; border-radius: 5px; }
-    #logout { width: auto; background: red; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; }
+    body { font-family: 'Segoe UI', Arial; background: #f4f4f4; margin: 0; }
+    header { background: #1a73e8; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
+ .container { max-width: 1000px; margin: 30px auto; padding: 20px; }
+  .tabs { display: flex; margin-bottom: 20px; border-radius: 8px; overflow: hidden; }
+  .tab { flex: 1; padding: 12px; background: #ddd; border: none; cursor: pointer; font-weight: bold; font-size: 16px; }
+  .tab.active { background: #1a73e8; color: white; }
+ .card { background: white; padding: 25px; margin-bottom: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+ .card h3 { margin: 0 0 10px 0; color: #1a73e8; }
+ .btn-download { display: inline-block; padding: 10px 20px; background: #34a853; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; margin-top: 10px; }
+ .btn-download:hover { background: #2c8a47; }
+ .date-limite { color: #d93025; font-weight: bold; }
+    #logout { width: auto; background: red; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; }
   </style>
 </head>
 <body>
   <header>
-    <h2>📚 Espace Étudiant</h2>
+    <h2>📖 Espace Étudiant</h2>
     <button id="logout">Déconnexion</button>
   </header>
   <div class="container">
-    <h3>Liste des Cours</h3>
+    <div class="tabs">
+      <button class="tab active" onclick="showTab('cours')">Cours</button>
+      <button class="tab" onclick="showTab('devoirs')">Devoirs</button>
+    </div>
     <div id="liste-cours">Chargement...</div>
+    <div id="liste-devoirs" style="display:none;">Chargement...</div>
   </div>
 
   <script type="module">
@@ -41,22 +51,37 @@
     const auth = getAuth(app);
 
     onAuthStateChanged(auth, (user) => {
-      if (user) { chargerCours(); } else { window.location.href = "login.html"; }
+      if (user) { chargerCours(); chargerDevoirs(); } else { window.location.href = "login.html"; }
     });
+    document.getElementById('logout').addEventListener('click', () => { signOut(auth).then(() => window.location.href = "login.html"); });
 
-    document.getElementById('logout').addEventListener('click', () => {
-      signOut(auth).then(() => window.location.href = "login.html");
-    });
+    window.showTab = (tab) => {
+      document.getElementById('liste-cours').style.display = tab === 'cours'? 'block' : 'none';
+      document.getElementById('liste-devoirs').style.display = tab === 'devoirs'? 'block' : 'none';
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      event.target.classList.add('active');
+    }
 
     async function chargerCours() {
       const q = query(collection(db, "cours"), orderBy("date", "desc"));
       const snap = await getDocs(q);
-      let html = snap.empty ? "<p>Aucun cours.</p>" : "";
+      let html = snap.empty? "<p>Aucun cours disponible.</p>" : "";
       snap.forEach(doc => {
         const c = doc.data();
-        html += `<div class="cours-card"><h3>${c.titre}</h3><p>${c.matiere}</p><a href="${c.lienPDF}" target="_blank" class="btn-download">Télécharger</a></div>`;
+        html += `<div class="card"><h3>${c.titre}</h3><p><b>Matière:</b> ${c.matiere}</p><a href="${c.lienPDF}" target="_blank" class="btn-download">📥 Télécharger le PDF</a></div>`;
       });
       document.getElementById('liste-cours').innerHTML = html;
+    }
+
+    async function chargerDevoirs() {
+      const q = query(collection(db, "devoirs"), orderBy("date", "desc"));
+      const snap = await getDocs(q);
+      let html = snap.empty? "<p>Aucun devoir publié.</p>" : "";
+      snap.forEach(doc => {
+        const d = doc.data();
+        html += `<div class="card"><h3>${d.titre}</h3><p><b>Matière:</b> ${d.matiere}</p><p>${d.description}</p><p class="date-limite">📅 Date limite: ${d.dateLimite}</p>${d.lienPDF?`<a href="${d.lienPDF}" target="_blank" class="btn-download">📥 Télécharger le sujet</a>`:""}</div>`;
+      });
+      document.getElementById('liste-devoirs').innerHTML = html;
     }
   </script>
 </body>
