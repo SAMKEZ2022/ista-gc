@@ -1,6 +1,6 @@
-// FORCER LE RESET 1 FOIS SI C'EST VIDE
-if(!localStorage.getItem('ISTAGC_V92_LOADED')){
-    localStorage.clear(); // On vide tout l'ancien cache
+// FORCER LES DONNEES PAR DEFAUT AU 1ER CHARGEMENT
+if(!localStorage.getItem('ISTAGC_LOADED_V10')){
+    localStorage.clear();
     const DONNEES_DEFAUT = {
         COURS: [
             {id: 1, titre: "Mathématiques Générales", date: "2026-08-25T14:00", lien: "https://meet.google.com/ista-gc-math", en_live: false},
@@ -23,57 +23,21 @@ if(!localStorage.getItem('ISTAGC_V92_LOADED')){
     localStorage.setItem('SUPPORTS', JSON.stringify([]));
     localStorage.setItem('DEPOTS', JSON.stringify([]));
     localStorage.setItem('USERS', JSON.stringify(DONNEES_DEFAUT.USERS));
-    localStorage.setItem('ISTAGC_V92_LOADED', 'true'); // Pour ne pas reset à chaque fois
+    localStorage.setItem('ISTAGC_LOADED_V10', 'true');
 }
 
-function getData(){
-    return {
-        COURS: JSON.parse(localStorage.getItem('COURS')),
-        DEVOIRS: JSON.parse(localStorage.getItem('DEVOIRS')),
-        SUPPORTS: JSON.parse(localStorage.getItem('SUPPORTS')),
-        DEPOTS: JSON.parse(localStorage.getItem('DEPOTS')),
-        USERS: JSON.parse(localStorage.getItem('USERS'))
-    }
-}
-function saveData(data){ 
-    localStorage.setItem('COURS', JSON.stringify(data.COURS)); 
-    localStorage.setItem('DEVOIRS', JSON.stringify(data.DEVOIRS)); 
-    localStorage.setItem('SUPPORTS', JSON.stringify(data.SUPPORTS)); 
-    localStorage.setItem('DEPOTS', JSON.stringify(data.DEPOTS)); 
-    localStorage.setItem('USERS', JSON.stringify(data.USERS)); 
-}
+function getData(){ return { COURS: JSON.parse(localStorage.getItem('COURS')), DEVOIRS: JSON.parse(localStorage.getItem('DEVOIRS')), SUPPORTS: JSON.parse(localStorage.getItem('SUPPORTS')), DEPOTS: JSON.parse(localStorage.getItem('DEPOTS')), USERS: JSON.parse(localStorage.getItem('USERS')) }}
+function saveData(data){ localStorage.setItem('COURS', JSON.stringify(data.COURS)); localStorage.setItem('DEVOIRS', JSON.stringify(data.DEVOIRS)); localStorage.setItem('SUPPORTS', JSON.stringify(data.SUPPORTS)); localStorage.setItem('DEPOTS', JSON.stringify(data.DEPOTS)); localStorage.setItem('USERS', JSON.stringify(data.USERS)); }
 
 const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-
-// ACTUALISER TOUTES LES 2 SECONDES
-setInterval(() => {
-    if(document.getElementById('listeCours')) afficherCoursEtudiant();
-    if(document.getElementById('listeCoursProf')) afficherCoursProf();
-}, 2000);
+setInterval(() => { if(document.getElementById('listeCours')) afficherCoursEtudiant(); if(document.getElementById('listeCoursProf')) afficherCoursProf(); }, 2000);
 
 document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('.btn-logout').forEach(btn => {
-        btn.addEventListener('click', logout);
-    });
-
+    document.querySelectorAll('.btn-logout').forEach(btn => { btn.addEventListener('click', logout); });
     if(document.getElementById('loginForm')){ loginForm.addEventListener('submit', (e) => { e.preventDefault(); let data = getData(); const user = data.USERS.find(u => u.email === email.value && u.password === password.value); if(user){ localStorage.setItem('currentUser', JSON.stringify(user)); window.location.href = user.role + '.html'; } else { error.innerText = '❌ Email ou mot de passe incorrect'; } }); }
-    
-    if(document.getElementById('listeUsers')){ 
-        afficherStats(); afficherUsers(); afficherCoursAdmin(); afficherDevoirsAdmin(); 
-        formAddUser.addEventListener('submit', (e) => { e.preventDefault(); let data = getData(); data.USERS.push({email: newEmail.value, password: newPassword.value, role: newRole.value}); saveData(data); afficherUsers(); afficherStats(); e.target.reset(); }); 
-        formAddCours.addEventListener('submit', (e) => { e.preventDefault(); let data = getData(); data.COURS.push({id: Date.now(), titre: newTitre.value, date: newDate.value, lien: newLien.value, en_live: false}); saveData(data); afficherCoursAdmin(); afficherStats(); e.target.reset(); }); 
-        formAddDevoir.addEventListener('submit', (e) => { e.preventDefault(); let data = getData(); data.DEVOIRS.push({id: Date.now(), titre: newTitreDevoir.value, desc: newDescDevoir.value}); saveData(data); afficherDevoirsAdmin(); afficherStats(); e.target.reset(); }); 
-    }
-    
-    if(document.getElementById('listeCoursProf')){ 
-        afficherCoursProf(); remplirSelectCours('supportCours'); afficherSupportsProf(); afficherDepotsProf(); 
-        formAddSupport.addEventListener('submit', (e) => { e.preventDefault(); let data = getData(); const file = supportFile.files[0]; const reader = new FileReader(); reader.onload = () => { data.SUPPORTS.push({id: Date.now(), cours: supportCours.value, nom: supportNom.value, fichier: reader.result}); saveData(data); afficherSupportsProf(); e.target.reset(); } reader.readAsDataURL(file); }); 
-    }
-    
-    if(document.getElementById('listeCours')){ 
-        afficherCoursEtudiant(); afficherSupportsEtudiant(); afficherDevoirsEtudiant(); remplirSelectDevoir('depotDevoir'); 
-        formDepot.addEventListener('submit', (e) => { e.preventDefault(); let data = getData(); const file = depotFile.files[0]; const reader = new FileReader(); reader.onload = () => { data.DEPOTS.push({id: Date.now(), devoir: depotDevoir.value, etudiant: currentUser.email, fichier: reader.result, note: ""}); saveData(data); afficherDevoirsEtudiant(); e.target.reset(); alert("✅ Copie déposée!"); } reader.readAsDataURL(file); }); 
-    }
+    if(document.getElementById('listeUsers')){ afficherStats(); afficherUsers(); afficherCoursAdmin(); afficherDevoirsAdmin(); formAddUser.addEventListener('submit', (e) => { e.preventDefault(); let data = getData(); data.USERS.push({email: newEmail.value, password: newPassword.value, role: newRole.value}); saveData(data); afficherUsers(); afficherStats(); e.target.reset(); }); formAddCours.addEventListener('submit', (e) => { e.preventDefault(); let data = getData(); data.COURS.push({id: Date.now(), titre: newTitre.value, date: newDate.value, lien: newLien.value, en_live: false}); saveData(data); afficherCoursAdmin(); afficherStats(); e.target.reset(); }); formAddDevoir.addEventListener('submit', (e) => { e.preventDefault(); let data = getData(); data.DEVOIRS.push({id: Date.now(), titre: newTitreDevoir.value, desc: newDescDevoir.value}); saveData(data); afficherDevoirsAdmin(); afficherStats(); e.target.reset(); }); }
+    if(document.getElementById('listeCoursProf')){ afficherCoursProf(); remplirSelectCours('supportCours'); afficherSupportsProf(); afficherDepotsProf(); formAddSupport.addEventListener('submit', (e) => { e.preventDefault(); let data = getData(); const file = supportFile.files[0]; const reader = new FileReader(); reader.onload = () => { data.SUPPORTS.push({id: Date.now(), cours: supportCours.value, nom: supportNom.value, fichier: reader.result}); saveData(data); afficherSupportsProf(); e.target.reset(); } reader.readAsDataURL(file); }); }
+    if(document.getElementById('listeCours')){ afficherCoursEtudiant(); afficherSupportsEtudiant(); afficherDevoirsEtudiant(); remplirSelectDevoir('depotDevoir'); formDepot.addEventListener('submit', (e) => { e.preventDefault(); let data = getData(); const file = depotFile.files[0]; const reader = new FileReader(); reader.onload = () => { data.DEPOTS.push({id: Date.now(), devoir: depotDevoir.value, etudiant: currentUser.email, fichier: reader.result, note: ""}); saveData(data); afficherDevoirsEtudiant(); e.target.reset(); alert("✅ Copie déposée!"); } reader.readAsDataURL(file); }); }
 });
 
 function afficherUsers(){ let data = getData(); if(document.getElementById('listeUsers')) listeUsers.innerHTML = data.USERS.map((u, i) => `<div class="card"><p><b>${u.email}</b> - ${u.role}</p>${u.role!== 'admin'? `<button onclick="supprimerUser(${i})" class="btn-danger">Supprimer</button>` : ''}</div>`).join(''); }
@@ -90,9 +54,9 @@ function afficherSupportsProf(){ let data = getData(); if(document.getElementByI
 function supprimerSupport(id){ let data = getData(); data.SUPPORTS = data.SUPPORTS.filter(s => s.id!== id); saveData(data); afficherSupportsProf(); }
 function afficherDepotsProf(){ let data = getData(); if(document.getElementById('listeDepotsProf')) listeDepotsProf.innerHTML = data.DEPOTS.map(d => `<div class="card"><h4>${d.devoir}</h4><p><b>Étudiant:</b> ${d.etudiant}</p><a href="${d.fichier}" download="copie.pdf" class="btn-secondary">Télécharger Copie</a><input type="number" placeholder="Note /20" value="${d.note}" onchange="noterCopie(${d.id}, this.value)" style="width:100px;"></div>`).join('') || "<p>Aucune copie</p>"; }
 function noterCopie(id, note){ let data = getData(); const depot = data.DEPOTS.find(d => d.id === id); depot.note = note; saveData(data); }
-function afficherCoursEtudiant(){ let data = getData(); if(document.getElementById('listeCours')){ const coursLive = data.COURS.filter(c => c.en_live === true); listeCours.innerHTML = coursLive.map(c => `<div class="card live-card"><h4>🔴 ${c.titre}</h4><p>📅 ${c.date}</p><a href="${c.lien}" target="_blank" class="btn-live">▶️ REJOINDRE MAINTENANT</a></div>`).join('') || "<p>Aucun cours en live pour le moment</p>"; }
+function afficherCoursEtudiant(){ let data = getData(); if(document.getElementById('listeCours')){ const coursLive = data.COURS.filter(c => c.en_live === true); listeCours.innerHTML = coursLive.map(c => `<div class="card live-card"><h4>🔴 ${c.titre}</h4><p>📅 ${c.date}</p><a href="${c.lien}" target="_blank" class="btn-live">▶️ REJOINDRE MAINTENANT</a></div>`).join('') || "<p>Aucun cours en live pour le moment</p>"; } }
 function afficherSupportsEtudiant(){ let data = getData(); if(document.getElementById('listeSupportsEtudiant')) listeSupportsEtudiant.innerHTML = data.SUPPORTS.map(s => `<div class="card"><h4>${s.nom}</h4><p><b>Cours:</b> ${s.cours}</p><a href="${s.fichier}" download="${s.nom}" class="btn-success">📥 Télécharger</a></div>`).join('') || "<p>Aucun support pour le moment</p>"; }
 function afficherDevoirsEtudiant(){ let data = getData(); if(document.getElementById('listeDevoirsEtudiant')) listeDevoirsEtudiant.innerHTML = data.DEVOIRS.map(d => { const monDepot = data.DEPOTS.find(dep => dep.devoir === d.titre && dep.etudiant === currentUser.email); return `<div class="card"><h4>${d.titre}</h4><p>${d.desc}</p>${monDepot? `<p class="success">✅ Déposé. Note: ${monDepot.note || 'En attente'}</p>` : `<p class="warning">❌ Pas encore déposé</p>`}</div>`}).join('') || "<p>Aucun devoir</p>"; }
 function remplirSelectCours(id){ let data = getData(); if(document.getElementById(id)) document.getElementById(id).innerHTML = '<option value="">Choisir un cours</option>' + data.COURS.map(c => `<option>${c.titre}</option>`).join(''); }
 function remplirSelectDevoir(id){ let data = getData(); if(document.getElementById(id)) document.getElementById(id).innerHTML = '<option value="">Choisir un devoir</option>' + data.DEVOIRS.map(d => `<option>${d.titre}</option>`).join(''); }
-function logout(){ localStorage.removeItem('currentUser'); window.location.href = 'login.html'; }
+function logout(){ localStorage.removeItem('currentUser'); window.location.href = 'index.html'; }

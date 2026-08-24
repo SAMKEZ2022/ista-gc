@@ -1,12 +1,46 @@
 <!DOCTYPE html>
 <html lang="fr">
-<head><meta charset="UTF-8"><title>Admin ISTA-GC</title><link rel="stylesheet" href="style.css"></head>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ISTA-GC | Espace Admin</title>
+    <link rel="stylesheet" href="style.css">
+</head>
 <body>
-<header><h1>👑 Espace Admin</h1><button onclick="logout()" class="btn-logout">Déconnexion</button></header>
-<main>
-    <section class="stats"><h3>Statistiques</h3><p>Cours: <span id="totalCours">0</span> | Devoirs: <span id="totalDevoirs">0</span> | Profs: <span id="totalProfs">0</span> | Etudiants: <span id="totalEtudiants">0</span></p></section>
-    <section><h2>👤 Gérer Utilisateurs</h2><form id="formAddUser" class="card"><input type="email" id="newEmail" placeholder="Email" required><input type="password" id="newPassword" placeholder="Mot de passe" required><select id="newRole"><option value="etudiant">Etudiant</option><option value="prof">Prof</option></select><button type="submit" class="btn-primary">Ajouter</button></form><div id="listeUsers"></div></section>
-    <section><h2>📚 Gérer Cours</h2><form id="formAddCours" class="card"><input type="text" id="newTitre" placeholder="Titre du cours" required><input type="datetime-local" id="newDate" required><input type="url" id="newLien" placeholder="Lien Google Meet" required><button type="submit" class="btn-primary">Programmer</button></form><div id="listeCoursAdmin"></div></section>
-    <section><h2>📝 Gérer Devoirs</h2><form id="formAddDevoir" class="card"><input type="text" id="newTitreDevoir" placeholder="Titre du devoir" required><textarea id="newDescDevoir" placeholder="Description" required></textarea><button type="submit" class="btn-primary">Créer Devoir</button></form><div id="listeDevoirsAdmin"></div></section>
-</main>
-<script src="script.js"></script></body></html>
+    <header>
+        <h1>👑 Espace Admin</h1>
+        <button class="btn-logout">Déconnexion</button>
+    </header>
+    <div class="container">
+        <h3>Statistiques</h3>
+        <p>Cours: <span id="totalCours">0</span> | Devoirs: <span id="totalDevoirs">0</span> | Profs: <span id="totalProfs">0</span> | Etudiants: <span id="totalEtudiants">0</span></p>
+
+        <h3>👤 Gérer Utilisateurs</h3>
+        <form id="formAddUser">
+            <input type="email" id="newEmail" placeholder="Email" required>
+            <input type="password" id="newPassword" placeholder="Mot de passe" required>
+            <select id="newRole"><option value="prof">Prof</option><option value="etudiant">Etudiant</option></select>
+            <button type="submit">Ajouter</button>
+        </form>
+        <div id="listeUsers"></div>
+
+        <h3>📚 Gérer Cours</h3>
+        <form id="formAddCours">
+            <input type="text" id="newTitre" placeholder="Titre du cours" required>
+            <input type="datetime-local" id="newDate" required>
+            <input type="text" id="newLien" placeholder="Lien Google Meet" required>
+            <button type="submit">Programmer</button>
+        </form>
+        <div id="listeCoursAdmin"></div>
+
+        <h3>📝 Gérer Devoirs</h3>
+        <form id="formAddDevoir">
+            <input type="text" id="newTitreDevoir" placeholder="Titre du devoir" required>
+            <textarea id="newDescDevoir" placeholder="Description"></textarea>
+            <button type="submit">Créer Devoir</button>
+        </form>
+        <div id="listeDevoirsAdmin"></div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
