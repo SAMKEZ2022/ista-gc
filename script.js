@@ -1,16 +1,13 @@
-// V10.13 - AVEC LIEN MEET PERMANENT
-const LIEN_MEET_PERMANENT = 'https://meet.google.com/yyb-hgqr-crq';
+// V11.0 - LOGIQUE ADMIN COMPLETE
+const LIEN_MEET_PERMANENT = 'https://meet.google.com/yyb-hgqr-crq'; // Ton lien par défaut
 
 const db = {
     users: [
-        { id: 1, email: 'admin@ista-gc.com', password: 'admin123', role: 'admin' },
-        { id: 2, email: 'prof.math@ista-gc.com', password: '1234', role: 'prof' },
-        { id: 3, email: 'etudiant.gc@ista-gc.com', password: '1234', role: 'etudiant' }
+        { id: 1, email: 'admin@ista-gc.com', password: 'admin123', role: 'admin', nom: 'Admin' },
+        { id: 2, email: 'prof.math@ista-gc.com', password: '1234', role: 'prof', nom: 'Prof. Koffi' },
+        { id: 3, email: 'etudiant.gc@ista-gc.com', password: '1234', role: 'etudiant', nom: 'Etudiant GC' }
     ],
-    cours: [
-        { id: 1, titre: 'Mathématiques Générales', date: '2026-08-25T14:00', profId: 2, isLive: false, lienMeet: LIEN_MEET_PERMANENT },
-        { id: 2, titre: 'Physique Batiment', date: '2026-08-26T10:00', profId: 2, isLive: false, lienMeet: LIEN_MEET_PERMANENT }
-    ],
+    cours: [], // VIDE AU DEPART. L'ADMIN VA REMPLIR
     supports: [],
     devoirs: [],
     depots: []
@@ -44,12 +41,64 @@ document.querySelector('.btn-logout')?.addEventListener('click', () => {
     window.location.href = 'index.html';
 });
 
-// PROF
+// ================== ADMIN ==================
+if(currentUser?.role === 'admin'){
+    const formCours = document.getElementById('formCours');
+    const selectProf = document.getElementById('selectProf');
+    const listeTousCours = document.getElementById('listeTousCours');
+
+    // 1. Remplir la liste des profs
+    db.users.filter(u => u.role === 'prof').forEach(prof => {
+        selectProf.innerHTML += `<option value="${prof.id}">${prof.nom}</option>`;
+    });
+
+    // 2. Ajouter un cours
+    formCours.addEventListener('submit', e => {
+        e.preventDefault();
+        const newCours = {
+            id: Date.now(),
+            titre: titreCours.value,
+            date: dateCours.value,
+            profId: parseInt(selectProf.value),
+            lienMeet: lienMeet.value || LIEN_MEET_PERMANENT,
+            isLive: false
+        };
+        db.cours.push(newCours);
+        saveDB();
+        formCours.reset();
+        renderCoursAdmin();
+    });
+
+    // 3. Afficher tous les cours
+    const renderCoursAdmin = () => {
+        listeTousCours.innerHTML = db.cours.map(c => {
+            const prof = db.users.find(u => u.id === c.profId);
+            return `
+            <div class="card">
+                <h4>${c.titre} ${c.isLive ? '🔴' : ''}</h4>
+                <p><b>Prof:</b> ${prof.nom}</p>
+                <p><b>Date:</b> ${new Date(c.date).toLocaleString('fr-FR')}</p>
+                <button class="btn-danger" onclick="supprimerCours(${c.id})">Supprimer</button>
+            </div>
+            `;
+        }).join('');
+    };
+    renderCoursAdmin();
+
+    window.supprimerCours = (id) => {
+        db.cours = db.cours.filter(c => c.id !== id);
+        saveDB();
+        renderCoursAdmin();
+    };
+}
+
+// ================== PROF ==================
 if(currentUser?.role === 'prof'){
     const listeCoursProf = document.getElementById('listeCoursProf');
     const mesCours = db.cours.filter(c => c.profId === currentUser.id);
     
     const renderCoursProf = () => {
+        if(mesCours.length === 0) { listeCoursProf.innerHTML = '<p>Aucun cours programmé par l\'admin.</p>'; return; }
         listeCoursProf.innerHTML = mesCours.map(c => `
             <div class="card ${c.isLive ? 'card-live' : ''}">
                 <h4>${c.titre}</h4>
@@ -71,7 +120,7 @@ if(currentUser?.role === 'prof'){
     };
 }
 
-// ETUDIANT
+// ================== ETUDIANT ==================
 if(currentUser?.role === 'etudiant'){
     const listeCours = document.getElementById('listeCours');
     const coursLive = db.cours.filter(c => c.isLive);
