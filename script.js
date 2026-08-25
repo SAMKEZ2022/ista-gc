@@ -1,4 +1,6 @@
-// V10.9 - LOGIQUE LIVE CORRIGEE
+// V10.13 - AVEC LIEN MEET PERMANENT
+const LIEN_MEET_PERMANENT = 'https://meet.google.com/yyb-hgqr-crq';
+
 const db = {
     users: [
         { id: 1, email: 'admin@ista-gc.com', password: 'admin123', role: 'admin' },
@@ -6,8 +8,8 @@ const db = {
         { id: 3, email: 'etudiant.gc@ista-gc.com', password: '1234', role: 'etudiant' }
     ],
     cours: [
-        { id: 1, titre: 'Mathématiques Générales', date: '2026-08-25T14:00', profId: 2, isLive: false, lienMeet: 'https://meet.google.com/ista-gc-math' },
-        { id: 2, titre: 'Physique Batiment', date: '2026-08-26T10:00', profId: 2, isLive: false, lienMeet: 'https://meet.google.com/ista-gc-physique' }
+        { id: 1, titre: 'Mathématiques Générales', date: '2026-08-25T14:00', profId: 2, isLive: false, lienMeet: LIEN_MEET_PERMANENT },
+        { id: 2, titre: 'Physique Batiment', date: '2026-08-26T10:00', profId: 2, isLive: false, lienMeet: LIEN_MEET_PERMANENT }
     ],
     supports: [],
     devoirs: [],
@@ -51,7 +53,7 @@ if(currentUser?.role === 'prof'){
         listeCoursProf.innerHTML = mesCours.map(c => `
             <div class="card ${c.isLive ? 'card-live' : ''}">
                 <h4>${c.titre}</h4>
-                <p>📅 ${c.date}</p>
+                <p>📅 ${new Date(c.date).toLocaleString('fr-FR')}</p>
                 ${c.isLive ? `<p style="color:red; font-weight:bold;">🔴 EN LIVE</p> <a href="${c.lienMeet}" target="_blank">REJOINDRE LE MEET</a>` : ''}
                 <button onclick="toggleLive(${c.id})" class="${c.isLive ? 'btn-danger' : 'btn-live'}">
                     ${c.isLive ? '🛑 Couper le Live' : '▶️ Lancer le Live'}
@@ -65,7 +67,7 @@ if(currentUser?.role === 'prof'){
         const cours = db.cours.find(c => c.id === id);
         cours.isLive = !cours.isLive;
         saveDB();
-        location.reload(); // FORCE L'ETUDIANT A VOIR LE CHANGEMENT
+        location.reload();
     };
 }
 
