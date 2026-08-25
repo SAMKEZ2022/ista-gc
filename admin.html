@@ -2,45 +2,42 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ISTA-GC | Espace Admin</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Admin - ISTA-GC</title>
+    <style>
+        :root { --primary: #003366; --accent: #28a745; --danger: #dc3545; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f9; margin: 0; }
+        .header { background: var(--primary); color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
+        .container { padding: 30px; max-width: 900px; margin: auto; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        input, select { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
+        button { padding: 10px 15px; background: var(--accent); color: white; border: none; border-radius: 5px; cursor: pointer; }
+        .btn-danger { background: var(--danger); }
+        .btn-logout { background: #6c757d; }
+    </style>
 </head>
 <body>
-    <header>
-        <h1>👑 Espace Admin</h1>
+    <header class="header">
+        <h1>👑 Panneau Admin</h1>
         <button class="btn-logout">Déconnexion</button>
     </header>
     <div class="container">
-        <h3>Statistiques</h3>
-        <p>Cours: <span id="totalCours">0</span> | Devoirs: <span id="totalDevoirs">0</span> | Profs: <span id="totalProfs">0</span> | Etudiants: <span id="totalEtudiants">0</span></p>
-
-        <h3>👤 Gérer Utilisateurs</h3>
-        <form id="formAddUser">
-            <input type="email" id="newEmail" placeholder="Email" required>
-            <input type="password" id="newPassword" placeholder="Mot de passe" required>
-            <select id="newRole"><option value="prof">Prof</option><option value="etudiant">Etudiant</option></select>
-            <button type="submit">Ajouter</button>
-        </form>
-        <div id="listeUsers"></div>
-
-        <h3>📚 Gérer Cours</h3>
-        <form id="formAddCours">
-            <input type="text" id="newTitre" placeholder="Titre du cours" required>
-            <input type="datetime-local" id="newDate" required>
-            <input type="text" id="newLien" placeholder="Lien Google Meet" required>
-            <button type="submit">Programmer</button>
-        </form>
-        <div id="listeCoursAdmin"></div>
-
-        <h3>📝 Gérer Devoirs</h3>
-        <form id="formAddDevoir">
-            <input type="text" id="newTitreDevoir" placeholder="Titre du devoir" required>
-            <textarea id="newDescDevoir" placeholder="Description"></textarea>
-            <button type="submit">Créer Devoir</button>
-        </form>
-        <div id="listeDevoirsAdmin"></div>
+        <div class="card">
+            <h3>Programmer un nouveau cours</h3>
+            <form id="formCours">
+                <input type="text" id="titreCours" placeholder="Titre du cours" required>
+                <input type="datetime-local" id="dateCours" required>
+                <select id="selectProf" required>
+                    <option value="">-- Choisir un Prof --</option>
+                </select>
+                <input type="url" id="lienMeet" placeholder="Lien Google Meet Permanent" value="https://meet.google.com/yyb-hgqr-crq" required>
+                <button type="submit">Programmer le cours</button>
+            </form>
+        </div>
+        <div class="card">
+            <h3>Tous les cours programmés</h3>
+            <div id="listeTousCours"></div>
+        </div>
     </div>
-    <script src="script.js"></script>
+    <script src="./script.js"></script>
 </body>
 </html>
