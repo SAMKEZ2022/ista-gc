@@ -4,53 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ISTA-GC | Connexion</title>
-    <style>
-        :root { --primary: #003366; --accent: #28a745; --bg: #f4f7f9; }
-        body.login-body { 
-            font-family: 'Segoe UI', sans-serif; 
-            background: linear-gradient(135deg, var(--primary), #0056b3); 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            height: 100vh; 
-            margin: 0; 
-        }
-        .login-container { 
-            background: white; 
-            padding: 40px; 
-            border-radius: 10px; 
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2); 
-            text-align: center; 
-            width: 350px; 
-        }
-        .login-container h1 { color: var(--primary); margin: 0; }
-        .login-container h2 { color: #555; font-weight: 300; margin-bottom: 20px; }
-        .login-container input { 
-            width: 100%; 
-            padding: 12px; 
-            margin-bottom: 15px; 
-            border: 1px solid #ddd; 
-            border-radius: 5px; 
-            box-sizing: border-box; 
-        }
-        .login-container button { 
-            width: 100%; 
-            padding: 12px; 
-            background: var(--accent); 
-            color: white; 
-            border: none; 
-            border-radius: 5px; 
-            font-size: 16px; 
-            font-weight: bold; 
-            cursor: pointer; 
-        }
-        .info { font-size: 12px; color: #777; margin-top: 20px; text-align: left; }
-        .error { color: var(--danger); }
-    </style>
+    <link rel="stylesheet" href="./style.css">
+    <!-- Firebase (SDK compat, pas de build nécessaire) -->
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+    <script src="./firebase-config.js"></script>
 </head>
 <body class="login-body">
     <div class="login-container">
-        <h1>👑 ISTA-GC</h1>
+        <img src="./logo.png" alt="Logo ISTR" class="logo-login">
+        <h1>ISTR</h1>
         <h2>Plateforme d'Enseignement</h2>
         <form id="loginForm">
             <input type="email" id="email" placeholder="Email" required>
@@ -60,8 +24,8 @@
         </form>
         <p class="info">
             <b>Comptes de Test:</b><br>
-            Admin: admin@ista-gc.com / admin123 <br> 
-            Prof: prof.math@ista-gc.com / 1234 <br> 
+            Admin: admin@ista-gc.com / admin123 <br>
+            Prof: prof.math@ista-gc.com / 1234 <br>
             Etudiant: etudiant.gc@ista-gc.com / 1234
         </p>
     </div>

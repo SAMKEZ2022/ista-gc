@@ -2,42 +2,100 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - ISTA-GC</title>
-    <style>
-        :root { --primary: #003366; --accent: #28a745; --danger: #dc3545; }
-        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f9; margin: 0; }
-        .header { background: var(--primary); color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
-        .container { padding: 30px; max-width: 900px; margin: auto; }
-        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        input, select { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
-        button { padding: 10px 15px; background: var(--accent); color: white; border: none; border-radius: 5px; cursor: pointer; }
-        .btn-danger { background: var(--danger); }
-        .btn-logout { background: #6c757d; }
-    </style>
+    <link rel="stylesheet" href="./style.css">
+    <!-- Firebase (SDK compat, pas de build nécessaire) -->
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+    <script src="./firebase-config.js"></script>
 </head>
 <body>
     <header class="header">
-        <h1>👑 Panneau Admin</h1>
+        <div class="header-brand">
+            <img src="./logo.png" alt="Logo ISTR" class="logo-header">
+            <h1>👑 Panneau Admin</h1>
+        </div>
         <button class="btn-logout">Déconnexion</button>
     </header>
     <div class="container">
-        <div class="card">
-            <h3>Programmer un nouveau cours</h3>
-            <form id="formCours">
-                <input type="text" id="titreCours" placeholder="Titre du cours" required>
-                <input type="datetime-local" id="dateCours" required>
-                <select id="selectProf" required>
-                    <option value="">-- Choisir un Prof --</option>
-                </select>
-                <input type="url" id="lienMeet" placeholder="Lien Google Meet Permanent" value="https://meet.google.com/yyb-hgqr-crq" required>
-                <button type="submit">Programmer le cours</button>
-            </form>
+
+        <h3>📊 Statistiques</h3>
+        <div class="stats-grid">
+            <div class="stat-box"><div class="stat-value" id="totalCours">0</div><div class="stat-label">Cours</div></div>
+            <div class="stat-box"><div class="stat-value" id="totalDevoirs">0</div><div class="stat-label">Devoirs</div></div>
+            <div class="stat-box"><div class="stat-value" id="totalProfs">0</div><div class="stat-label">Professeurs</div></div>
+            <div class="stat-box"><div class="stat-value" id="totalEtudiants">0</div><div class="stat-label">Étudiants</div></div>
         </div>
-        <div class="card">
-            <h3>Tous les cours programmés</h3>
-            <div id="listeTousCours"></div>
-        </div>
+
+        <h3>👥 Gestion des Utilisateurs</h3>
+        <form id="formAddUser">
+            <input type="email" id="newEmail" placeholder="Email" required>
+            <input type="password" id="newPassword" placeholder="Mot de passe" required>
+            <select id="newRole" required onchange="toggleSerieField()">
+                <option value="">-- Choisir un rôle --</option>
+                <option value="admin">Administrateur</option>
+                <option value="prof">Professeur</option>
+                <option value="etudiant">Étudiant</option>
+            </select>
+            <select id="newSerie" style="display:none;">
+                <option value="">-- Choisir une série --</option>
+            </select>
+            <button type="submit">Ajouter l'utilisateur</button>
+        </form>
+        <div id="listeUsers"></div>
+
+        <h3>📅 Programmer un cours</h3>
+        <form id="formAddCours">
+            <input type="text" id="newTitre" placeholder="Titre du cours" required>
+            <input type="datetime-local" id="newDate" required>
+            <select id="newSerie" required onchange="remplirSelectSalles('newSalle', this.value)">
+                <option value="">-- Choisir une série --</option>
+            </select>
+            <select id="newSalle" required>
+                <option value="">-- D'abord choisir une série --</option>
+            </select>
+            <button type="submit">Programmer le cours</button>
+        </form>
+        <div id="listeCoursAdmin"></div>
+
+        <h3>📝 Gestion des Devoirs</h3>
+        <form id="formAddDevoir">
+            <input type="text" id="newTitreDevoir" placeholder="Titre du devoir" required>
+            <textarea id="newDescDevoir" placeholder="Description / consignes" rows="3"></textarea>
+            <select id="newSerieDevoir" required>
+                <option value="">-- Choisir une série --</option>
+            </select>
+            <button type="submit">Ajouter le devoir</button>
+        </form>
+        <div id="listeDevoirsAdmin"></div>
+
     </div>
     <script src="./script.js"></script>
+    <script>
+        // Remplir les sélecteurs de séries au chargement
+        document.addEventListener('DOMContentLoaded', () => {
+            remplirSelectSeries('newSerie');
+            remplirSelectSeries('newSerieDevoir');
+            // Initialiser le select des salles pour la série par défaut
+            const firstSerieKey = Object.keys(SERIES)[0];
+            if (firstSerieKey) {
+                document.getElementById('newSerie').value = firstSerieKey;
+                remplirSelectSalles('newSalle', firstSerieKey);
+            }
+        });
+
+        function toggleSerieField() {
+            const role = document.getElementById('newRole').value;
+            const serieSelect = document.getElementById('newSerie');
+            if (role === 'admin') {
+                serieSelect.style.display = 'none';
+            } else {
+                serieSelect.style.display = 'block';
+                remplirSelectSeries('newSerie');
+            }
+        }
+    </script>
 </body>
 </html>
