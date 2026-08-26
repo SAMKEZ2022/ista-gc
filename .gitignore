@@ -1,0 +1,14 @@
+# Données locales du navigateur
+COURS
+USERS
+DEVOIRS
+SUPPORTS
+DEPOTS
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
