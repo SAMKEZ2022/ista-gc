@@ -5,86 +5,163 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - ISTA-GC</title>
     <link rel="stylesheet" href="./style.css">
-    <!-- Firebase (SDK compat, pas de build nécessaire) -->
+    <!-- Firebase SDK compat -->
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
     <script src="./firebase-config.js"></script>
+    <style>
+       .login-container { max-width:400px; margin:100px auto; padding:30px; border:1px solid #ddd; border-radius:10px; }
+       .hidden { display: none!important; }
+    </style>
 </head>
 <body>
-    <header class="header">
-        <div class="header-brand">
-            <img src="./logo.png" alt="Logo ISTR" class="logo-header">
-            <h1>👑 Panneau Admin</h1>
-        </div>
-        <button class="btn-logout">Déconnexion</button>
-    </header>
-    <div class="container">
-
-        <h3>📊 Statistiques</h3>
-        <div class="stats-grid">
-            <div class="stat-box"><div class="stat-value" id="totalCours">0</div><div class="stat-label">Cours</div></div>
-            <div class="stat-box"><div class="stat-value" id="totalDevoirs">0</div><div class="stat-label">Devoirs</div></div>
-            <div class="stat-box"><div class="stat-value" id="totalProfs">0</div><div class="stat-label">Professeurs</div></div>
-            <div class="stat-box"><div class="stat-value" id="totalEtudiants">0</div><div class="stat-label">Étudiants</div></div>
-        </div>
-
-        <h3>👥 Gestion des Utilisateurs</h3>
-        <form id="formAddUser">
-            <input type="email" id="newEmail" placeholder="Email" required>
-            <input type="password" id="newPassword" placeholder="Mot de passe" required>
-            <select id="newRole" required onchange="toggleSerieField()">
-                <option value="">-- Choisir un rôle --</option>
-                <option value="admin">Administrateur</option>
-                <option value="prof">Professeur</option>
-                <option value="etudiant">Étudiant</option>
-            </select>
-            <select id="newSerie" style="display:none;">
-                <option value="">-- Choisir une série --</option>
-            </select>
-            <button type="submit">Ajouter l'utilisateur</button>
-        </form>
-        <div id="listeUsers"></div>
-
-        <h3>📅 Programmer un cours</h3>
-        <form id="formAddCours">
-            <input type="text" id="newTitre" placeholder="Titre du cours" required>
-            <input type="datetime-local" id="newDate" required>
-            <select id="newSerie" required onchange="remplirSelectSalles('newSalle', this.value)">
-                <option value="">-- Choisir une série --</option>
-            </select>
-            <select id="newSalle" required>
-                <option value="">-- D'abord choisir une série --</option>
-            </select>
-            <button type="submit">Programmer le cours</button>
-        </form>
-        <div id="listeCoursAdmin"></div>
-
-        <h3>📝 Gestion des Devoirs</h3>
-        <form id="formAddDevoir">
-            <input type="text" id="newTitreDevoir" placeholder="Titre du devoir" required>
-            <textarea id="newDescDevoir" placeholder="Description / consignes" rows="3"></textarea>
-            <select id="newSerieDevoir" required>
-                <option value="">-- Choisir une série --</option>
-            </select>
-            <button type="submit">Ajouter le devoir</button>
-        </form>
-        <div id="listeDevoirsAdmin"></div>
-
+    <!-- ÉCRAN DE CONNEXION -->
+    <div id="loginScreen" class="login-container">
+        <h2>👑 Connexion Admin</h2>
+        <input type="email" id="email" placeholder="Email admin@ista.gc" required style="width:100%; padding:10px; margin:10px 0;">
+        <input type="password" id="password" placeholder="Mot de passe" required style="width:100%; padding:10px; margin:10px 0;">
+        <button onclick="login()" style="width:100%; padding:10px;">Se connecter</button>
+        <p id="loginError" style="color:red;"></p>
     </div>
+
+    <!-- PANNEAU ADMIN CACHÉ PAR DÉFAUT -->
+    <div id="adminPanel" class="hidden">
+        <header class="header">
+            <div class="header-brand">
+                <img src="./logo.png" alt="Logo ISTR" class="logo-header">
+                <h1>👑 Panneau Admin</h1>
+            </div>
+            <button class="btn-logout" onclick="logout()">Déconnexion</button>
+        </header>
+        <div class="container">
+
+            <h3>📊 Statistiques</h3>
+            <div class="stats-grid">
+                <div class="stat-box"><div class="stat-value" id="totalCours">0</div><div class="stat-label">Cours</div></div>
+                <div class="stat-box"><div class="stat-value" id="totalDevoirs">0</div><div class="stat-label">Devoirs</div></div>
+                <div class="stat-box"><div class="stat-value" id="totalProfs">0</div><div class="stat-label">Professeurs</div></div>
+                <div class="stat-box"><div class="stat-value" id="totalEtudiants">0</div><div class="stat-label">Étudiants</div></div>
+            </div>
+
+            <h3>👥 Gestion des Utilisateurs</h3>
+            <form id="formAddUser">
+                <input type="email" id="newEmail" placeholder="Email" required>
+                <input type="password" id="newPassword" placeholder="Mot de passe" required>
+                <select id="newRole" required onchange="toggleSerieField()">
+                    <option value="">-- Choisir un rôle --</option>
+                    <option value="admin">Administrateur</option>
+                    <option value="prof">Professeur</option>
+                    <option value="etudiant">Étudiant</option>
+                </select>
+                <select id="newSerie" style="display:none;">
+                    <option value="">-- Choisir une série --</option>
+                </select>
+                <button type="submit">Ajouter l'utilisateur</button>
+            </form>
+            <div id="listeUsers"></div>
+
+            <h3>📅 Programmer un cours</h3>
+            <form id="formAddCours">
+                <input type="text" id="newTitre" placeholder="Titre du cours" required>
+                <input type="datetime-local" id="newDate" required>
+                <select id="newSerie" required onchange="remplirSelectSalles('newSalle', this.value)">
+                    <option value="">-- Choisir une série --</option>
+                </select>
+                <select id="newSalle" required>
+                    <option value="">-- D'abord choisir une série --</option>
+                </select>
+                <button type="submit">Programmer le cours</button>
+            </form>
+            <div id="listeCoursAdmin"></div>
+
+            <h3>📝 Gestion des Devoirs</h3>
+            <form id="formAddDevoir">
+                <input type="text" id="newTitreDevoir" placeholder="Titre du devoir" required>
+                <textarea id="newDescDevoir" placeholder="Description / consignes" rows="3"></textarea>
+                <select id="newSerieDevoir" required>
+                    <option value="">-- Choisir une série --</option>
+                </select>
+                <button type="submit">Ajouter le devoir</button>
+            </form>
+            <div id="listeDevoirsAdmin"></div>
+
+        </div>
+    </div>
+
     <script src="./script.js"></script>
     <script>
-        // Remplir les sélecteurs de séries au chargement
-        document.addEventListener('DOMContentLoaded', () => {
-            remplirSelectSeries('newSerie');
-            remplirSelectSeries('newSerieDevoir');
-            // Initialiser le select des salles pour la série par défaut
-            const firstSerieKey = Object.keys(SERIES)[0];
-            if (firstSerieKey) {
-                document.getElementById('newSerie').value = firstSerieKey;
-                remplirSelectSalles('newSalle', firstSerieKey);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // 1. VÉRIFIER SI DÉJÀ CONNECTÉ AU CHARGEMENT
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                const roleDoc = await db.collection('roles').doc(user.uid).get();
+                if(roleDoc.exists && roleDoc.data().role === 'admin'){
+                    showAdminPanel();
+                    initAdmin(); // Lance ton script.js
+                } else {
+                    showLoginScreen();
+                    auth.signOut();
+                }
+            } else {
+                showLoginScreen();
             }
         });
+
+        // 2. FONCTION LOGIN
+        async function login() {
+            const email = document.getElementById('email').value;
+            const pass = document.getElementById('password').value;
+            document.getElementById('loginError').innerText = "";
+
+            try {
+                const userCredential = await auth.signInWithEmailAndPassword(email, pass);
+                const uid = userCredential.user.uid;
+
+                const roleDoc = await db.collection('roles').doc(uid).get();
+
+                if(roleDoc.exists && roleDoc.data().role === 'admin'){
+                    showAdminPanel();
+                    initAdmin();
+                } else {
+                    document.getElementById('loginError').innerText = "Accès refusé. Vous n'êtes pas admin.";
+                    auth.signOut();
+                }
+            } catch(error) {
+                document.getElementById('loginError').innerText = "Erreur: " + error.message;
+            }
+        }
+
+        // 3. FONCTION LOGOUT
+        function logout() {
+            auth.signOut();
+            showLoginScreen();
+        }
+
+        function showAdminPanel(){
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('adminPanel').classList.remove('hidden');
+        }
+        function showLoginScreen(){
+            document.getElementById('loginScreen').classList.remove('hidden');
+            document.getElementById('adminPanel').classList.add('hidden');
+        }
+
+        // 4. TON CODE EXISTANT
+        function initAdmin(){
+            document.addEventListener('DOMContentLoaded', () => {
+                remplirSelectSeries('newSerie');
+                remplirSelectSeries('newSerieDevoir');
+                const firstSerieKey = Object.keys(SERIES)[0];
+                if (firstSerieKey) {
+                    document.getElementById('newSerie').value = firstSerieKey;
+                    remplirSelectSalles('newSalle', firstSerieKey);
+                }
+                loadStats(); // charge les stats
+            });
+        }
 
         function toggleSerieField() {
             const role = document.getElementById('newRole').value;
@@ -95,6 +172,18 @@
                 serieSelect.style.display = 'block';
                 remplirSelectSeries('newSerie');
             }
+        }
+
+        async function loadStats(){
+            // Exemple pour compter
+            const usersSnap = await db.collection('users').get();
+            let profs=0, etudiants=0;
+            usersSnap.forEach(doc => {
+                if(doc.data().role === 'prof') profs++;
+                if(doc.data().role === 'etudiant') etudiants++;
+            });
+            document.getElementById('totalProfs').innerText = profs;
+            document.getElementById('totalEtudiants').innerText = etudiants;
         }
     </script>
 </body>
