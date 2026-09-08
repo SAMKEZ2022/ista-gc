@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ISTA-GC | Connexion</title>
+    <link rel="stylesheet" href="./style.css">
+    <!-- Firebase (SDK compat, pas de build nécessaire) -->
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+    <script src="./firebase-config.js"></script>
+</head>
+<body class="login-body">
+    <div class="login-container">
+        <img src="./logo.png" alt="Logo ISTA" class="logo-login">
+        <h1>ISTA</h1>
+        <h2>Plateforme d'Enseignement</h2>
+        <form id="loginForm">
+            <input type="email" id="email" placeholder="Email" required>
+            <input type="password" id="password" placeholder="Mot de passe" required>
+            <button type="submit">Se Connecter</button>
+            <p id="error" class="error"></p>
+        </form>
+        <p class="info">
+            <b>Comptes de Test:</b><br>
+            Admin: admin@ista-gc.com / admin123 <br>
+            Prof: prof.math@ista-gc.com / 1234 <br>
+            Etudiant: etudiant.gc@ista-gc.com / 1234
+        </p>
+    </div>
+    <script src="./script.js"></script>
+</body>
+</html>

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ISTA-GC | Espace Etudiant</title>
+    <link rel="stylesheet" href="./style.css">
+    <!-- Firebase (SDK compat, pas de build nécessaire) -->
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+    <script src="./firebase-config.js"></script>
+</head>
+<body class="theme-etudiant">
+    <header>
+        <div class="header-brand">
+            <img src="./logo.png" alt="Logo ISTA" class="logo-header">
+            <h1>🎓 Espace Étudiant</h1>
+        </div>
+        <button class="btn-logout">Déconnexion</button>
+    </header>
+    <div id="liveBanner"></div>
+    <div class="container">
+
+        <h3>🔴 Cours en Live Maintenant</h3>
+        <div id="listeCours"></div>
+
+        <h3>📅 Prochains Cours</h3>
+        <div id="listeProchainsCours"></div>
+
+        <h3>📚 Supports de Cours</h3>
+        <div id="listeSupportsEtudiant"></div>
+
+        <h3>📝 Mes Devoirs</h3>
+        <div id="listeDevoirsEtudiant"></div>
+
+        <h3>📤 Déposer une Copie</h3>
+        <form id="formDepot">
+            <select id="depotDevoir" required></select>
+            <input type="file" id="depotFile" required>
+            <button type="submit">Déposer</button>
+        </form>
+
+    </div>
+    <script src="./script.js"></script>
+</body>
+</html>

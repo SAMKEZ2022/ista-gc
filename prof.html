@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ISTA-GC | Espace Prof</title>
+    <link rel="stylesheet" href="./style.css">
+    <!-- Firebase (SDK compat, pas de build nécessaire) -->
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+    <script src="./firebase-config.js"></script>
+</head>
+<body class="theme-prof">
+    <header>
+        <div class="header-brand">
+            <img src="./logo.png" alt="Logo ISTA" class="logo-header">
+            <h1>👨‍🏫 Espace Professeur</h1>
+        </div>
+        <button class="btn-logout">Déconnexion</button>
+    </header>
+    <div class="container">
+
+        <h3>Mes Cours & Live</h3>
+        <div id="listeCoursProf"></div>
+
+        <h3>📤 Envoyer un Support de Cours</h3>
+        <form id="formAddSupport">
+            <select id="supportCours" required></select>
+            <input type="text" id="supportNom" placeholder="Nom du fichier: Chapitre 1.pdf" required>
+            <input type="file" id="supportFile" required>
+            <button type="submit">Envoyer aux Etudiants</button>
+        </form>
+        <div id="listeSupportsProf"></div>
+
+        <h3>📥 Copies des Devoirs</h3>
+        <div id="listeDepotsProf"></div>
+
+    </div>
+    <script src="./script.js"></script>
+</body>
+</html>
