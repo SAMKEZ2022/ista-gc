@@ -190,6 +190,49 @@ body.login-body {
 }
 .live-banner a:hover { text-decoration: none; opacity: 0.85; }
 
+/* ---- Liste de classe (étudiant) + minuteur ---- */
+.classe-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 14px 20px;
+}
+.minuteur {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    font-size: 14px;
+    background: #eef2f7;
+    color: var(--primary);
+    padding: 4px 10px;
+    border-radius: 20px;
+    min-width: 78px;
+    justify-content: center;
+}
+.minuteur-actif {
+    background: #ffe6e6;
+    color: var(--live);
+    animation: pulse 1.5s infinite;
+}
+
+/* ---- Présence des étudiants dans un cours (prof) ---- */
+.presence-etudiants {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #eee;
+}
+.presence-etudiants ul {
+    list-style: none;
+    padding: 0;
+    margin: 8px 0 0;
+}
+.presence-etudiants li {
+    padding: 4px 0;
+    font-family: 'Courier New', monospace;
+}
+
 /* ---- Visioconférence intégrée (Jitsi) ---- */
 .jitsi-wrapper {
     position: relative;

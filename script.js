@@ -95,6 +95,22 @@ const SERIES = {
     }
 };
 
+// ---- NIVEAUX (communs à toutes les séries) ----
+// Un étudiant appartient à une série (filière) ET à un niveau (1 à 5).
+// Ces niveaux correspondent aux mêmes numéros que les salles des cours
+// (c.salle) : ça permet de savoir quels étudiants suivent quel cours.
+const NIVEAUX = {
+    1: "L1 / BTS 1",
+    2: "L2 / BTS 2",
+    3: "L3",
+    4: "Master 1",
+    5: "Master 2"
+};
+
+function getNomNiveau(niveau) {
+    return NIVEAUX[niveau] || `Niveau ${niveau}`;
+}
+
 function getNomSerie(serieId) {
     const serie = SERIES[serieId];
     return serie ? serie.nom : `Série ${serieId}`;
@@ -133,7 +149,8 @@ let state = {
     DEVOIRS: [],
     SUPPORTS: [],
     DEPOTS: [],
-    USERS: []
+    USERS: [],
+    PRESENCES: []
 };
 
 let etatInitialCoursCharge = false;
@@ -168,8 +185,8 @@ async function seedDonneesInitialesSiNecessaire() {
         { email: "prof.math@ista-gc.com", password: "1234", role: "prof", serie: "gc" },
         { email: "prof.electro@ista-gc.com", password: "1234", role: "prof", serie: "electro" },
         { email: "prof.journalisme@ista-gc.com", password: "1234", role: "prof", serie: "journalisme" },
-        { email: "etudiant.gc@ista-gc.com", password: "1234", role: "etudiant", serie: "gc" },
-        { email: "etudiant.electro@ista-gc.com", password: "1234", role: "etudiant", serie: "electro" }
+        { email: "etudiant.gc@ista-gc.com", password: "1234", role: "etudiant", serie: "gc", niveau: 1 },
+        { email: "etudiant.electro@ista-gc.com", password: "1234", role: "etudiant", serie: "electro", niveau: 1 }
     ];
     usersInitiaux.forEach(u => batch.set(db.collection('users').doc(), u));
 
@@ -217,7 +234,17 @@ function demarrerEcouteTempsReel() {
         state.USERS = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         afficherUsers();
         afficherStats();
+        afficherClasseEtudiant();
+        afficherCoursProf();
     }, (err) => console.error("Erreur d'écoute Firestore (users) :", err));
+
+    // Temps de présence des étudiants dans les cours (pour le minuteur et le
+    // suivi par l'enseignant). Voir "SUIVI DE PRESENCE" plus bas.
+    db.collection('presences').onSnapshot((snap) => {
+        state.PRESENCES = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        afficherClasseEtudiant();
+        afficherCoursProf();
+    }, (err) => console.error("Erreur d'écoute Firestore (presences) :", err));
 }
 
 function rafraichirVuesLieesAuxCours() {
@@ -226,6 +253,7 @@ function rafraichirVuesLieesAuxCours() {
     afficherProchainsCours();
     afficherCoursAdmin();
     afficherStats();
+    synchroniserPresenceEtudiant();
 }
 
 function rafraichirVuesLieesAuxDevoirs() {
@@ -329,6 +357,116 @@ function notifierNouveauxLivePourEtudiant(ancienCours, nouveauCours) {
     });
 }
 
+// ===================================
+// SUIVI DE PRESENCE (minuteur par étudiant)
+// Pendant qu'un cours de sa série est en Live, le navigateur de l'étudiant
+// enregistre régulièrement le temps écoulé dans Firestore (collection
+// "presences"). Ça permet :
+//  - au professeur de voir combien de minutes chaque étudiant a passé
+//    dans SON cours (afficherCoursProf) ;
+//  - aux camarades de classe de voir un minuteur en direct à côté de
+//    chaque nom (afficherClasseEtudiant).
+// ===================================
+
+// coursId -> { debut: Date, dernierFlush: Date }  (uniquement en mémoire locale)
+let presencesEnCours = {};
+
+function idPresence(coursId, email) {
+    return `${coursId}_${slugify(email)}`;
+}
+
+async function majPresenceFirestore(coursId, enLigne, minutesAAjouter) {
+    if (!currentUser) return;
+    const ref = db.collection('presences').doc(idPresence(coursId, currentUser.email));
+    try {
+        await ref.set({
+            coursId,
+            etudiant: currentUser.email,
+            serie: currentUser.serie,
+            niveau: currentUser.niveau || null,
+            enLigne,
+            sessionDebut: enLigne ? new Date().toISOString() : null,
+            minutesTotal: firebase.firestore.FieldValue.increment(minutesAAjouter || 0)
+        }, { merge: true });
+    } catch (err) {
+        console.error("Erreur d'enregistrement de la présence :", err);
+    }
+}
+
+// Enregistre le temps écoulé depuis le dernier "flush" dans Firestore.
+// resterEnLigne=false quand le cours n'est plus en Live ou que la page se ferme.
+function flushPresence(coursId, resterEnLigne) {
+    const session = presencesEnCours[coursId];
+    if (!session) return;
+    const maintenant = new Date();
+    const minutesEcoulees = (maintenant - session.dernierFlush) / 60000;
+    session.dernierFlush = maintenant;
+    majPresenceFirestore(coursId, resterEnLigne, minutesEcoulees);
+}
+
+// Appelée à chaque changement de la liste des cours : démarre/arrête le
+// suivi selon les cours actuellement en Live pour la série de l'étudiant.
+function synchroniserPresenceEtudiant() {
+    if (!currentUser || currentUser.role !== 'etudiant') return;
+    if (!document.getElementById('listeCours')) return; // page étudiant uniquement
+
+    const coursLiveConcernes = state.COURS.filter(c => c.en_live && c.serie === currentUser.serie);
+    const idsLive = new Set(coursLiveConcernes.map(c => c.id));
+
+    coursLiveConcernes.forEach(c => {
+        if (!presencesEnCours[c.id]) {
+            const maintenant = new Date();
+            presencesEnCours[c.id] = { debut: maintenant, dernierFlush: maintenant };
+            majPresenceFirestore(c.id, true, 0); // crée/réactive le document de présence
+        }
+    });
+
+    Object.keys(presencesEnCours).forEach(coursId => {
+        if (!idsLive.has(coursId)) {
+            flushPresence(coursId, false);
+            delete presencesEnCours[coursId];
+        }
+    });
+}
+
+// Sauvegarde périodique (toutes les 30s) pour que profs/camarades voient
+// un temps à jour même si l'étudiant reste connecté longtemps.
+setInterval(() => {
+    Object.keys(presencesEnCours).forEach(coursId => flushPresence(coursId, true));
+}, 30000);
+
+// Meilleure tentative de sauvegarde à la fermeture de la page/onglet.
+window.addEventListener('beforeunload', () => {
+    Object.keys(presencesEnCours).forEach(coursId => flushPresence(coursId, false));
+});
+
+// Rafraîchissement visuel du minuteur toutes les secondes (les données
+// Firestore, elles, ne changent que toutes les 30s ou moins).
+setInterval(() => {
+    afficherClasseEtudiant();
+    afficherCoursProf();
+}, 1000);
+
+// Calcule le temps total (en secondes) représenté par un document de présence,
+// en ajoutant le temps de la session en cours si l'étudiant est actuellement en ligne.
+function calculerSecondesPresence(p) {
+    let secondes = (p.minutesTotal || 0) * 60;
+    if (p.enLigne && p.sessionDebut) {
+        secondes += (Date.now() - new Date(p.sessionDebut).getTime()) / 1000;
+    }
+    return Math.max(0, Math.round(secondes));
+}
+
+// Formate un nombre de secondes en "1h 05min" ou "05:23" (façon minuteur).
+function formatDuree(secondesTotales) {
+    const s = Math.floor(secondesTotales);
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const sec = s % 60;
+    if (h > 0) return `${h}h ${String(m).padStart(2, '0')}min`;
+    return `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
     document.querySelectorAll('.btn-logout').forEach(btn => btn.addEventListener('click', logout));
 
@@ -395,6 +533,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const newPassword = document.getElementById('newPassword');
             const newRole = document.getElementById('newRole');
             const newSerie = document.getElementById('newSerie');
+            const newNiveau = document.getElementById('newNiveau');
 
             const email = newEmail.value.trim().toLowerCase();
             if (!email || !newPassword.value || !newRole.value) {
@@ -412,9 +551,17 @@ document.addEventListener('DOMContentLoaded', async () => {
                 return;
             }
 
+            if (newRole.value === 'etudiant' && !newNiveau.value) {
+                alert("Veuillez choisir le niveau de cet étudiant (sinon il ne verra jamais la liste de sa classe).");
+                return;
+            }
+
             const newUser = { email, password: newPassword.value, role: newRole.value };
             if (newRole.value !== 'admin' && newSerie.value) {
                 newUser.serie = newSerie.value;
+            }
+            if (newRole.value === 'etudiant' && newNiveau.value) {
+                newUser.niveau = parseInt(newNiveau.value, 10);
             }
 
             try {
@@ -590,7 +737,7 @@ function afficherUsers() {
     const el = document.getElementById('listeUsers');
     if (!el) return;
     el.innerHTML = state.USERS.map((u) =>
-        `<div class="card"><p><b>${u.email}</b> - ${u.role} ${u.serie ? '(' + getNomSerie(u.serie) + ')' : ''}</p>${u.role !== 'admin' ? `<button onclick="supprimerUser('${u.id}')" class="btn-danger">Supprimer</button>` : ''}</div>`
+        `<div class="card"><p><b>${u.email}</b> - ${u.role} ${u.serie ? '(' + getNomSerie(u.serie) + (u.niveau ? ' - ' + getNomNiveau(u.niveau) : '') + ')' : ''}</p>${u.role !== 'admin' ? `<button onclick="supprimerUser('${u.id}')" class="btn-danger">Supprimer</button>` : ''}</div>`
     ).join('') || '<p>Aucun utilisateur</p>';
 }
 
@@ -690,6 +837,24 @@ function blocVisio(c) {
     return `<div class="jitsi-fallback"><p>🎥 Salle de visioconférence prête.</p><a href="${c.lien}" target="_blank" rel="noopener"><button class="btn-live">▶️ Rejoindre la visio</button></a></div>`;
 }
 
+// Liste, pour un cours donné, le temps passé par chaque étudiant concerné
+// (même série + même niveau que la salle du cours) — visible par le prof.
+function blocPresenceEtudiants(c) {
+    const etudiantsConcernes = state.USERS.filter(u =>
+        u.role === 'etudiant' && u.serie === c.serie && Number(u.niveau) === Number(c.salle)
+    );
+    if (etudiantsConcernes.length === 0) return '';
+
+    const lignes = etudiantsConcernes.map(u => {
+        const presencesEtudiant = state.PRESENCES.filter(p => p.etudiant === u.email && p.coursId === c.id);
+        const secondes = presencesEtudiant.reduce((total, p) => total + calculerSecondesPresence(p), 0);
+        const enDirect = presencesEtudiant.some(p => p.enLigne);
+        return `<li>${enDirect ? '🔴' : '⏱️'} ${u.email} — <b>${formatDuree(secondes)}</b></li>`;
+    }).join('');
+
+    return `<div class="presence-etudiants"><p><b>⏱️ Temps passé par les étudiants dans ce cours :</b></p><ul>${lignes}</ul></div>`;
+}
+
 function afficherCoursProf() {
     const el = document.getElementById('listeCoursProf');
     if (!el || !currentUser) return;
@@ -700,7 +865,7 @@ function afficherCoursProf() {
         : state.COURS.filter(c => c.serie === currentUser.serie);
 
     el.innerHTML = mesCours.map(c =>
-        `<div class="card"><h4>${c.titre}</h4><p>📚 ${getNomSerie(c.serie)} | 📅 ${new Date(c.date).toLocaleString('fr-FR')} | 🏫 ${nomSalle(c.serie, c.salle)}</p>${c.en_live ? `<p class="live">🔴 EN LIVE</p>${blocVisio(c)}<button onclick="couperCours('${c.id}')" class="btn-danger" style="margin-top:12px;">Couper le Live</button>` : `<button onclick="lancerCours('${c.id}')" class="btn-success">▶️ Lancer le Live</button>`}</div>`
+        `<div class="card"><h4>${c.titre}</h4><p>📚 ${getNomSerie(c.serie)} | 📅 ${new Date(c.date).toLocaleString('fr-FR')} | 🏫 ${nomSalle(c.serie, c.salle)}</p>${c.en_live ? `<p class="live">🔴 EN LIVE</p>${blocVisio(c)}<button onclick="couperCours('${c.id}')" class="btn-danger" style="margin-top:12px;">Couper le Live</button>` : `<button onclick="lancerCours('${c.id}')" class="btn-success">▶️ Lancer le Live</button>`}${blocPresenceEtudiants(c)}</div>`
     ).join('') || "<p>Aucun cours programmé</p>";
 }
 
@@ -805,6 +970,36 @@ function afficherSupportsEtudiant() {
         }).join('') || "<p>Aucun support pour le moment</p>";
 }
 
+// Liste des camarades de classe : uniquement ceux de la même série ET du
+// même niveau que l'étudiant connecté ("seuls les étudiants du même niveau
+// peuvent consulter leur liste").
+function afficherClasseEtudiant() {
+    const el = document.getElementById('listeClasseEtudiant');
+    if (!el || !currentUser) return;
+
+    if (!currentUser.niveau) {
+        el.innerHTML = "<p>⚠️ Votre niveau n'a pas encore été renseigné par l'administration. Demandez à l'administrateur de le compléter pour voir la liste de votre classe.</p>";
+        return;
+    }
+
+    const camarades = state.USERS.filter(u =>
+        u.role === 'etudiant' && u.serie === currentUser.serie && Number(u.niveau) === Number(currentUser.niveau)
+    );
+
+    el.innerHTML = camarades.map(u => {
+        const presenceEnDirect = state.PRESENCES.find(p => p.etudiant === u.email && p.serie === currentUser.serie && p.enLigne);
+        const secondes = presenceEnDirect
+            ? calculerSecondesPresence(presenceEnDirect)
+            : state.PRESENCES.filter(p => p.etudiant === u.email && p.serie === currentUser.serie)
+                .reduce((total, p) => total + calculerSecondesPresence(p), 0);
+
+        return `<div class="card classe-item">
+            <span class="minuteur ${presenceEnDirect ? 'minuteur-actif' : ''}">${presenceEnDirect ? '🔴' : '⏱️'} ${formatDuree(secondes)}</span>
+            <span>${u.email === currentUser.email ? `👤 ${u.email} (vous)` : `🎓 ${u.email}`}</span>
+        </div>`;
+    }).join('') || "<p>Vous êtes seul(e) dans ce niveau pour le moment.</p>";
+}
+
 function afficherDevoirsEtudiant() {
     const el = document.getElementById('listeDevoirsEtudiant');
     if (!el || !currentUser) return;
@@ -837,6 +1032,13 @@ function remplirSelectSeries(id) {
     if (!el) return;
     el.innerHTML = '<option value="">Choisir une série</option>' +
         Object.keys(SERIES).map(key => `<option value="${key}">${SERIES[key].nom}</option>`).join('');
+}
+
+function remplirSelectNiveaux(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.innerHTML = '<option value="">-- Choisir un niveau --</option>' +
+        Object.keys(NIVEAUX).map(num => `<option value="${num}">${NIVEAUX[num]}</option>`).join('');
 }
 
 function remplirSelectSalles(id, serieId) {

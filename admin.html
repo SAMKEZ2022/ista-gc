@@ -42,6 +42,9 @@
             <select id="newSerie" style="display:none;">
                 <option value="">-- Choisir une série --</option>
             </select>
+            <select id="newNiveau" style="display:none;">
+                <option value="">-- Choisir un niveau --</option>
+            </select>
             <button type="submit">Ajouter l'utilisateur</button>
         </form>
         <div id="listeUsers"></div>
@@ -90,6 +93,7 @@
         function toggleSerieField() {
             const role = document.getElementById('newRole').value;
             const serieSelect = document.getElementById('newSerie');
+            const niveauSelect = document.getElementById('newNiveau');
             if (role === 'admin') {
                 serieSelect.style.display = 'none';
                 serieSelect.required = false;
@@ -97,6 +101,17 @@
                 serieSelect.style.display = 'block';
                 serieSelect.required = true;
                 remplirSelectSeries('newSerie');
+            }
+
+            // Le niveau ne concerne que les étudiants : c'est lui qui détermine
+            // avec qui ils partagent la liste de classe et le minuteur.
+            if (role === 'etudiant') {
+                niveauSelect.style.display = 'block';
+                niveauSelect.required = true;
+                remplirSelectNiveaux('newNiveau');
+            } else {
+                niveauSelect.style.display = 'none';
+                niveauSelect.required = false;
             }
         }
     </script>
