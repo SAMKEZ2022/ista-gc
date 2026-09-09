@@ -341,14 +341,15 @@ function envoyerNotificationLive(cours) {
     }
 }
 
-// Ne concerne QUE les étudiants (une page avec #listeCours) et QUE leur propre série
+// Ne concerne QUE les étudiants (une page avec #listeCours) et QUE leur propre série + niveau
 function notifierNouveauxLivePourEtudiant(ancienCours, nouveauCours) {
     if (!currentUser || currentUser.role !== 'etudiant') return;
     if (!document.getElementById('listeCours')) return;
+    if (!currentUser.niveau) return;
 
     const ancienIdsLive = new Set(ancienCours.filter(c => c.en_live).map(c => c.id));
     const nouveauxLiveConcernes = nouveauCours.filter(c =>
-        c.en_live && c.serie === currentUser.serie && !ancienIdsLive.has(c.id)
+        c.en_live && c.serie === currentUser.serie && Number(c.salle) === Number(currentUser.niveau) && !ancienIdsLive.has(c.id)
     );
 
     nouveauxLiveConcernes.forEach(c => {
@@ -409,8 +410,11 @@ function flushPresence(coursId, resterEnLigne) {
 function synchroniserPresenceEtudiant() {
     if (!currentUser || currentUser.role !== 'etudiant') return;
     if (!document.getElementById('listeCours')) return; // page étudiant uniquement
+    if (!currentUser.niveau) return; // pas de niveau connu = pas de cours concerné
 
-    const coursLiveConcernes = state.COURS.filter(c => c.en_live && c.serie === currentUser.serie);
+    const coursLiveConcernes = state.COURS.filter(c =>
+        c.en_live && c.serie === currentUser.serie && Number(c.salle) === Number(currentUser.niveau)
+    );
     const idsLive = new Set(coursLiveConcernes.map(c => c.id));
 
     coursLiveConcernes.forEach(c => {
@@ -871,11 +875,17 @@ function afficherCoursProf() {
 
 function afficherSupportsProf() {
     const el = document.getElementById('listeSupportsProf');
-    if (!el) return;
-    el.innerHTML = state.SUPPORTS.map(s => {
-        const cours = state.COURS.find(c => c.id === s.coursId);
-        return `<div class="card"><h4>${s.nom}</h4><p><b>Cours:</b> ${cours ? cours.titre : '(cours supprimé)'}</p><a href="${s.fichier}" download="${s.nom}" class="btn-secondary">Télécharger</a><button onclick="supprimerSupport('${s.id}')" class="btn-danger">Supprimer</button></div>`;
-    }).join('') || "<p>Aucun support</p>";
+    if (!el || !currentUser) return;
+    el.innerHTML = state.SUPPORTS
+        .filter(s => {
+            const cours = state.COURS.find(c => c.id === s.coursId);
+            // Un prof ne doit voir que les supports liés à SA propre série
+            return cours && cours.serie === currentUser.serie;
+        })
+        .map(s => {
+            const cours = state.COURS.find(c => c.id === s.coursId);
+            return `<div class="card"><h4>${s.nom}</h4><p><b>Cours:</b> ${cours ? cours.titre : '(cours supprimé)'}</p><a href="${s.fichier}" download="${s.nom}" class="btn-secondary">Télécharger</a><button onclick="supprimerSupport('${s.id}')" class="btn-danger">Supprimer</button></div>`;
+        }).join('') || "<p>Aucun support</p>";
 }
 
 async function supprimerSupport(id) {
@@ -890,11 +900,17 @@ async function supprimerSupport(id) {
 
 function afficherDepotsProf() {
     const el = document.getElementById('listeDepotsProf');
-    if (!el) return;
-    el.innerHTML = state.DEPOTS.map(d => {
-        const devoir = state.DEVOIRS.find(dv => dv.id === d.devoirId);
-        return `<div class="card"><h4>${devoir ? devoir.titre : '(devoir supprimé)'}</h4><p><b>Étudiant:</b> ${d.etudiant}</p><a href="${d.fichier}" download="copie.pdf" class="btn-secondary">Télécharger Copie</a><input type="number" min="0" max="20" placeholder="Note /20" value="${d.note}" onchange="noterCopie('${d.id}', this.value)" style="width:100px;"></div>`;
-    }).join('') || "<p>Aucune copie</p>";
+    if (!el || !currentUser) return;
+    el.innerHTML = state.DEPOTS
+        .filter(d => {
+            const devoir = state.DEVOIRS.find(dv => dv.id === d.devoirId);
+            // Un prof ne doit voir que les copies déposées pour un devoir de SA propre série
+            return devoir && devoir.serie === currentUser.serie;
+        })
+        .map(d => {
+            const devoir = state.DEVOIRS.find(dv => dv.id === d.devoirId);
+            return `<div class="card"><h4>${devoir ? devoir.titre : '(devoir supprimé)'}</h4><p><b>Étudiant:</b> ${d.etudiant}</p><a href="${d.fichier}" download="copie.pdf" class="btn-secondary">Télécharger Copie</a><input type="number" min="0" max="20" placeholder="Note /20" value="${d.note}" onchange="noterCopie('${d.id}', this.value)" style="width:100px;"></div>`;
+        }).join('') || "<p>Aucune copie</p>";
 }
 
 async function noterCopie(id, note) {
@@ -933,8 +949,17 @@ function afficherCoursEtudiant() {
     const el = document.getElementById('listeCours');
     if (!el || !currentUser) return;
 
-    // Seuls les cours en live DE SA PROPRE SERIE sont montrés = "les étudiants concernés"
-    const coursLive = state.COURS.filter(c => c.en_live === true && c.serie === currentUser.serie);
+    if (!currentUser.niveau) {
+        el.innerHTML = "<p>⚠️ Votre niveau n'a pas encore été renseigné par l'administration. Contactez l'administrateur pour voir vos cours.</p>";
+        afficherBanniereLive([]);
+        return;
+    }
+
+    // Seuls les cours en live DE SA SERIE **ET** DE SON NIVEAU sont montrés
+    // (c.salle correspond au niveau : voir la constante NIVEAUX en haut du fichier)
+    const coursLive = state.COURS.filter(c =>
+        c.en_live === true && c.serie === currentUser.serie && Number(c.salle) === Number(currentUser.niveau)
+    );
 
     afficherBanniereLive(coursLive);
 
@@ -947,8 +972,13 @@ function afficherProchainsCours() {
     const el = document.getElementById('listeProchainsCours');
     if (!el || !currentUser) return;
 
+    if (!currentUser.niveau) {
+        el.innerHTML = "<p>⚠️ Votre niveau n'a pas encore été renseigné par l'administration.</p>";
+        return;
+    }
+
     const prochains = state.COURS
-        .filter(c => c.en_live === false && c.serie === currentUser.serie)
+        .filter(c => c.en_live === false && c.serie === currentUser.serie && Number(c.salle) === Number(currentUser.niveau))
         .sort((a, b) => new Date(a.date) - new Date(b.date));
 
     el.innerHTML = prochains.map(c =>
@@ -959,10 +989,17 @@ function afficherProchainsCours() {
 function afficherSupportsEtudiant() {
     const el = document.getElementById('listeSupportsEtudiant');
     if (!el || !currentUser) return;
+
+    if (!currentUser.niveau) {
+        el.innerHTML = "<p>⚠️ Votre niveau n'a pas encore été renseigné par l'administration.</p>";
+        return;
+    }
+
     el.innerHTML = state.SUPPORTS
         .filter(s => {
             const cours = state.COURS.find(c => c.id === s.coursId);
-            return cours && cours.serie === currentUser.serie;
+            // Un support n'est visible que par les étudiants de la même série ET du même niveau que le cours concerné
+            return cours && cours.serie === currentUser.serie && Number(cours.salle) === Number(currentUser.niveau);
         })
         .map(s => {
             const cours = state.COURS.find(c => c.id === s.coursId);
@@ -987,10 +1024,10 @@ function afficherClasseEtudiant() {
     );
 
     el.innerHTML = camarades.map(u => {
-        const presenceEnDirect = state.PRESENCES.find(p => p.etudiant === u.email && p.serie === currentUser.serie && p.enLigne);
+        const presenceEnDirect = state.PRESENCES.find(p => p.etudiant === u.email && p.serie === currentUser.serie && Number(p.niveau) === Number(currentUser.niveau) && p.enLigne);
         const secondes = presenceEnDirect
             ? calculerSecondesPresence(presenceEnDirect)
-            : state.PRESENCES.filter(p => p.etudiant === u.email && p.serie === currentUser.serie)
+            : state.PRESENCES.filter(p => p.etudiant === u.email && p.serie === currentUser.serie && Number(p.niveau) === Number(currentUser.niveau))
                 .reduce((total, p) => total + calculerSecondesPresence(p), 0);
 
         return `<div class="card classe-item">
