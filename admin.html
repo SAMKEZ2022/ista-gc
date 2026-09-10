@@ -70,6 +70,9 @@
 
         <h3>📅 Programmer un cours</h3>
         <form id="formAddCours">
+            <select id="coursMatiereAdmin" onchange="appliquerMatiereSelectionneeAdmin()">
+                <option value="">-- Saisie libre (aucune matière) --</option>
+            </select>
             <input type="text" id="newTitre" placeholder="Titre du cours" required>
             <input type="datetime-local" id="newDate" required>
             <select id="newSerieCours" required onchange="remplirSelectSalles('newSalle', this.value); toggleSeriesConcerneesCours();">

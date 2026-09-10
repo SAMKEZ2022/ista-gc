@@ -25,24 +25,8 @@
         <p>Matières qui vous ont été attribuées par l'administration.</p>
         <div id="listeMatieresProf"></div>
 
-        <h3>📅 Programmer un cours</h3>
-        <form id="formAddCoursProf">
-            <select id="coursMatiereProf" onchange="appliquerMatiereSelectionnee()">
-                <option value="">-- Saisie libre (aucune matière) --</option>
-            </select>
-            <input type="text" id="newTitreCoursProf" placeholder="Titre du cours" required>
-            <input type="datetime-local" id="newDateCoursProf" required>
-            <select id="newNiveauCoursProf" required>
-                <option value="">-- Choisir un niveau --</option>
-            </select>
-            <div id="seriesConcerneesWrapperProf" class="checkbox-group" style="display:none;">
-                <p><b>🎯 Ce cours est en Tronc Commun : cochez les séries concernées</b></p>
-                <div id="seriesConcerneesCoursProf"></div>
-            </div>
-            <button type="submit">Programmer le cours</button>
-        </form>
-
         <h3>Mes Cours & Live</h3>
+        <p>Ces cours sont programmés par l'administration. Vous pouvez lancer ou couper le Live pour ceux qui vous sont attribués.</p>
         <div id="listeCoursProf"></div>
 
         <h3>📤 Envoyer un Support de Cours</h3>

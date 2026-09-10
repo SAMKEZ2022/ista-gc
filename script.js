@@ -163,6 +163,25 @@ function coursConcerneEtudiant(cours, etudiant) {
     return false;
 }
 
+// Détermine si un professeur donné est autorisé à gérer un cours donné
+// (le voir dans "Mes cours", lancer/couper son Live, lui envoyer un
+// support). Règle : même série obligatoirement, ET :
+//  - si le cours n'est rattaché à aucune matière (créé "en saisie libre"
+//    par l'admin) : géré par tous les profs de la série (comportement
+//    historique, notamment pour le Tronc Commun) ;
+//  - si le cours est rattaché à une matière SANS professeur attribué :
+//    géré par tous les profs de la série, en attendant l'attribution ;
+//  - si le cours est rattaché à une matière AVEC un professeur attribué :
+//    géré UNIQUEMENT par ce professeur.
+function coursGereParProf(cours, prof) {
+    if (!cours || !prof) return false;
+    if (cours.serie !== prof.serie) return false;
+    if (!cours.matiereId) return true;
+    const matiere = state.MATIERES.find(m => m.id === cours.matiereId);
+    if (!matiere || !matiere.profId) return true;
+    return matiere.profId === prof.id;
+}
+
 // Remplit une liste de cases à cocher avec toutes les séries "normales"
 // (on exclut "tronc_commun" lui-même : ça n'aurait pas de sens de cocher
 // "Tronc Commun" comme série concernée par un cours de tronc commun).
@@ -318,8 +337,10 @@ function demarrerEcouteTempsReel() {
         state.MATIERES = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         afficherMatieresAdmin();
         afficherMatieresProf();
-        remplirSelectMatieresProf();
+        remplirSelectMatieresAdmin();
         afficherStats();
+        rafraichirVuesLieesAuxCours(); // l'attribution d'une matière peut changer qui gère quel cours
+        afficherSupportsProf(); // idem pour les supports visibles/gérés par le prof
     }, (err) => console.error("Erreur d'écoute Firestore (matieres) :", err));
 
     // Temps de présence des étudiants dans les cours (pour le minuteur et le
@@ -731,6 +752,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const newDate = document.getElementById('newDate');
             const newSerie = document.getElementById('newSerieCours');
             const newSalle = document.getElementById('newSalle');
+            const newMatiere = document.getElementById('coursMatiereAdmin');
 
             if (!newTitre.value || !newDate.value || !newSerie.value) {
                 alert("Le titre, la date et la série du cours sont obligatoires.");
@@ -748,6 +770,18 @@ document.addEventListener('DOMContentLoaded', async () => {
                 lien: lienSalle(serieId, numeroSalle),
                 en_live: false
             };
+
+            // Rattache le cours à la matière choisie (si l'admin en a
+            // sélectionné une) : c'est ce qui détermine ensuite QUEL
+            // professeur (celui attribué à la matière) pourra lancer le
+            // Live de ce cours précis — voir coursGereParProf().
+            if (newMatiere && newMatiere.value) {
+                const matiere = state.MATIERES.find(m => m.id === newMatiere.value);
+                if (matiere) {
+                    coursData.matiereId = matiere.id;
+                    coursData.matiereNom = matiere.nom;
+                }
+            }
 
             // Cours de tronc commun : il faut préciser quelles séries sont
             // concernées (en plus du niveau), pour que seuls leurs étudiants
@@ -829,84 +863,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ---------------- PROF ----------------
     if (document.getElementById('listeCoursProf')) {
         remplirSelectCours('supportCours');
-
-        // Le prof programme lui-même ses cours : il choisit le niveau
-        // concerné (sa série est la sienne, fixée à la création de son
-        // compte). Exception "Tronc Commun" : un prof rattaché à la série
-        // "tronc_commun" n'a pas d'étudiants qui lui sont propres, donc il
-        // doit en plus cocher les séries (filières) concernées par son
-        // cours ; seuls les étudiants de ces séries, au niveau choisi,
-        // recevront le cours.
-        const formAddCoursProf = document.getElementById('formAddCoursProf');
-        if (formAddCoursProf && currentUser.serie) {
-            remplirSelectNiveaux('newNiveauCoursProf');
-            remplirSelectMatieresProf(); // sera aussi rafraîchi dès que les matières arrivent (temps réel)
-
-            const wrapperTC = document.getElementById('seriesConcerneesWrapperProf');
-            if (estSerieTroncCommun(currentUser.serie)) {
-                wrapperTC.style.display = 'block';
-                remplirCheckboxSeriesConcernees('seriesConcerneesCoursProf');
-            } else if (wrapperTC) {
-                wrapperTC.style.display = 'none';
-            }
-
-            formAddCoursProf.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const newTitre = document.getElementById('newTitreCoursProf');
-                const newDate = document.getElementById('newDateCoursProf');
-                const newNiveau = document.getElementById('newNiveauCoursProf');
-                const newMatiere = document.getElementById('coursMatiereProf');
-
-                if (!newTitre.value || !newDate.value || !newNiveau.value) {
-                    alert("Le titre, la date et le niveau du cours sont obligatoires.");
-                    return;
-                }
-
-                const serieId = currentUser.serie;
-                const numeroSalle = parseInt(newNiveau.value, 10);
-
-                const coursData = {
-                    titre: newTitre.value,
-                    date: newDate.value,
-                    serie: serieId,
-                    salle: numeroSalle,
-                    lien: lienSalle(serieId, numeroSalle),
-                    en_live: false
-                };
-
-                // Rattache le cours à la matière choisie (si le prof en a
-                // sélectionné une parmi celles que l'admin lui a attribuées) :
-                // sert à l'admin/prof pour savoir quel cours correspond à
-                // quelle matière du référentiel.
-                if (newMatiere && newMatiere.value) {
-                    const matiere = state.MATIERES.find(m => m.id === newMatiere.value);
-                    if (matiere) {
-                        coursData.matiereId = matiere.id;
-                        coursData.matiereNom = matiere.nom;
-                    }
-                }
-
-                if (estSerieTroncCommun(serieId)) {
-                    const seriesConcernees = getSeriesConcerneesCochees('seriesConcerneesCoursProf');
-                    if (seriesConcernees.length === 0) {
-                        alert("Ce cours est en Tronc Commun : veuillez cocher au moins une série concernée pour que ses étudiants le reçoivent.");
-                        return;
-                    }
-                    coursData.seriesConcernees = seriesConcernees;
-                }
-
-                try {
-                    await db.collection('cours').add(coursData);
-                    e.target.reset();
-                    if (estSerieTroncCommun(serieId)) {
-                        remplirCheckboxSeriesConcernees('seriesConcerneesCoursProf');
-                    }
-                } catch (err) {
-                    console.error(err);
-                    alert("⚠️ Impossible de programmer le cours.");
-                }
-            });
-        }
 
         const formAddSupport = document.getElementById('formAddSupport');
         formAddSupport.addEventListener('submit', (e) => {
@@ -1137,29 +1093,40 @@ function afficherMatieresProf() {
     ).join('') || "<p>Aucune matière ne vous a encore été attribuée par l'administration.</p>";
 }
 
-// Remplit le select "Matière" du formulaire de programmation de cours (prof)
-// avec uniquement les matières qui LUI ont été attribuées. Choisir une
-// matière préremplit automatiquement le niveau (et le titre s'il est vide).
-function remplirSelectMatieresProf() {
-    const el = document.getElementById('coursMatiereProf');
-    if (!el || !currentUser) return;
+// Remplit le select "Matière" du formulaire "Programmer un cours" de
+// l'admin, avec TOUTES les matières existantes (toutes séries confondues,
+// puisque c'est l'admin qui choisit ensuite la série via le champ dédié).
+// Choisir une matière préremplit automatiquement la série, le niveau/salle
+// et le titre (si vide) du cours.
+function remplirSelectMatieresAdmin() {
+    const el = document.getElementById('coursMatiereAdmin');
+    if (!el) return;
 
-    const mesMatieres = state.MATIERES.filter(m => m.profId === currentUser.id);
     el.innerHTML = '<option value="">-- Saisie libre (aucune matière) --</option>' +
-        mesMatieres.map(m => `<option value="${m.id}" data-niveau="${m.niveau}" data-nom="${m.nom}">${m.nom} (${getNomNiveau(m.niveau)})</option>`).join('');
+        state.MATIERES.map(m =>
+            `<option value="${m.id}" data-serie="${m.serie}" data-niveau="${m.niveau}" data-nom="${m.nom}">${m.nom} — ${getNomSerie(m.serie)} / ${getNomNiveau(m.niveau)} ${m.profEmail ? '(' + m.profEmail + ')' : '(non attribuée)'}</option>`
+        ).join('');
 }
 
-// Appelée par le onchange du select #coursMatiereProf (voir prof.html).
-function appliquerMatiereSelectionnee() {
-    const select = document.getElementById('coursMatiereProf');
-    const niveauSelect = document.getElementById('newNiveauCoursProf');
-    const titreInput = document.getElementById('newTitreCoursProf');
+// Appelée par le onchange du select #coursMatiereAdmin (voir admin.html).
+function appliquerMatiereSelectionneeAdmin() {
+    const select = document.getElementById('coursMatiereAdmin');
+    const serieSelect = document.getElementById('newSerieCours');
+    const salleSelect = document.getElementById('newSalle');
+    const titreInput = document.getElementById('newTitre');
     if (!select || !select.value) return;
 
     const option = select.options[select.selectedIndex];
+    const serie = option.getAttribute('data-serie');
     const niveau = option.getAttribute('data-niveau');
     const nom = option.getAttribute('data-nom');
-    if (niveauSelect && niveau) niveauSelect.value = niveau;
+
+    if (serieSelect && serie) {
+        serieSelect.value = serie;
+        remplirSelectSalles('newSalle', serie);
+        toggleSeriesConcerneesCours();
+    }
+    if (salleSelect && niveau) salleSelect.value = niveau;
     if (titreInput && !titreInput.value.trim()) titreInput.value = nom;
 }
 
@@ -1245,14 +1212,16 @@ function afficherCoursProf() {
     const el = document.getElementById('listeCoursProf');
     if (!el || !currentUser) return;
 
-    // Un prof ne gère que les cours de sa propre série
+    // Un prof ne gère que les cours de sa série qui lui sont réellement
+    // destinés (voir coursGereParProf : tient compte de l'attribution des
+    // matières par l'admin).
     const mesCours = currentUser.role === 'admin'
         ? state.COURS
-        : state.COURS.filter(c => c.serie === currentUser.serie);
+        : state.COURS.filter(c => coursGereParProf(c, currentUser));
 
     el.innerHTML = mesCours.map(c =>
         `<div class="card"><h4>${c.titre}</h4><p>📚 ${getNomSerie(c.serie)} | 📅 ${new Date(c.date).toLocaleString('fr-FR')} | 🏫 ${nomSalle(c.serie, c.salle)}</p>${texteMatiereCours(c)}${texteSeriesConcernees(c)}${c.en_live ? `<p class="live">🔴 EN LIVE</p>${blocVisio(c)}<button onclick="couperCours('${c.id}')" class="btn-danger" style="margin-top:12px;">Couper le Live</button>` : `<button onclick="lancerCours('${c.id}')" class="btn-success">▶️ Lancer le Live</button>`}${blocPresenceEtudiants(c)}</div>`
-    ).join('') || "<p>Aucun cours programmé</p>";
+    ).join('') || "<p>Aucun cours programmé par l'administration pour le moment</p>";
 }
 
 function afficherSupportsProf() {
@@ -1261,8 +1230,8 @@ function afficherSupportsProf() {
     el.innerHTML = state.SUPPORTS
         .filter(s => {
             const cours = state.COURS.find(c => c.id === s.coursId);
-            // Un prof ne doit voir que les supports liés à SA propre série
-            return cours && cours.serie === currentUser.serie;
+            // Un prof ne doit voir/gérer que les supports des cours qui lui sont attribués
+            return cours && coursGereParProf(cours, currentUser);
         })
         .map(s => {
             const cours = state.COURS.find(c => c.id === s.coursId);
@@ -1432,7 +1401,9 @@ function afficherDevoirsEtudiant() {
 function remplirSelectCours(id) {
     const el = document.getElementById(id);
     if (!el || !currentUser) return;
-    const cours = currentUser.role === 'admin' ? state.COURS : state.COURS.filter(c => c.serie === currentUser.serie);
+    // Un prof ne peut envoyer un support que pour les cours qu'il gère
+    // réellement (voir coursGereParProf) — pas tous les cours de sa série.
+    const cours = currentUser.role === 'admin' ? state.COURS : state.COURS.filter(c => coursGereParProf(c, currentUser));
     el.innerHTML = '<option value="">Choisir un cours</option>' +
         cours.map(c => `<option value="${c.id}">${c.titre} (${getNomSerie(c.serie)})</option>`).join('');
 }

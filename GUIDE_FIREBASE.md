@@ -123,40 +123,12 @@ de toutes les séries. J'ai filtré l'affichage et les notifications pour ne
 montrer aux étudiants **que les cours de leur propre série** — ce qui
 correspond à "les étudiants concernés" dans votre demande.
 
-## Nouveau : le prof programme lui-même son cours (série + niveau)
+## Historique : le prof a un temps programmé ses propres cours (revenu en arrière)
 
-Auparavant, seul l'**admin** pouvait créer un cours. Désormais, `prof.html`
-a aussi un formulaire **"📅 Programmer un cours"** :
-
-- Le prof choisit un **titre**, une **date**, et un **niveau** (L1 à Master 2).
-- Sa **série** est automatiquement celle de son compte (pas besoin de la
-  choisir) : le cours est donc réservé aux étudiants de sa série **et** du
-  niveau choisi — personne d'autre ne le reçoit.
-
-### Cas particulier : Tronc Commun
-
-Un prof rattaché à la série **"Tronc Commun"** n'a pas d'étudiants qui lui
-sont propres (ce sont des cours communs à plusieurs filières). Pour lui, le
-formulaire affiche en plus une liste à cocher **"Séries concernées"** : il
-coche les filières (GC, Électro, Journalisme, etc.) dont les étudiants,
-**au niveau choisi**, doivent recevoir ce cours précis. Un étudiant reçoit
-alors le cours si :
-
-- son niveau correspond au niveau du cours, **ET**
-- soit sa série correspond à celle du cours (cas normal),
-- soit le cours est en Tronc Commun et sa série fait partie des "séries
-  concernées" cochées par le prof.
-
-Cette logique est centralisée dans une seule fonction, `coursConcerneEtudiant()`
-dans `script.js`, utilisée partout (affichage des cours live, prochains
-cours, supports de cours, notifications, minuteur de présence) pour rester
-cohérente. Le même mécanisme (case "Séries concernées") a aussi été ajouté
-au formulaire de création de cours de l'**admin**, pour qu'il puisse créer
-lui aussi des cours de tronc commun correctement ciblés.
-
-**Non traité (hors demande) :** les **devoirs** restent liés à une seule
-série (pas de notion de tronc commun) — dites-moi si vous voulez la même
-logique pour eux.
+Une version intermédiaire de l'app laissait chaque prof créer lui-même ses
+cours depuis `prof.html`. **Ce n'est plus le cas** : voir la section
+"Nouveau : seul l'admin programme les cours" plus bas, qui décrit le
+fonctionnement actuel.
 
 ## Nouveau : Gestion des Matières par niveau (admin → prof)
 
@@ -187,20 +159,77 @@ utilisateurs :
 
 - Nouvelle section **"📘 Mes Matières"** : liste en lecture seule des
   matières que l'admin lui a attribuées (nom + niveau + série).
-- Le formulaire **"📅 Programmer un cours"** propose désormais un menu
-  déroulant **"Matière"** rempli avec les seules matières attribuées à ce
-  prof. En choisir une préremplit automatiquement le **niveau** du cours et
-  son **titre** (si le titre est encore vide) ; le prof garde la possibilité
-  de laisser "Saisie libre" et de taper un titre lui-même comme avant. Le
-  cours créé garde une référence à la matière (`matiereId`, `matiereNom`),
-  affichée ensuite sur les cartes de cours (admin, prof, étudiant) sous la
-  forme "📘 Matière : ...".
+- Ces matières ne servent plus à créer des cours depuis l'espace prof (voir
+  section suivante) : elles servent uniquement de référence, et déterminent
+  **quel prof peut lancer le Live** d'un cours donné quand l'admin relie ce
+  cours à une matière.
 
 ### Sécurité
 
 Les règles Firestore actuelles (`allow read, write: if request.auth != null`)
 couvrent automatiquement la nouvelle collection `matieres` — aucune
 modification de `firestore.rules` n'était nécessaire.
+
+## Nouveau : seul l'admin programme les cours, le prof ne fait que lancer le Live
+
+Changement de workflow demandé : le formulaire **"📅 Programmer un cours"**
+a été **retiré de `prof.html`**. Il n'existe plus que sur `admin.html`. Le
+prof garde uniquement la section **"Mes Cours & Live"**, où il peut lancer
+ou couper le Live des cours que l'admin a programmés pour lui.
+
+### Le formulaire admin peut maintenant partir d'une matière
+
+Le formulaire de l'admin **"📅 Programmer un cours"** propose un nouveau
+menu déroulant **"Matière"** (`#coursMatiereAdmin`), rempli avec **toutes**
+les matières existantes (avec le nom du prof attribué entre parenthèses,
+ou "non attribuée"). En choisir une :
+
+- préremplit automatiquement la **série** et le **niveau/salle** du cours ;
+- préremplit le **titre** du cours (si le champ est encore vide) ;
+- affiche/masque automatiquement la case "Séries concernées" si la série
+  de la matière est "Tronc Commun" ;
+- enregistre `matiereId` et `matiereNom` sur le document `cours` créé.
+
+L'admin garde la possibilité de laisser "-- Saisie libre --" et de tout
+choisir manuellement comme avant (série, salle/niveau), pour les cours qui
+ne correspondent à aucune matière du référentiel.
+
+### Qui peut lancer le Live d'un cours ? (`coursGereParProf`)
+
+Nouvelle fonction centrale dans `script.js`, utilisée partout où un prof
+gère un cours (liste "Mes Cours & Live", bouton Lancer/Couper le Live,
+liste et envoi des supports de cours) :
+
+- Le prof doit être de la **même série** que le cours (condition de base,
+  inchangée).
+- Si le cours **n'est rattaché à aucune matière** (créé en "saisie libre"
+  par l'admin — notamment les cours de Tronc Commun), il reste géré par
+  **tous les profs de la série**, comme avant.
+- Si le cours est rattaché à une matière **sans professeur attribué**, il
+  reste géré par tous les profs de la série (en attendant que l'admin
+  fasse l'attribution).
+- Si le cours est rattaché à une matière **avec un professeur attribué**,
+  **seul ce professeur** voit le cours dans "Mes Cours & Live", peut lancer/
+  couper son Live, et peut lui envoyer un support de cours. Les autres
+  profs de la même série ne le voient plus du tout dans leur espace.
+
+### Supports de cours envoyés aux bons étudiants
+
+Ce point était déjà correct avant cette mise à jour et n'a pas eu besoin
+d'être changé : un support de cours est rattaché à un `coursId`, et
+`afficherSupportsEtudiant()` ne montre à un étudiant que les supports dont
+le cours le concerne réellement, via la même fonction centrale
+`coursConcerneEtudiant()` utilisée pour les cours en Live (même niveau ET
+(même série, OU — pour un cours de Tronc Commun — série listée dans les
+"séries concernées" du cours)). Ce qui a changé avec cette mise à jour,
+c'est le menu déroulant **côté prof** pour choisir le cours auquel
+rattacher un support (`#supportCours`) : il ne liste plus que les cours que
+le prof **gère réellement** (voir `coursGereParProf` ci-dessus), au lieu de
+tous les cours de sa série.
+
+**Non traité (hors demande) :** les **devoirs** restent liés à une seule
+série (pas de notion de tronc commun, pas de notion de matière/prof
+attribué) — dites-moi si vous voulez la même logique pour eux.
 
 ### Bug corrigé au passage
 
