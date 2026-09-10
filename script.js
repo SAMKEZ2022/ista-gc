@@ -224,11 +224,30 @@ function demarrerEcouteTempsReel() {
         afficherSupportsEtudiant();
     }, (err) => console.error("Erreur d'écoute Firestore (supports) :", err));
 
-    db.collection('depots').onSnapshot((snap) => {
-        state.DEPOTS = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        afficherDepotsProf();
-        afficherDevoirsEtudiant();
-    }, (err) => console.error("Erreur d'écoute Firestore (depots) :", err));
+    // Les dépôts (fichiers + notes) sont sensibles : un étudiant ne doit
+    // JAMAIS recevoir dans son navigateur les copies/notes des autres, et un
+    // prof ne doit voir que celles de sa propre série. On restreint donc la
+    // requête elle-même (pas juste l'affichage). Seul l'admin a besoin de
+    // tout voir (pour l'export Excel des notes toutes séries confondues).
+    if (currentUser.role === 'etudiant') {
+        db.collection('depots').where('etudiant', '==', currentUser.email).onSnapshot((snap) => {
+            state.DEPOTS = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            afficherDevoirsEtudiant();
+        }, (err) => console.error("Erreur d'écoute Firestore (depots) :", err));
+    } else if (currentUser.role === 'prof') {
+        db.collection('depots').where('serie', '==', currentUser.serie).onSnapshot((snap) => {
+            state.DEPOTS = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            afficherDepotsProf();
+            afficherDevoirsEtudiant();
+        }, (err) => console.error("Erreur d'écoute Firestore (depots) :", err));
+    } else {
+        // Admin : accès complet, nécessaire pour l'export des notes par classe/matière
+        db.collection('depots').onSnapshot((snap) => {
+            state.DEPOTS = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            afficherDepotsProf();
+            afficherDevoirsEtudiant();
+        }, (err) => console.error("Erreur d'écoute Firestore (depots) :", err));
+    }
 
     db.collection('users').onSnapshot((snap) => {
         state.USERS = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -471,6 +490,59 @@ function formatDuree(secondesTotales) {
     return `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
 }
 
+// ===================================
+// EXPORT DES NOTES EN EXCEL (admin)
+// Un fichier par classe (série + niveau) : une ligne par étudiant
+// (nom, prénom), une colonne par devoir/matière avec sa note.
+// ===================================
+function exporterNotesExcel() {
+    const serieSelect = document.getElementById('exportSerie');
+    const niveauSelect = document.getElementById('exportNiveau');
+    const serie = serieSelect.value;
+    const niveau = niveauSelect.value;
+
+    if (!serie || !niveau) {
+        alert("Veuillez choisir une série et un niveau.");
+        return;
+    }
+
+    const etudiantsClasse = state.USERS
+        .filter(u => u.role === 'etudiant' && u.serie === serie && Number(u.niveau) === Number(niveau))
+        .sort((a, b) => (a.nom || a.email).localeCompare(b.nom || b.email));
+
+    if (etudiantsClasse.length === 0) {
+        alert("Aucun étudiant trouvé dans cette classe.");
+        return;
+    }
+
+    // Les "matières" = les devoirs programmés pour cette série
+    const matieres = state.DEVOIRS.filter(d => d.serie === serie);
+
+    if (typeof XLSX === 'undefined') {
+        alert("⚠️ La bibliothèque d'export Excel n'a pas pu se charger (vérifiez votre connexion internet) puis réessayez.");
+        return;
+    }
+
+    const entetes = ["Nom", "Prénom", "Email", ...matieres.map(m => m.titre)];
+    const lignes = etudiantsClasse.map(u => {
+        const ligne = [u.nom || '(non renseigné)', u.prenom || '', u.email];
+        matieres.forEach(m => {
+            const depot = state.DEPOTS.find(d => d.devoirId === m.id && d.etudiant === u.email);
+            ligne.push(depot && depot.note !== '' && depot.note != null ? Number(depot.note) : '');
+        });
+        return ligne;
+    });
+
+    const feuille = XLSX.utils.aoa_to_sheet([entetes, ...lignes]);
+    feuille['!cols'] = entetes.map((_, i) => ({ wch: i < 3 ? 18 : 22 }));
+
+    const classeur = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(classeur, feuille, "Notes");
+
+    const nomClasse = `${getNomSerie(serie)}_${getNomNiveau(niveau)}`.replace(/[\/\\?%*:|"<>\s]/g, '-');
+    XLSX.writeFile(classeur, `Notes_${nomClasse}.xlsx`);
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
     document.querySelectorAll('.btn-logout').forEach(btn => btn.addEventListener('click', logout));
 
@@ -538,6 +610,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             const newRole = document.getElementById('newRole');
             const newSerie = document.getElementById('newSerie');
             const newNiveau = document.getElementById('newNiveau');
+            const newNom = document.getElementById('newNom');
+            const newPrenom = document.getElementById('newPrenom');
 
             const email = newEmail.value.trim().toLowerCase();
             if (!email || !newPassword.value || !newRole.value) {
@@ -560,12 +634,21 @@ document.addEventListener('DOMContentLoaded', async () => {
                 return;
             }
 
+            if (newRole.value === 'etudiant' && (!newNom.value.trim() || !newPrenom.value.trim())) {
+                alert("Veuillez saisir le nom et le prénom de cet étudiant (nécessaires pour l'export des notes).");
+                return;
+            }
+
             const newUser = { email, password: newPassword.value, role: newRole.value };
             if (newRole.value !== 'admin' && newSerie.value) {
                 newUser.serie = newSerie.value;
             }
             if (newRole.value === 'etudiant' && newNiveau.value) {
                 newUser.niveau = parseInt(newNiveau.value, 10);
+            }
+            if (newRole.value === 'etudiant') {
+                newUser.nom = newNom.value.trim();
+                newUser.prenom = newPrenom.value.trim();
             }
 
             try {
@@ -717,9 +800,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
 
                 try {
+                    const devoir = state.DEVOIRS.find(d => d.id === devoirId);
                     await db.collection('depots').add({
                         devoirId,
                         etudiant: currentUser.email,
+                        serie: devoir ? devoir.serie : currentUser.serie, // dénormalisé pour restreindre les requêtes par série
                         fichier: reader.result,
                         note: ""
                     });
@@ -737,11 +822,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // ================= FONCTIONS D'AFFICHAGE / ADMIN =================
 
+function nomAffiche(u) {
+    return u.nom && u.prenom ? `${u.prenom} ${u.nom}` : u.email;
+}
+
 function afficherUsers() {
     const el = document.getElementById('listeUsers');
     if (!el) return;
     el.innerHTML = state.USERS.map((u) =>
-        `<div class="card"><p><b>${u.email}</b> - ${u.role} ${u.serie ? '(' + getNomSerie(u.serie) + (u.niveau ? ' - ' + getNomNiveau(u.niveau) : '') + ')' : ''}</p>${u.role !== 'admin' ? `<button onclick="supprimerUser('${u.id}')" class="btn-danger">Supprimer</button>` : ''}</div>`
+        `<div class="card"><p><b>${u.nom && u.prenom ? nomAffiche(u) + ' — ' + u.email : u.email}</b> - ${u.role} ${u.serie ? '(' + getNomSerie(u.serie) + (u.niveau ? ' - ' + getNomNiveau(u.niveau) : '') + ')' : ''}</p>${u.role !== 'admin' ? `<button onclick="supprimerUser('${u.id}')" class="btn-danger">Supprimer</button>` : ''}</div>`
     ).join('') || '<p>Aucun utilisateur</p>';
 }
 
@@ -853,7 +942,7 @@ function blocPresenceEtudiants(c) {
         const presencesEtudiant = state.PRESENCES.filter(p => p.etudiant === u.email && p.coursId === c.id);
         const secondes = presencesEtudiant.reduce((total, p) => total + calculerSecondesPresence(p), 0);
         const enDirect = presencesEtudiant.some(p => p.enLigne);
-        return `<li>${enDirect ? '🔴' : '⏱️'} ${u.email} — <b>${formatDuree(secondes)}</b></li>`;
+        return `<li>${enDirect ? '🔴' : '⏱️'} ${nomAffiche(u)} — <b>${formatDuree(secondes)}</b></li>`;
     }).join('');
 
     return `<div class="presence-etudiants"><p><b>⏱️ Temps passé par les étudiants dans ce cours :</b></p><ul>${lignes}</ul></div>`;
@@ -1032,7 +1121,7 @@ function afficherClasseEtudiant() {
 
         return `<div class="card classe-item">
             <span class="minuteur ${presenceEnDirect ? 'minuteur-actif' : ''}">${presenceEnDirect ? '🔴' : '⏱️'} ${formatDuree(secondes)}</span>
-            <span>${u.email === currentUser.email ? `👤 ${u.email} (vous)` : `🎓 ${u.email}`}</span>
+            <span>${u.email === currentUser.email ? `👤 ${nomAffiche(u)} (vous)` : `🎓 ${nomAffiche(u)}`}</span>
         </div>`;
     }).join('') || "<p>Vous êtes seul(e) dans ce niveau pour le moment.</p>";
 }

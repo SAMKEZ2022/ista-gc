@@ -10,6 +10,8 @@
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
     <script src="./firebase-config.js"></script>
+    <!-- SheetJS : génère le fichier .xlsx directement dans le navigateur -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body class="theme-admin">
     <header class="header">
@@ -39,6 +41,8 @@
                 <option value="prof">Professeur</option>
                 <option value="etudiant">Étudiant</option>
             </select>
+            <input type="text" id="newNom" placeholder="Nom" style="display:none;">
+            <input type="text" id="newPrenom" placeholder="Prénom" style="display:none;">
             <select id="newSerie" style="display:none;">
                 <option value="">-- Choisir une série --</option>
             </select>
@@ -74,6 +78,18 @@
         </form>
         <div id="listeDevoirsAdmin"></div>
 
+        <h3>📊 Export des notes (Excel)</h3>
+        <div class="card">
+            <p>Choisissez une classe (série + niveau) : le fichier contiendra une ligne par étudiant (nom, prénom) et une colonne par devoir/matière avec la note correspondante.</p>
+            <select id="exportSerie">
+                <option value="">-- Choisir une série --</option>
+            </select>
+            <select id="exportNiveau">
+                <option value="">-- Choisir un niveau --</option>
+            </select>
+            <button type="button" onclick="exporterNotesExcel()" class="btn-success">📥 Télécharger le bulletin (.xlsx)</button>
+        </div>
+
     </div>
     <script src="./script.js"></script>
     <script>
@@ -82,6 +98,8 @@
             remplirSelectSeries('newSerie');
             remplirSelectSeries('newSerieCours');
             remplirSelectSeries('newSerieDevoir');
+            remplirSelectSeries('exportSerie');
+            remplirSelectNiveaux('exportNiveau');
             // Initialiser le select des salles pour la série par défaut
             const firstSerieKey = Object.keys(SERIES)[0];
             if (firstSerieKey) {
@@ -94,6 +112,8 @@
             const role = document.getElementById('newRole').value;
             const serieSelect = document.getElementById('newSerie');
             const niveauSelect = document.getElementById('newNiveau');
+            const nomInput = document.getElementById('newNom');
+            const prenomInput = document.getElementById('newPrenom');
             if (role === 'admin') {
                 serieSelect.style.display = 'none';
                 serieSelect.required = false;
@@ -105,13 +125,22 @@
 
             // Le niveau ne concerne que les étudiants : c'est lui qui détermine
             // avec qui ils partagent la liste de classe et le minuteur.
+            // Nom/Prénom aussi : nécessaires pour l'export Excel des notes.
             if (role === 'etudiant') {
                 niveauSelect.style.display = 'block';
                 niveauSelect.required = true;
                 remplirSelectNiveaux('newNiveau');
+                nomInput.style.display = 'block';
+                nomInput.required = true;
+                prenomInput.style.display = 'block';
+                prenomInput.required = true;
             } else {
                 niveauSelect.style.display = 'none';
                 niveauSelect.required = false;
+                nomInput.style.display = 'none';
+                nomInput.required = false;
+                prenomInput.style.display = 'none';
+                prenomInput.required = false;
             }
         }
     </script>
