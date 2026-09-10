@@ -57,12 +57,16 @@
         <form id="formAddCours">
             <input type="text" id="newTitre" placeholder="Titre du cours" required>
             <input type="datetime-local" id="newDate" required>
-            <select id="newSerieCours" required onchange="remplirSelectSalles('newSalle', this.value)">
+            <select id="newSerieCours" required onchange="remplirSelectSalles('newSalle', this.value); toggleSeriesConcerneesCours();">
                 <option value="">-- Choisir une série --</option>
             </select>
             <select id="newSalle" required>
                 <option value="">-- D'abord choisir une série --</option>
             </select>
+            <div id="seriesConcerneesWrapper" class="checkbox-group" style="display:none;">
+                <p><b>🎯 Séries concernées par ce cours de Tronc Commun :</b></p>
+                <div id="seriesConcerneesCours"></div>
+            </div>
             <button type="submit">Programmer le cours</button>
         </form>
         <div id="listeCoursAdmin"></div>
@@ -107,6 +111,20 @@
                 remplirSelectSalles('newSalle', firstSerieKey);
             }
         });
+
+        // Affiche la liste à cocher "Séries concernées" seulement quand la
+        // série choisie pour le cours est "Tronc Commun" (sinon la série du
+        // cours suffit à savoir qui doit le recevoir).
+        function toggleSeriesConcerneesCours() {
+            const serieId = document.getElementById('newSerieCours').value;
+            const wrapper = document.getElementById('seriesConcerneesWrapper');
+            if (estSerieTroncCommun(serieId)) {
+                wrapper.style.display = 'block';
+                remplirCheckboxSeriesConcernees('seriesConcerneesCours');
+            } else {
+                wrapper.style.display = 'none';
+            }
+        }
 
         function toggleSerieField() {
             const role = document.getElementById('newRole').value;

@@ -122,3 +122,38 @@ Dans la version `localStorage`, un étudiant voyait **tous** les cours en live
 de toutes les séries. J'ai filtré l'affichage et les notifications pour ne
 montrer aux étudiants **que les cours de leur propre série** — ce qui
 correspond à "les étudiants concernés" dans votre demande.
+
+## Nouveau : le prof programme lui-même son cours (série + niveau)
+
+Auparavant, seul l'**admin** pouvait créer un cours. Désormais, `prof.html`
+a aussi un formulaire **"📅 Programmer un cours"** :
+
+- Le prof choisit un **titre**, une **date**, et un **niveau** (L1 à Master 2).
+- Sa **série** est automatiquement celle de son compte (pas besoin de la
+  choisir) : le cours est donc réservé aux étudiants de sa série **et** du
+  niveau choisi — personne d'autre ne le reçoit.
+
+### Cas particulier : Tronc Commun
+
+Un prof rattaché à la série **"Tronc Commun"** n'a pas d'étudiants qui lui
+sont propres (ce sont des cours communs à plusieurs filières). Pour lui, le
+formulaire affiche en plus une liste à cocher **"Séries concernées"** : il
+coche les filières (GC, Électro, Journalisme, etc.) dont les étudiants,
+**au niveau choisi**, doivent recevoir ce cours précis. Un étudiant reçoit
+alors le cours si :
+
+- son niveau correspond au niveau du cours, **ET**
+- soit sa série correspond à celle du cours (cas normal),
+- soit le cours est en Tronc Commun et sa série fait partie des "séries
+  concernées" cochées par le prof.
+
+Cette logique est centralisée dans une seule fonction, `coursConcerneEtudiant()`
+dans `script.js`, utilisée partout (affichage des cours live, prochains
+cours, supports de cours, notifications, minuteur de présence) pour rester
+cohérente. Le même mécanisme (case "Séries concernées") a aussi été ajouté
+au formulaire de création de cours de l'**admin**, pour qu'il puisse créer
+lui aussi des cours de tronc commun correctement ciblés.
+
+**Non traité (hors demande) :** les **devoirs** restent liés à une seule
+série (pas de notion de tronc commun) — dites-moi si vous voulez la même
+logique pour eux.

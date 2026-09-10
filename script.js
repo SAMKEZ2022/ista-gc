@@ -137,6 +137,56 @@ function estLienJitsi(lien) {
     return typeof lien === 'string' && lien.includes('meet.jit.si/');
 }
 
+// ---- TRONC COMMUN : un cours "tronc commun" est suivi par plusieurs séries ----
+// Pour un cours normal, seule la série du cours (c.serie) est concernée.
+// Pour un cours de tronc commun, on ajoute une liste explicite de séries
+// concernées (c.seriesConcernees) choisie par le prof/admin qui programme
+// le cours : ce sont les étudiants de CES séries (au niveau du cours) qui
+// doivent recevoir le lien, en plus des éventuels étudiants directement
+// rattachés à la série "tronc_commun".
+function estSerieTroncCommun(serieId) {
+    return serieId === 'tronc_commun';
+}
+
+// Fonction centrale : détermine si un cours donné concerne un étudiant donné
+// (même niveau ET (même série OU série listée dans les "séries concernées"
+// d'un cours de tronc commun)). Utilisée partout où l'on filtre l'affichage,
+// les notifications et le suivi de présence côté étudiant, pour garder une
+// seule logique cohérente.
+function coursConcerneEtudiant(cours, etudiant) {
+    if (!cours || !etudiant || !etudiant.niveau) return false;
+    if (Number(cours.salle) !== Number(etudiant.niveau)) return false;
+    if (cours.serie === etudiant.serie) return true;
+    if (estSerieTroncCommun(cours.serie) && Array.isArray(cours.seriesConcernees)) {
+        return cours.seriesConcernees.includes(etudiant.serie);
+    }
+    return false;
+}
+
+// Remplit une liste de cases à cocher avec toutes les séries "normales"
+// (on exclut "tronc_commun" lui-même : ça n'aurait pas de sens de cocher
+// "Tronc Commun" comme série concernée par un cours de tronc commun).
+function remplirCheckboxSeriesConcernees(containerId, valeursCochees) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    const cochees = new Set(valeursCochees || []);
+    el.innerHTML = Object.keys(SERIES)
+        .filter(key => !estSerieTroncCommun(key))
+        .map(key => `
+            <label class="checkbox-item">
+                <input type="checkbox" value="${key}" ${cochees.has(key) ? 'checked' : ''}>
+                ${SERIES[key].nom}
+            </label>
+        `).join('');
+}
+
+// Lit les cases cochées d'un groupe rempli par remplirCheckboxSeriesConcernees.
+function getSeriesConcerneesCochees(containerId) {
+    const el = document.getElementById(containerId);
+    if (!el) return [];
+    return Array.from(el.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
+}
+
 // ===================================
 // ETAT LOCAL EN MEMOIRE
 // Rempli automatiquement et en continu par les écouteurs Firestore (onSnapshot).
@@ -368,7 +418,7 @@ function notifierNouveauxLivePourEtudiant(ancienCours, nouveauCours) {
 
     const ancienIdsLive = new Set(ancienCours.filter(c => c.en_live).map(c => c.id));
     const nouveauxLiveConcernes = nouveauCours.filter(c =>
-        c.en_live && c.serie === currentUser.serie && Number(c.salle) === Number(currentUser.niveau) && !ancienIdsLive.has(c.id)
+        c.en_live && coursConcerneEtudiant(c, currentUser) && !ancienIdsLive.has(c.id)
     );
 
     nouveauxLiveConcernes.forEach(c => {
@@ -431,9 +481,7 @@ function synchroniserPresenceEtudiant() {
     if (!document.getElementById('listeCours')) return; // page étudiant uniquement
     if (!currentUser.niveau) return; // pas de niveau connu = pas de cours concerné
 
-    const coursLiveConcernes = state.COURS.filter(c =>
-        c.en_live && c.serie === currentUser.serie && Number(c.salle) === Number(currentUser.niveau)
-    );
+    const coursLiveConcernes = state.COURS.filter(c => c.en_live && coursConcerneEtudiant(c, currentUser));
     const idsLive = new Set(coursLiveConcernes.map(c => c.id));
 
     coursLiveConcernes.forEach(c => {
@@ -676,16 +724,31 @@ document.addEventListener('DOMContentLoaded', async () => {
             const serieId = newSerie.value;
             const numeroSalle = parseInt(newSalle.value, 10);
 
+            const coursData = {
+                titre: newTitre.value,
+                date: newDate.value,
+                serie: serieId,
+                salle: numeroSalle,
+                lien: lienSalle(serieId, numeroSalle),
+                en_live: false
+            };
+
+            // Cours de tronc commun : il faut préciser quelles séries sont
+            // concernées (en plus du niveau), pour que seuls leurs étudiants
+            // reçoivent le cours.
+            if (estSerieTroncCommun(serieId)) {
+                const seriesConcernees = getSeriesConcerneesCochees('seriesConcerneesCours');
+                if (seriesConcernees.length === 0) {
+                    alert("Pour un cours de Tronc Commun, veuillez cocher au moins une série concernée.");
+                    return;
+                }
+                coursData.seriesConcernees = seriesConcernees;
+            }
+
             try {
-                await db.collection('cours').add({
-                    titre: newTitre.value,
-                    date: newDate.value,
-                    serie: serieId,
-                    salle: numeroSalle,
-                    lien: lienSalle(serieId, numeroSalle),
-                    en_live: false
-                });
+                await db.collection('cours').add(coursData);
                 e.target.reset();
+                document.getElementById('seriesConcerneesWrapper').style.display = 'none';
             } catch (err) {
                 console.error(err);
                 alert("⚠️ Impossible de programmer le cours.");
@@ -721,6 +784,70 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ---------------- PROF ----------------
     if (document.getElementById('listeCoursProf')) {
         remplirSelectCours('supportCours');
+
+        // Le prof programme lui-même ses cours : il choisit le niveau
+        // concerné (sa série est la sienne, fixée à la création de son
+        // compte). Exception "Tronc Commun" : un prof rattaché à la série
+        // "tronc_commun" n'a pas d'étudiants qui lui sont propres, donc il
+        // doit en plus cocher les séries (filières) concernées par son
+        // cours ; seuls les étudiants de ces séries, au niveau choisi,
+        // recevront le cours.
+        const formAddCoursProf = document.getElementById('formAddCoursProf');
+        if (formAddCoursProf && currentUser.serie) {
+            remplirSelectNiveaux('newNiveauCoursProf');
+
+            const wrapperTC = document.getElementById('seriesConcerneesWrapperProf');
+            if (estSerieTroncCommun(currentUser.serie)) {
+                wrapperTC.style.display = 'block';
+                remplirCheckboxSeriesConcernees('seriesConcerneesCoursProf');
+            } else if (wrapperTC) {
+                wrapperTC.style.display = 'none';
+            }
+
+            formAddCoursProf.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const newTitre = document.getElementById('newTitreCoursProf');
+                const newDate = document.getElementById('newDateCoursProf');
+                const newNiveau = document.getElementById('newNiveauCoursProf');
+
+                if (!newTitre.value || !newDate.value || !newNiveau.value) {
+                    alert("Le titre, la date et le niveau du cours sont obligatoires.");
+                    return;
+                }
+
+                const serieId = currentUser.serie;
+                const numeroSalle = parseInt(newNiveau.value, 10);
+
+                const coursData = {
+                    titre: newTitre.value,
+                    date: newDate.value,
+                    serie: serieId,
+                    salle: numeroSalle,
+                    lien: lienSalle(serieId, numeroSalle),
+                    en_live: false
+                };
+
+                if (estSerieTroncCommun(serieId)) {
+                    const seriesConcernees = getSeriesConcerneesCochees('seriesConcerneesCoursProf');
+                    if (seriesConcernees.length === 0) {
+                        alert("Ce cours est en Tronc Commun : veuillez cocher au moins une série concernée pour que ses étudiants le reçoivent.");
+                        return;
+                    }
+                    coursData.seriesConcernees = seriesConcernees;
+                }
+
+                try {
+                    await db.collection('cours').add(coursData);
+                    e.target.reset();
+                    if (estSerieTroncCommun(serieId)) {
+                        remplirCheckboxSeriesConcernees('seriesConcerneesCoursProf');
+                    }
+                } catch (err) {
+                    console.error(err);
+                    alert("⚠️ Impossible de programmer le cours.");
+                }
+            });
+        }
 
         const formAddSupport = document.getElementById('formAddSupport');
         formAddSupport.addEventListener('submit', (e) => {
@@ -844,11 +971,18 @@ async function supprimerUser(id) {
     }
 }
 
+// Petit texte "Séries concernées : ..." affiché uniquement pour les cours de
+// tronc commun, pour que l'admin/le prof voie d'un coup d'œil qui recevra le cours.
+function texteSeriesConcernees(c) {
+    if (!estSerieTroncCommun(c.serie) || !Array.isArray(c.seriesConcernees) || c.seriesConcernees.length === 0) return '';
+    return `<p>🎯 Séries concernées : ${c.seriesConcernees.map(getNomSerie).join(', ')}</p>`;
+}
+
 function afficherCoursAdmin() {
     const el = document.getElementById('listeCoursAdmin');
     if (!el) return;
     el.innerHTML = state.COURS.map((c) =>
-        `<div class="card"><h4>${c.titre}</h4><p>📚 ${getNomSerie(c.serie)} | 📅 ${new Date(c.date).toLocaleString('fr-FR')} | 🏫 ${nomSalle(c.serie, c.salle)} ${c.en_live ? '🔴 LIVE' : ''}</p><button onclick="supprimerCours('${c.id}')" class="btn-danger">Supprimer</button></div>`
+        `<div class="card"><h4>${c.titre}</h4><p>📚 ${getNomSerie(c.serie)} | 📅 ${new Date(c.date).toLocaleString('fr-FR')} | 🏫 ${nomSalle(c.serie, c.salle)} ${c.en_live ? '🔴 LIVE' : ''}</p>${texteSeriesConcernees(c)}<button onclick="supprimerCours('${c.id}')" class="btn-danger">Supprimer</button></div>`
     ).join('') || '<p>Aucun cours</p>';
 }
 
@@ -933,9 +1067,7 @@ function blocVisio(c) {
 // Liste, pour un cours donné, le temps passé par chaque étudiant concerné
 // (même série + même niveau que la salle du cours) — visible par le prof.
 function blocPresenceEtudiants(c) {
-    const etudiantsConcernes = state.USERS.filter(u =>
-        u.role === 'etudiant' && u.serie === c.serie && Number(u.niveau) === Number(c.salle)
-    );
+    const etudiantsConcernes = state.USERS.filter(u => u.role === 'etudiant' && coursConcerneEtudiant(c, u));
     if (etudiantsConcernes.length === 0) return '';
 
     const lignes = etudiantsConcernes.map(u => {
@@ -958,7 +1090,7 @@ function afficherCoursProf() {
         : state.COURS.filter(c => c.serie === currentUser.serie);
 
     el.innerHTML = mesCours.map(c =>
-        `<div class="card"><h4>${c.titre}</h4><p>📚 ${getNomSerie(c.serie)} | 📅 ${new Date(c.date).toLocaleString('fr-FR')} | 🏫 ${nomSalle(c.serie, c.salle)}</p>${c.en_live ? `<p class="live">🔴 EN LIVE</p>${blocVisio(c)}<button onclick="couperCours('${c.id}')" class="btn-danger" style="margin-top:12px;">Couper le Live</button>` : `<button onclick="lancerCours('${c.id}')" class="btn-success">▶️ Lancer le Live</button>`}${blocPresenceEtudiants(c)}</div>`
+        `<div class="card"><h4>${c.titre}</h4><p>📚 ${getNomSerie(c.serie)} | 📅 ${new Date(c.date).toLocaleString('fr-FR')} | 🏫 ${nomSalle(c.serie, c.salle)}</p>${texteSeriesConcernees(c)}${c.en_live ? `<p class="live">🔴 EN LIVE</p>${blocVisio(c)}<button onclick="couperCours('${c.id}')" class="btn-danger" style="margin-top:12px;">Couper le Live</button>` : `<button onclick="lancerCours('${c.id}')" class="btn-success">▶️ Lancer le Live</button>`}${blocPresenceEtudiants(c)}</div>`
     ).join('') || "<p>Aucun cours programmé</p>";
 }
 
@@ -1029,7 +1161,7 @@ function afficherBanniereLive(coursLive) {
     }
 
     banniere.innerHTML = coursLive.map(c =>
-        `<span>🔴 ${c.titre} (${nomSalle(c.serie, c.salle)}) est en Live</span><a href="#live-cours-${c.id}">▶️ Voir le cours</a>`
+        `<span>🔴 ${c.titre} (${nomSalle(c.serie, c.salle)}${estSerieTroncCommun(c.serie) ? ' - Tronc Commun' : ''}) est en Live</span><a href="#live-cours-${c.id}">▶️ Voir le cours</a>`
     ).join(' &nbsp;|&nbsp; ');
     banniere.className = 'live-banner';
 }
@@ -1044,11 +1176,10 @@ function afficherCoursEtudiant() {
         return;
     }
 
-    // Seuls les cours en live DE SA SERIE **ET** DE SON NIVEAU sont montrés
-    // (c.salle correspond au niveau : voir la constante NIVEAUX en haut du fichier)
-    const coursLive = state.COURS.filter(c =>
-        c.en_live === true && c.serie === currentUser.serie && Number(c.salle) === Number(currentUser.niveau)
-    );
+    // Seuls les cours en live qui concernent la série ET le niveau de
+    // l'étudiant sont montrés (voir coursConcerneEtudiant : gère aussi le
+    // cas des cours de tronc commun destinés à plusieurs séries).
+    const coursLive = state.COURS.filter(c => c.en_live === true && coursConcerneEtudiant(c, currentUser));
 
     afficherBanniereLive(coursLive);
 
@@ -1067,7 +1198,7 @@ function afficherProchainsCours() {
     }
 
     const prochains = state.COURS
-        .filter(c => c.en_live === false && c.serie === currentUser.serie && Number(c.salle) === Number(currentUser.niveau))
+        .filter(c => c.en_live === false && coursConcerneEtudiant(c, currentUser))
         .sort((a, b) => new Date(a.date) - new Date(b.date));
 
     el.innerHTML = prochains.map(c =>
@@ -1087,8 +1218,8 @@ function afficherSupportsEtudiant() {
     el.innerHTML = state.SUPPORTS
         .filter(s => {
             const cours = state.COURS.find(c => c.id === s.coursId);
-            // Un support n'est visible que par les étudiants de la même série ET du même niveau que le cours concerné
-            return cours && cours.serie === currentUser.serie && Number(cours.salle) === Number(currentUser.niveau);
+            // Un support n'est visible que par les étudiants concernés par le cours (série/niveau, y compris tronc commun)
+            return cours && coursConcerneEtudiant(cours, currentUser);
         })
         .map(s => {
             const cours = state.COURS.find(c => c.id === s.coursId);
