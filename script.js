@@ -200,7 +200,8 @@ let state = {
     SUPPORTS: [],
     DEPOTS: [],
     USERS: [],
-    PRESENCES: []
+    PRESENCES: [],
+    MATIERES: []
 };
 
 let etatInitialCoursCharge = false;
@@ -305,7 +306,21 @@ function demarrerEcouteTempsReel() {
         afficherStats();
         afficherClasseEtudiant();
         afficherCoursProf();
+        afficherMatieresAdmin(); // la liste des profs assignables dépend de state.USERS
     }, (err) => console.error("Erreur d'écoute Firestore (users) :", err));
+
+    // ---- MATIERES ----
+    // Créées par l'admin pour un niveau (et une série) donnés, puis attribuées
+    // à un professeur de cette série. Sert de référentiel pour savoir "qui
+    // enseigne quoi" ; utilisé aussi pour préremplir le formulaire de
+    // programmation de cours côté prof.
+    db.collection('matieres').onSnapshot((snap) => {
+        state.MATIERES = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        afficherMatieresAdmin();
+        afficherMatieresProf();
+        remplirSelectMatieresProf();
+        afficherStats();
+    }, (err) => console.error("Erreur d'écoute Firestore (matieres) :", err));
 
     // Temps de présence des étudiants dans les cours (pour le minuteur et le
     // suivi par l'enseignant). Voir "SUIVI DE PRESENCE" plus bas.
@@ -323,6 +338,7 @@ function rafraichirVuesLieesAuxCours() {
     afficherCoursAdmin();
     afficherStats();
     synchroniserPresenceEtudiant();
+    remplirSelectCours('supportCours'); // corrige le select vide si les cours arrivent après le 1er rendu
 }
 
 function rafraichirVuesLieesAuxDevoirs() {
@@ -755,6 +771,35 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         });
 
+        const formAddMatiere = document.getElementById('formAddMatiere');
+        if (formAddMatiere) {
+            formAddMatiere.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const newNomMatiere = document.getElementById('newNomMatiere');
+                const newSerieMatiere = document.getElementById('newSerieMatiere');
+                const newNiveauMatiere = document.getElementById('newNiveauMatiere');
+
+                if (!newNomMatiere.value.trim() || !newSerieMatiere.value || !newNiveauMatiere.value) {
+                    alert("Le nom, la série et le niveau de la matière sont obligatoires.");
+                    return;
+                }
+
+                try {
+                    await db.collection('matieres').add({
+                        nom: newNomMatiere.value.trim(),
+                        serie: newSerieMatiere.value,
+                        niveau: parseInt(newNiveauMatiere.value, 10),
+                        profId: null,
+                        profEmail: null
+                    });
+                    e.target.reset();
+                } catch (err) {
+                    console.error(err);
+                    alert("⚠️ Impossible de créer la matière.");
+                }
+            });
+        }
+
         const formAddDevoir = document.getElementById('formAddDevoir');
         formAddDevoir.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -795,6 +840,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const formAddCoursProf = document.getElementById('formAddCoursProf');
         if (formAddCoursProf && currentUser.serie) {
             remplirSelectNiveaux('newNiveauCoursProf');
+            remplirSelectMatieresProf(); // sera aussi rafraîchi dès que les matières arrivent (temps réel)
 
             const wrapperTC = document.getElementById('seriesConcerneesWrapperProf');
             if (estSerieTroncCommun(currentUser.serie)) {
@@ -809,6 +855,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const newTitre = document.getElementById('newTitreCoursProf');
                 const newDate = document.getElementById('newDateCoursProf');
                 const newNiveau = document.getElementById('newNiveauCoursProf');
+                const newMatiere = document.getElementById('coursMatiereProf');
 
                 if (!newTitre.value || !newDate.value || !newNiveau.value) {
                     alert("Le titre, la date et le niveau du cours sont obligatoires.");
@@ -826,6 +873,18 @@ document.addEventListener('DOMContentLoaded', async () => {
                     lien: lienSalle(serieId, numeroSalle),
                     en_live: false
                 };
+
+                // Rattache le cours à la matière choisie (si le prof en a
+                // sélectionné une parmi celles que l'admin lui a attribuées) :
+                // sert à l'admin/prof pour savoir quel cours correspond à
+                // quelle matière du référentiel.
+                if (newMatiere && newMatiere.value) {
+                    const matiere = state.MATIERES.find(m => m.id === newMatiere.value);
+                    if (matiere) {
+                        coursData.matiereId = matiere.id;
+                        coursData.matiereNom = matiere.nom;
+                    }
+                }
 
                 if (estSerieTroncCommun(serieId)) {
                     const seriesConcernees = getSeriesConcerneesCochees('seriesConcerneesCoursProf');
@@ -978,11 +1037,18 @@ function texteSeriesConcernees(c) {
     return `<p>🎯 Séries concernées : ${c.seriesConcernees.map(getNomSerie).join(', ')}</p>`;
 }
 
+// Petit texte "📘 Matière : ..." affiché uniquement si le cours a été
+// programmé à partir d'une matière attribuée par l'admin (voir coursData.matiereId).
+function texteMatiereCours(c) {
+    if (!c.matiereNom) return '';
+    return `<p>📘 Matière : ${c.matiereNom}</p>`;
+}
+
 function afficherCoursAdmin() {
     const el = document.getElementById('listeCoursAdmin');
     if (!el) return;
     el.innerHTML = state.COURS.map((c) =>
-        `<div class="card"><h4>${c.titre}</h4><p>📚 ${getNomSerie(c.serie)} | 📅 ${new Date(c.date).toLocaleString('fr-FR')} | 🏫 ${nomSalle(c.serie, c.salle)} ${c.en_live ? '🔴 LIVE' : ''}</p>${texteSeriesConcernees(c)}<button onclick="supprimerCours('${c.id}')" class="btn-danger">Supprimer</button></div>`
+        `<div class="card"><h4>${c.titre}</h4><p>📚 ${getNomSerie(c.serie)} | 📅 ${new Date(c.date).toLocaleString('fr-FR')} | 🏫 ${nomSalle(c.serie, c.salle)} ${c.en_live ? '🔴 LIVE' : ''}</p>${texteMatiereCours(c)}${texteSeriesConcernees(c)}<button onclick="supprimerCours('${c.id}')" class="btn-danger">Supprimer</button></div>`
     ).join('') || '<p>Aucun cours</p>';
 }
 
@@ -1004,6 +1070,99 @@ function afficherDevoirsAdmin() {
     ).join('') || '<p>Aucun devoir</p>';
 }
 
+// ================= FONCTIONS MATIERES (admin) =================
+// Une matière appartient à une série ET un niveau (comme un cours), et peut
+// être attribuée à UN professeur de cette même série. L'admin peut créer,
+// attribuer/réattribuer (y compris "aucun prof") et supprimer.
+
+function afficherMatieresAdmin() {
+    const el = document.getElementById('listeMatieresAdmin');
+    if (!el) return;
+
+    el.innerHTML = state.MATIERES.map(m => {
+        // Seuls les profs de la même série que la matière ont du sens ici.
+        const profsSerie = state.USERS.filter(u => u.role === 'prof' && u.serie === m.serie);
+        const optionsProfs = '<option value="">-- Aucun professeur --</option>' +
+            profsSerie.map(p => `<option value="${p.id}" ${m.profId === p.id ? 'selected' : ''}>${nomAffiche(p)}</option>`).join('');
+
+        return `<div class="card">
+            <h4>${m.nom}</h4>
+            <p>📚 ${getNomSerie(m.serie)} | 🎓 ${getNomNiveau(m.niveau)}</p>
+            <p>${m.profId ? `👨‍🏫 Attribuée à : <b>${m.profEmail || '(prof)'}</b>` : '⚠️ Aucun professeur attribué pour le moment'}</p>
+            <label>Attribuer / réattribuer à un professeur :</label>
+            <select onchange="assignerProfMatiere('${m.id}', this.value)">${optionsProfs}</select>
+            <button onclick="supprimerMatiere('${m.id}')" class="btn-danger">Supprimer</button>
+        </div>`;
+    }).join('') || '<p>Aucune matière créée pour le moment</p>';
+}
+
+async function assignerProfMatiere(matiereId, profId) {
+    try {
+        if (!profId) {
+            await db.collection('matieres').doc(matiereId).update({ profId: null, profEmail: null });
+            return;
+        }
+        const prof = state.USERS.find(u => u.id === profId);
+        await db.collection('matieres').doc(matiereId).update({
+            profId,
+            profEmail: prof ? prof.email : null
+        });
+    } catch (err) {
+        console.error(err);
+        alert("⚠️ Impossible d'attribuer la matière à ce professeur.");
+        afficherMatieresAdmin(); // réaffiche l'état réel (annule le changement visuel du select)
+    }
+}
+
+async function supprimerMatiere(id) {
+    if (!confirm("Supprimer cette matière ? Les cours déjà programmés ne seront pas supprimés.")) return;
+    try {
+        await db.collection('matieres').doc(id).delete();
+    } catch (err) {
+        console.error(err);
+        alert("⚠️ Suppression impossible.");
+    }
+}
+
+// ================= FONCTIONS MATIERES (prof) =================
+
+// Liste en lecture seule des matières que l'admin a attribuées à ce prof.
+function afficherMatieresProf() {
+    const el = document.getElementById('listeMatieresProf');
+    if (!el || !currentUser) return;
+
+    const mesMatieres = state.MATIERES.filter(m => m.profId === currentUser.id);
+    el.innerHTML = mesMatieres.map(m =>
+        `<div class="card"><h4>${m.nom}</h4><p>🎓 ${getNomNiveau(m.niveau)} | 📚 ${getNomSerie(m.serie)}</p></div>`
+    ).join('') || "<p>Aucune matière ne vous a encore été attribuée par l'administration.</p>";
+}
+
+// Remplit le select "Matière" du formulaire de programmation de cours (prof)
+// avec uniquement les matières qui LUI ont été attribuées. Choisir une
+// matière préremplit automatiquement le niveau (et le titre s'il est vide).
+function remplirSelectMatieresProf() {
+    const el = document.getElementById('coursMatiereProf');
+    if (!el || !currentUser) return;
+
+    const mesMatieres = state.MATIERES.filter(m => m.profId === currentUser.id);
+    el.innerHTML = '<option value="">-- Saisie libre (aucune matière) --</option>' +
+        mesMatieres.map(m => `<option value="${m.id}" data-niveau="${m.niveau}" data-nom="${m.nom}">${m.nom} (${getNomNiveau(m.niveau)})</option>`).join('');
+}
+
+// Appelée par le onchange du select #coursMatiereProf (voir prof.html).
+function appliquerMatiereSelectionnee() {
+    const select = document.getElementById('coursMatiereProf');
+    const niveauSelect = document.getElementById('newNiveauCoursProf');
+    const titreInput = document.getElementById('newTitreCoursProf');
+    if (!select || !select.value) return;
+
+    const option = select.options[select.selectedIndex];
+    const niveau = option.getAttribute('data-niveau');
+    const nom = option.getAttribute('data-nom');
+    if (niveauSelect && niveau) niveauSelect.value = niveau;
+    if (titreInput && !titreInput.value.trim()) titreInput.value = nom;
+}
+
 async function supprimerDevoir(id) {
     if (!confirm("Supprimer ce devoir ? Les dépôts associés resteront orphelins.")) return;
     try {
@@ -1020,6 +1179,8 @@ function afficherStats() {
     document.getElementById('totalDevoirs').innerText = state.DEVOIRS.length;
     document.getElementById('totalProfs').innerText = state.USERS.filter(u => u.role === 'prof').length;
     document.getElementById('totalEtudiants').innerText = state.USERS.filter(u => u.role === 'etudiant').length;
+    const totalMatieresEl = document.getElementById('totalMatieres');
+    if (totalMatieresEl) totalMatieresEl.innerText = state.MATIERES.length;
 }
 
 // ================= FONCTIONS PROF =================
@@ -1090,7 +1251,7 @@ function afficherCoursProf() {
         : state.COURS.filter(c => c.serie === currentUser.serie);
 
     el.innerHTML = mesCours.map(c =>
-        `<div class="card"><h4>${c.titre}</h4><p>📚 ${getNomSerie(c.serie)} | 📅 ${new Date(c.date).toLocaleString('fr-FR')} | 🏫 ${nomSalle(c.serie, c.salle)}</p>${texteSeriesConcernees(c)}${c.en_live ? `<p class="live">🔴 EN LIVE</p>${blocVisio(c)}<button onclick="couperCours('${c.id}')" class="btn-danger" style="margin-top:12px;">Couper le Live</button>` : `<button onclick="lancerCours('${c.id}')" class="btn-success">▶️ Lancer le Live</button>`}${blocPresenceEtudiants(c)}</div>`
+        `<div class="card"><h4>${c.titre}</h4><p>📚 ${getNomSerie(c.serie)} | 📅 ${new Date(c.date).toLocaleString('fr-FR')} | 🏫 ${nomSalle(c.serie, c.salle)}</p>${texteMatiereCours(c)}${texteSeriesConcernees(c)}${c.en_live ? `<p class="live">🔴 EN LIVE</p>${blocVisio(c)}<button onclick="couperCours('${c.id}')" class="btn-danger" style="margin-top:12px;">Couper le Live</button>` : `<button onclick="lancerCours('${c.id}')" class="btn-success">▶️ Lancer le Live</button>`}${blocPresenceEtudiants(c)}</div>`
     ).join('') || "<p>Aucun cours programmé</p>";
 }
 
@@ -1184,7 +1345,7 @@ function afficherCoursEtudiant() {
     afficherBanniereLive(coursLive);
 
     el.innerHTML = coursLive.map(c =>
-        `<div class="card card-live" id="live-cours-${c.id}"><h4>🔴 ${c.titre}</h4><p>📚 ${getNomSerie(c.serie)} | 📅 ${new Date(c.date).toLocaleString('fr-FR')} | 🏫 ${nomSalle(c.serie, c.salle)}</p>${blocVisio(c)}</div>`
+        `<div class="card card-live" id="live-cours-${c.id}"><h4>🔴 ${c.titre}</h4><p>📚 ${getNomSerie(c.serie)} | 📅 ${new Date(c.date).toLocaleString('fr-FR')} | 🏫 ${nomSalle(c.serie, c.salle)}</p>${texteMatiereCours(c)}${blocVisio(c)}</div>`
     ).join('') || "<p>Aucun cours en live pour le moment. Cette page se met à jour automatiquement et instantanément dès qu'un professeur démarre un cours.</p>";
 }
 
@@ -1202,7 +1363,7 @@ function afficherProchainsCours() {
         .sort((a, b) => new Date(a.date) - new Date(b.date));
 
     el.innerHTML = prochains.map(c =>
-        `<div class="card"><h4>${c.titre}</h4><p>📚 ${getNomSerie(c.serie)} | 📅 ${new Date(c.date).toLocaleString('fr-FR')} | 🏫 ${nomSalle(c.serie, c.salle)}</p></div>`
+        `<div class="card"><h4>${c.titre}</h4><p>📚 ${getNomSerie(c.serie)} | 📅 ${new Date(c.date).toLocaleString('fr-FR')} | 🏫 ${nomSalle(c.serie, c.salle)}</p>${texteMatiereCours(c)}</div>`
     ).join('') || "<p>Aucun cours programmé pour le moment</p>";
 }
 

@@ -21,8 +21,15 @@
     </header>
     <div class="container">
 
+        <h3>📘 Mes Matières</h3>
+        <p>Matières qui vous ont été attribuées par l'administration.</p>
+        <div id="listeMatieresProf"></div>
+
         <h3>📅 Programmer un cours</h3>
         <form id="formAddCoursProf">
+            <select id="coursMatiereProf" onchange="appliquerMatiereSelectionnee()">
+                <option value="">-- Saisie libre (aucune matière) --</option>
+            </select>
             <input type="text" id="newTitreCoursProf" placeholder="Titre du cours" required>
             <input type="datetime-local" id="newDateCoursProf" required>
             <select id="newNiveauCoursProf" required>

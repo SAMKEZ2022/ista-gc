@@ -157,3 +157,56 @@ lui aussi des cours de tronc commun correctement ciblés.
 **Non traité (hors demande) :** les **devoirs** restent liés à une seule
 série (pas de notion de tronc commun) — dites-moi si vous voulez la même
 logique pour eux.
+
+## Nouveau : Gestion des Matières par niveau (admin → prof)
+
+Nouvelle collection Firestore **`matieres`**. Chaque document représente une
+matière rattachée à une **série** et un **niveau**, avec un professeur
+attribué (ou aucun) :
+
+```
+{ nom: "Mathématiques Générales", serie: "gc", niveau: 1, profId: "abc123", profEmail: "prof.math@ista-gc.com" }
+```
+
+### Côté admin (`admin.html`)
+
+Nouvelle section **"📘 Gestion des Matières"**, juste après la gestion des
+utilisateurs :
+
+- L'admin crée une matière : nom + série + niveau.
+- Sous chaque matière listée, un menu déroulant liste **uniquement les
+  professeurs de la même série** (`state.USERS.filter(u => u.role === 'prof' && u.serie === m.serie)`)
+  et permet de l'attribuer (ou de retirer l'attribution avec "Aucun
+  professeur"). L'attribution est immédiate (mise à jour Firestore), pas
+  besoin de bouton "Valider" séparé.
+- Une matière peut être supprimée à tout moment (les cours déjà programmés
+  ne sont pas affectés).
+- Le compteur "Matières" a été ajouté aux statistiques du tableau de bord.
+
+### Côté prof (`prof.html`)
+
+- Nouvelle section **"📘 Mes Matières"** : liste en lecture seule des
+  matières que l'admin lui a attribuées (nom + niveau + série).
+- Le formulaire **"📅 Programmer un cours"** propose désormais un menu
+  déroulant **"Matière"** rempli avec les seules matières attribuées à ce
+  prof. En choisir une préremplit automatiquement le **niveau** du cours et
+  son **titre** (si le titre est encore vide) ; le prof garde la possibilité
+  de laisser "Saisie libre" et de taper un titre lui-même comme avant. Le
+  cours créé garde une référence à la matière (`matiereId`, `matiereNom`),
+  affichée ensuite sur les cartes de cours (admin, prof, étudiant) sous la
+  forme "📘 Matière : ...".
+
+### Sécurité
+
+Les règles Firestore actuelles (`allow read, write: if request.auth != null`)
+couvrent automatiquement la nouvelle collection `matieres` — aucune
+modification de `firestore.rules` n'était nécessaire.
+
+### Bug corrigé au passage
+
+Le menu déroulant "Envoyer un Support de Cours" (`#supportCours`, page prof)
+n'était rempli qu'une seule fois, **avant** que les cours n'aient fini de
+charger depuis Firestore (chargement asynchrone) : il restait donc souvent
+vide. Il est maintenant réactualisé à chaque mise à jour temps réel des
+cours (`rafraichirVuesLieesAuxCours`), comme le sont déjà les autres menus
+déroulants du même type.

@@ -27,6 +27,7 @@
         <div class="stats-grid">
             <div class="stat-box"><div class="stat-value" id="totalCours">0</div><div class="stat-label">Cours</div></div>
             <div class="stat-box"><div class="stat-value" id="totalDevoirs">0</div><div class="stat-label">Devoirs</div></div>
+            <div class="stat-box"><div class="stat-value" id="totalMatieres">0</div><div class="stat-label">Matières</div></div>
             <div class="stat-box"><div class="stat-value" id="totalProfs">0</div><div class="stat-label">Professeurs</div></div>
             <div class="stat-box"><div class="stat-value" id="totalEtudiants">0</div><div class="stat-label">Étudiants</div></div>
         </div>
@@ -52,6 +53,20 @@
             <button type="submit">Ajouter l'utilisateur</button>
         </form>
         <div id="listeUsers"></div>
+
+        <h3>📘 Gestion des Matières</h3>
+        <p>Créez une matière pour un niveau donné, puis attribuez-la à l'un de vos professeurs (de la même série). Le professeur retrouvera ensuite cette matière dans son espace.</p>
+        <form id="formAddMatiere">
+            <input type="text" id="newNomMatiere" placeholder="Nom de la matière (ex: Mathématiques Générales)" required>
+            <select id="newSerieMatiere" required>
+                <option value="">-- Choisir une série --</option>
+            </select>
+            <select id="newNiveauMatiere" required>
+                <option value="">-- Choisir un niveau --</option>
+            </select>
+            <button type="submit">Ajouter la matière</button>
+        </form>
+        <div id="listeMatieresAdmin"></div>
 
         <h3>📅 Programmer un cours</h3>
         <form id="formAddCours">
@@ -102,6 +117,8 @@
             remplirSelectSeries('newSerie');
             remplirSelectSeries('newSerieCours');
             remplirSelectSeries('newSerieDevoir');
+            remplirSelectSeries('newSerieMatiere');
+            remplirSelectNiveaux('newNiveauMatiere');
             remplirSelectSeries('exportSerie');
             remplirSelectNiveaux('exportNiveau');
             // Initialiser le select des salles pour la série par défaut
