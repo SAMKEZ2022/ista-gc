@@ -263,6 +263,28 @@ Un second bloc a été ajouté juste sous le formulaire habituel, dans
   importez-le plusieurs fois (une fois par série/niveau), ou séparez-le en
   plusieurs fichiers.
 
+### Corrections apportées à cet import (relecture data/code)
+
+1. **Bug bloquant sur les PDF (extraction de texte) :** `pdf.js` ne renvoie
+   pas des "lignes" de texte mais des fragments positionnés par coordonnées
+   (x, y) sur la page. Le code initial les recollait tous avec un simple
+   espace, sans jamais réinsérer de retour à la ligne : toutes les matières
+   d'une page PDF finissaient fusionnées en une seule chaîne géante, rejetée
+   par le filtre de longueur (≤ 80 caractères) → **aucune matière n'était
+   jamais détectée dans un vrai PDF**. Corrigé en reconstituant les lignes à
+   partir de la coordonnée Y de chaque fragment (les fragments partageant
+   la même hauteur, à 2px près, forment une ligne).
+2. **Doublons non détectés contre la base existante :** le code ne
+   dédoublonnait qu'à l'intérieur du fichier importé, pas contre les
+   matières déjà créées en base pour la même série/niveau — un import
+   répété du même fichier créait des doublons Firestore. Une comparaison
+   insensible aux accents/à la casse (`normaliserNomMatiere`) coche
+   maintenant automatiquement "à ne pas créer" (décochée par défaut, avec
+   la mention *"déjà existante"*) toute matière détectée qui existe déjà
+   pour cette série/ce niveau ; le dédoublonnage interne au fichier utilise
+   la même normalisation (avant, "Économie" et "economie" auraient compté
+   comme deux matières différentes).
+
 ### Bug corrigé au passage
 
 Le menu déroulant "Envoyer un Support de Cours" (`#supportCours`, page prof)
@@ -271,3 +293,53 @@ charger depuis Firestore (chargement asynchrone) : il restait donc souvent
 vide. Il est maintenant réactualisé à chaque mise à jour temps réel des
 cours (`rafraichirVuesLieesAuxCours`), comme le sont déjà les autres menus
 déroulants du même type.
+
+## Relecture de code (sécurité) : faille XSS stockée corrigée
+
+Toutes les valeurs saisies par un utilisateur (titre de cours/devoir, nom
+de matière, nom de fichier, nom/prénom, email, lignes détectées dans un
+PDF/Word importé...) étaient insérées **directement** dans le HTML des
+pages (`innerHTML`) sans aucun échappement. Concrètement, un professeur ou
+un admin qui tapait (ou important un fichier contenant) quelque chose comme
+`<img src=x onerror=alert(1)>` dans un titre de cours aurait vu ce code
+s'exécuter dans le navigateur de **tous les étudiants** qui consultent
+ensuite ce cours (faille XSS stockée) — un simple champ texte devenait un
+vecteur d'attaque contre les autres comptes de la plateforme.
+
+Une fonction `escapeHtml()` a été ajoutée et appliquée à tous les endroits
+où une donnée saisie par un utilisateur (ou extraite d'un fichier importé)
+est réinjectée dans une page : listes d'utilisateurs, de cours, de devoirs,
+de matières, de supports, de copies déposées, bannière de live, classe de
+l'étudiant, aperçus d'import. Les données qui viennent uniquement de
+`SERIES`/`NIVEAUX` (fixées dans le code, jamais saisies par un utilisateur)
+n'ont pas besoin de cet échappement et n'y sont pas soumises.
+
+## Nouveau : créer plusieurs utilisateurs à la fois (Excel/CSV)
+
+Dans **"👥 Gestion des Utilisateurs"** (`admin.html`), sous le formulaire
+habituel (un utilisateur à la fois) :
+
+1. **"📄 Télécharger le modèle (.xlsx)"** génère un fichier Excel avec les
+   colonnes `Email`, `Mot de passe`, `Role`, `Serie`, `Niveau`, `Nom`,
+   `Prenom`, quelques lignes d'exemple, et un second onglet rappelant les
+   codes valides (rôles, codes de série, niveaux 1 à 5).
+2. L'admin remplit une ligne par utilisateur (`Role` = `admin`, `prof` ou
+   `etudiant` ; `Serie` obligatoire sauf pour un admin ; `Niveau`/`Nom`/
+   `Prenom` obligatoires uniquement pour un étudiant), puis dépose le
+   fichier via le champ juste en dessous.
+3. **"🔍 Analyser le fichier"** relit chaque ligne (format Excel ou CSV, via
+   `SheetJS`, déjà utilisé pour l'export des notes), et affiche un aperçu
+   avec une case à cocher par ligne :
+   - lignes valides → cochées par défaut ;
+   - lignes en erreur (email invalide, mot de passe manquant, rôle/série/
+     niveau invalide, nom/prénom manquant pour un étudiant, email déjà
+     utilisé en base ou en double dans le fichier) → grisées et décochées,
+     avec le détail de l'erreur affiché à la place de la ligne.
+4. **"✅ Créer les utilisateurs cochés"** crée uniquement les lignes valides
+   restées cochées, par lots Firestore (`batch`) de 400 pour rester
+   largement sous la limite de 500 écritures par lot.
+
+**Limite à connaître :** comme pour la création d'un utilisateur au compte-
+goutte, les mots de passe du fichier sont stockés tels quels dans Firestore
+(voir la section sécurité plus haut dans ce guide) — ne partagez/ne stockez
+pas ce fichier au-delà de l'import.

@@ -976,11 +976,27 @@ function nomAffiche(u) {
     return u.nom && u.prenom ? `${u.prenom} ${u.nom}` : u.email;
 }
 
+// Échappe le HTML : toutes les valeurs saisies par un utilisateur (nom de
+// matière, titre de cours/devoir, email, contenu d'un fichier importé...)
+// passent par cette fonction avant d'être insérées dans le innerHTML d'une
+// page. Sans ça, un simple "<script>" tapé dans un champ texte (ou caché
+// dans un PDF/Excel importé) s'exécuterait dans le navigateur de TOUS les
+// utilisateurs qui consultent ensuite cette donnée (faille XSS stockée).
+function escapeHtml(valeur) {
+    if (valeur === null || valeur === undefined) return '';
+    return String(valeur)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 function afficherUsers() {
     const el = document.getElementById('listeUsers');
     if (!el) return;
     el.innerHTML = state.USERS.map((u) =>
-        `<div class="card"><p><b>${u.nom && u.prenom ? nomAffiche(u) + ' — ' + u.email : u.email}</b> - ${u.role} ${u.serie ? '(' + getNomSerie(u.serie) + (u.niveau ? ' - ' + getNomNiveau(u.niveau) : '') + ')' : ''}</p>${u.role !== 'admin' ? `<button onclick="supprimerUser('${u.id}')" class="btn-danger">Supprimer</button>` : ''}</div>`
+        `<div class="card"><p><b>${u.nom && u.prenom ? escapeHtml(nomAffiche(u)) + ' — ' + escapeHtml(u.email) : escapeHtml(u.email)}</b> - ${escapeHtml(u.role)} ${u.serie ? '(' + escapeHtml(getNomSerie(u.serie)) + (u.niveau ? ' - ' + escapeHtml(getNomNiveau(u.niveau)) : '') + ')' : ''}</p>${u.role !== 'admin' ? `<button onclick="supprimerUser('${u.id}')" class="btn-danger">Supprimer</button>` : ''}</div>`
     ).join('') || '<p>Aucun utilisateur</p>';
 }
 
@@ -991,6 +1007,185 @@ async function supprimerUser(id) {
     } catch (err) {
         console.error(err);
         alert("⚠️ Suppression impossible.");
+    }
+}
+
+// ==========================================
+// Création de plusieurs utilisateurs à la fois depuis un fichier Excel/CSV
+// (admins, professeurs et/ou étudiants mélangés dans un même fichier).
+// Réutilise SheetJS (déjà chargé pour l'export des notes) à la fois pour
+// générer le modèle et pour lire le fichier rempli par l'admin.
+// ==========================================
+let usersDetectesImport = [];
+
+// Normalise un nom d'en-tête de colonne (accents/casse/espaces/ponctuation
+// ignorés) pour que "Mot de passe", "mot_de_passe" ou "Password" soient
+// tous reconnus, quelle que soit la façon dont l'admin a nommé sa colonne.
+function normaliserEntete(txt) {
+    return String(txt)
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z]/g, '');
+}
+
+function telechargerModeleUsers() {
+    if (typeof XLSX === 'undefined') {
+        alert("⚠️ La bibliothèque Excel n'a pas pu se charger (vérifiez votre connexion internet) puis réessayez.");
+        return;
+    }
+
+    const entetes = ['Email', 'Mot de passe', 'Role', 'Serie', 'Niveau', 'Nom', 'Prenom'];
+    const exemples = [
+        ['jean.dupont@ista-gc.com', 'motdepasse123', 'etudiant', 'gc', 1, 'Dupont', 'Jean'],
+        ['prof.awa@ista-gc.com', 'motdepasse456', 'prof', 'electro', '', '', ''],
+        ['admin2@ista-gc.com', 'motdepasse789', 'admin', '', '', '', '']
+    ];
+    const feuille = XLSX.utils.aoa_to_sheet([entetes, ...exemples]);
+    feuille['!cols'] = entetes.map(() => ({ wch: 22 }));
+
+    const feuilleCodes = XLSX.utils.aoa_to_sheet([
+        ['Colonne "Role" — valeurs acceptées'],
+        ['admin'], ['prof'], ['etudiant'],
+        [],
+        ['Colonne "Serie" — code à utiliser', 'Nom complet'],
+        ...Object.keys(SERIES).map(k => [k, SERIES[k].nom]),
+        ['(laisser vide pour un admin)', ''],
+        [],
+        ['Colonne "Niveau" — uniquement pour les étudiants', 'Signification'],
+        ...Object.keys(NIVEAUX).map(n => [n, NIVEAUX[n]]),
+        [],
+        ['Nom / Prénom : obligatoires uniquement pour les étudiants (export des notes)']
+    ]);
+
+    const classeur = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(classeur, feuille, "Utilisateurs");
+    XLSX.utils.book_append_sheet(classeur, feuilleCodes, "Codes à utiliser");
+    XLSX.writeFile(classeur, "Modele_Utilisateurs_ISTA-GC.xlsx");
+}
+
+async function analyserFichierUsers() {
+    const input = document.getElementById('fichierUsers');
+    const apercu = document.getElementById('apercuUsersImport');
+
+    if (typeof XLSX === 'undefined') {
+        alert("⚠️ La bibliothèque Excel n'a pas pu se charger (vérifiez votre connexion internet) puis réessayez.");
+        return;
+    }
+    if (!input.files || !input.files[0]) {
+        alert("Choisissez un fichier Excel (.xlsx) ou CSV à analyser.");
+        return;
+    }
+
+    apercu.innerHTML = '<p>⏳ Lecture du fichier...</p>';
+
+    try {
+        const buffer = await input.files[0].arrayBuffer();
+        const classeur = XLSX.read(buffer, { type: 'array' });
+        const premiereFeuille = classeur.Sheets[classeur.SheetNames[0]];
+        const lignes = XLSX.utils.sheet_to_json(premiereFeuille, { defval: '' });
+
+        if (lignes.length === 0) {
+            apercu.innerHTML = "<p>⚠️ Le fichier ne contient aucune ligne exploitable. Utilisez le modèle fourni.</p>";
+            return;
+        }
+
+        const lireColonne = (ligne, nomAttendu) => {
+            const clef = Object.keys(ligne).find(k => normaliserEntete(k) === nomAttendu);
+            return clef ? String(ligne[clef]).trim() : '';
+        };
+
+        // Emails déjà en base : pour repérer les doublons AVANT de créer quoi que ce soit.
+        const emailsExistants = new Set(state.USERS.map(u => u.email.toLowerCase()));
+        const emailsDuFichier = new Set();
+
+        usersDetectesImport = lignes.map((ligne, index) => {
+            const email = lireColonne(ligne, 'email').toLowerCase();
+            const password = lireColonne(ligne, 'motdepasse') || lireColonne(ligne, 'password');
+            const role = lireColonne(ligne, 'role').toLowerCase();
+            const serie = lireColonne(ligne, 'serie').toLowerCase();
+            const niveauBrut = lireColonne(ligne, 'niveau');
+            const niveau = parseInt(niveauBrut, 10);
+            const nom = lireColonne(ligne, 'nom');
+            const prenom = lireColonne(ligne, 'prenom');
+
+            const erreurs = [];
+            if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) erreurs.push("email invalide");
+            if (!password) erreurs.push("mot de passe manquant");
+            if (!['admin', 'prof', 'etudiant'].includes(role)) erreurs.push("rôle invalide (admin/prof/etudiant)");
+            if (role && role !== 'admin' && !SERIES[serie]) erreurs.push("série inconnue");
+            if (role === 'etudiant' && !NIVEAUX[niveau]) erreurs.push("niveau invalide (1 à 5)");
+            if (role === 'etudiant' && (!nom || !prenom)) erreurs.push("nom/prénom manquant");
+            if (email) {
+                if (emailsExistants.has(email)) erreurs.push("email déjà utilisé en base");
+                if (emailsDuFichier.has(email)) erreurs.push("email en double dans le fichier");
+                emailsDuFichier.add(email);
+            }
+
+            return { ligneNum: index + 2, email, password, role, serie, niveau, nom, prenom, erreurs };
+        });
+
+        const nbValides = usersDetectesImport.filter(u => u.erreurs.length === 0).length;
+
+        apercu.innerHTML = `
+            <p>${usersDetectesImport.length} ligne(s) lue(s), dont <b>${nbValides} valide(s)</b>. Les lignes en erreur sont grisées : corrigez-les dans le fichier puis réanalysez si besoin.</p>
+            <div class="checkbox-group">
+                ${usersDetectesImport.map((u, i) => {
+                    const ok = u.erreurs.length === 0;
+                    const details = ok
+                        ? `${u.email} — ${u.role}${u.serie ? ' — ' + getNomSerie(u.serie) : ''}${u.niveau ? ' — ' + getNomNiveau(u.niveau) : ''}`
+                        : `Ligne ${u.ligneNum} (${u.email || 'email manquant'}) : ⚠️ ${u.erreurs.join(', ')}`;
+                    return `<label><input type="checkbox" id="userImport_${i}" ${ok ? 'checked' : 'disabled'}> ${escapeHtml(details)}</label>`;
+                }).join('')}
+            </div>
+            <button type="button" onclick="importerUsersSelectionnes()" class="btn-success" ${nbValides === 0 ? 'disabled' : ''}>✅ Créer les utilisateurs cochés</button>
+        `;
+    } catch (err) {
+        console.error(err);
+        apercu.innerHTML = "<p>⚠️ Impossible de lire ce fichier. Vérifiez qu'il s'agit bien d'un fichier Excel (.xlsx) ou CSV, de préférence généré à partir du modèle.</p>";
+    }
+}
+
+async function importerUsersSelectionnes() {
+    const apercu = document.getElementById('apercuUsersImport');
+    const aCreer = usersDetectesImport.filter((u, i) => {
+        const cb = document.getElementById(`userImport_${i}`);
+        return cb && cb.checked && u.erreurs.length === 0;
+    });
+
+    if (aCreer.length === 0) {
+        alert("Aucun utilisateur valide coché à créer.");
+        return;
+    }
+
+    apercu.innerHTML = '<p>⏳ Création en cours...</p>';
+
+    try {
+        // Firestore limite un batch à 500 écritures ; on découpe par sécurité
+        // pour rester très en dessous, même pour un très gros fichier.
+        const paquets = [];
+        for (let i = 0; i < aCreer.length; i += 400) paquets.push(aCreer.slice(i, i + 400));
+
+        for (const paquet of paquets) {
+            const batch = db.batch();
+            paquet.forEach(u => {
+                const data = { email: u.email, password: u.password, role: u.role };
+                if (u.role !== 'admin') data.serie = u.serie;
+                if (u.role === 'etudiant') {
+                    data.niveau = u.niveau;
+                    data.nom = u.nom;
+                    data.prenom = u.prenom;
+                }
+                batch.set(db.collection('users').doc(), data);
+            });
+            await batch.commit();
+        }
+
+        apercu.innerHTML = `<p>✅ ${aCreer.length} utilisateur(s) créé(s) avec succès.</p>`;
+        usersDetectesImport = [];
+        document.getElementById('fichierUsers').value = '';
+    } catch (err) {
+        console.error(err);
+        apercu.innerHTML = "<p>⚠️ Une erreur est survenue pendant la création. Vérifiez la liste des utilisateurs ci-dessus (certains ont peut-être déjà été créés) avant de relancer l'import.</p>";
     }
 }
 
@@ -1005,14 +1200,14 @@ function texteSeriesConcernees(c) {
 // programmé à partir d'une matière attribuée par l'admin (voir coursData.matiereId).
 function texteMatiereCours(c) {
     if (!c.matiereNom) return '';
-    return `<p>📘 Matière : ${c.matiereNom}</p>`;
+    return `<p>📘 Matière : ${escapeHtml(c.matiereNom)}</p>`;
 }
 
 function afficherCoursAdmin() {
     const el = document.getElementById('listeCoursAdmin');
     if (!el) return;
     el.innerHTML = state.COURS.map((c) =>
-        `<div class="card"><h4>${c.titre}</h4><p>📚 ${getNomSerie(c.serie)} | 📅 ${new Date(c.date).toLocaleString('fr-FR')} | 🏫 ${nomSalle(c.serie, c.salle)} ${c.en_live ? '🔴 LIVE' : ''}</p>${texteMatiereCours(c)}${texteSeriesConcernees(c)}<button onclick="supprimerCours('${c.id}')" class="btn-danger">Supprimer</button></div>`
+        `<div class="card"><h4>${escapeHtml(c.titre)}</h4><p>📚 ${getNomSerie(c.serie)} | 📅 ${new Date(c.date).toLocaleString('fr-FR')} | 🏫 ${nomSalle(c.serie, c.salle)} ${c.en_live ? '🔴 LIVE' : ''}</p>${texteMatiereCours(c)}${texteSeriesConcernees(c)}<button onclick="supprimerCours('${c.id}')" class="btn-danger">Supprimer</button></div>`
     ).join('') || '<p>Aucun cours</p>';
 }
 
@@ -1030,7 +1225,7 @@ function afficherDevoirsAdmin() {
     const el = document.getElementById('listeDevoirsAdmin');
     if (!el) return;
     el.innerHTML = state.DEVOIRS.map((d) =>
-        `<div class="card"><h4>${d.titre}</h4><p>📚 ${getNomSerie(d.serie)}</p><p>${d.desc}</p><button onclick="supprimerDevoir('${d.id}')" class="btn-danger">Supprimer</button></div>`
+        `<div class="card"><h4>${escapeHtml(d.titre)}</h4><p>📚 ${getNomSerie(d.serie)}</p><p>${escapeHtml(d.desc)}</p><button onclick="supprimerDevoir('${d.id}')" class="btn-danger">Supprimer</button></div>`
     ).join('') || '<p>Aucun devoir</p>';
 }
 
@@ -1047,12 +1242,12 @@ function afficherMatieresAdmin() {
         // Seuls les profs de la même série que la matière ont du sens ici.
         const profsSerie = state.USERS.filter(u => u.role === 'prof' && u.serie === m.serie);
         const optionsProfs = '<option value="">-- Aucun professeur --</option>' +
-            profsSerie.map(p => `<option value="${p.id}" ${m.profId === p.id ? 'selected' : ''}>${nomAffiche(p)}</option>`).join('');
+            profsSerie.map(p => `<option value="${p.id}" ${m.profId === p.id ? 'selected' : ''}>${escapeHtml(nomAffiche(p))}</option>`).join('');
 
         return `<div class="card">
-            <h4>${m.nom}</h4>
+            <h4>${escapeHtml(m.nom)}</h4>
             <p>📚 ${getNomSerie(m.serie)} | 🎓 ${getNomNiveau(m.niveau)}</p>
-            <p>${m.profId ? `👨‍🏫 Attribuée à : <b>${m.profEmail || '(prof)'}</b>` : '⚠️ Aucun professeur attribué pour le moment'}</p>
+            <p>${m.profId ? `👨‍🏫 Attribuée à : <b>${escapeHtml(m.profEmail || '(prof)')}</b>` : '⚠️ Aucun professeur attribué pour le moment'}</p>
             <label>Attribuer / réattribuer à un professeur :</label>
             <select onchange="assignerProfMatiere('${m.id}', this.value)">${optionsProfs}</select>
             <button onclick="supprimerMatiere('${m.id}')" class="btn-danger">Supprimer</button>
@@ -1085,6 +1280,17 @@ async function assignerProfMatiere(matiereId, profId) {
 // ==========================================
 let matieresDetecteesImport = [];
 
+// Normalise un nom de matière pour comparaison (accents/casse/espaces
+// ignorés) : sert à détecter les doublons, aussi bien à l'intérieur du
+// fichier importé qu'avec les matières déjà présentes en base.
+function normaliserNomMatiere(nom) {
+    return nom
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // retire les accents
+        .toLowerCase()
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
 async function extraireTexteFichier(file) {
     const nom = file.name.toLowerCase();
     if (nom.endsWith('.pdf')) {
@@ -1094,7 +1300,32 @@ async function extraireTexteFichier(file) {
         for (let i = 1; i <= pdf.numPages; i++) {
             const page = await pdf.getPage(i);
             const contenu = await page.getTextContent();
-            texte += contenu.items.map(it => it.str).join(' ') + '\n';
+
+            // IMPORTANT : pdf.js ne renvoie PAS des lignes de texte, mais
+            // des fragments positionnés par coordonnées (x, y). Les
+            // concaténer tel quel écrase tous les retours à la ligne du
+            // PDF d'origine et fusionne toutes les matières d'une page en
+            // une seule "ligne" géante (donc jamais détectée ensuite).
+            // On reconstitue les lignes en regroupant les fragments qui
+            // partagent la même coordonnée Y (à une petite tolérance près,
+            // pour absorber les micro-décalages de rendu des polices).
+            const TOLERANCE_Y = 2;
+            let ligneCourante = [];
+            let yLigneCourante = null;
+            const lignesPage = [];
+
+            contenu.items.forEach(item => {
+                const y = item.transform[5];
+                if (yLigneCourante !== null && Math.abs(y - yLigneCourante) > TOLERANCE_Y) {
+                    lignesPage.push(ligneCourante.join(' '));
+                    ligneCourante = [];
+                }
+                ligneCourante.push(item.str);
+                yLigneCourante = y;
+            });
+            if (ligneCourante.length > 0) lignesPage.push(ligneCourante.join(' '));
+
+            texte += lignesPage.join('\n') + '\n';
         }
         return texte;
     }
@@ -1140,9 +1371,12 @@ async function analyserFichierMatieres() {
             .map(nettoyerLigneMatiere)
             .filter(l => l.length >= 2 && l.length <= 80);
 
+        // Dédoublonnage à l'intérieur même du fichier (insensible aux
+        // accents/casse), pour éviter de proposer deux fois la même matière
+        // si elle apparaît deux fois dans le document.
         const vues = new Set();
         matieresDetecteesImport = lignes.filter(l => {
-            const cle = l.toLowerCase();
+            const cle = normaliserNomMatiere(l);
             if (vues.has(cle)) return false;
             vues.add(cle);
             return true;
@@ -1153,10 +1387,24 @@ async function analyserFichierMatieres() {
             return;
         }
 
+        // Repère celles qui existent déjà en base pour cette série/ce
+        // niveau (même nom, accents/casse ignorés) : décochées par défaut
+        // pour ne pas créer de doublon Firestore par mégarde, mais l'admin
+        // peut quand même les recocher s'il le souhaite vraiment.
+        const niveauInt = parseInt(niveau, 10);
+        const dejaExistantes = new Set(
+            state.MATIERES
+                .filter(m => m.serie === serie && Number(m.niveau) === niveauInt)
+                .map(m => normaliserNomMatiere(m.nom))
+        );
+
         apercu.innerHTML = `
-            <p>${matieresDetecteesImport.length} matière(s) détectée(s) pour <b>${getNomSerie(serie)} - ${getNomNiveau(parseInt(niveau, 10))}</b>. Décochez celles à ne pas créer :</p>
+            <p>${matieresDetecteesImport.length} matière(s) détectée(s) pour <b>${getNomSerie(serie)} - ${getNomNiveau(niveauInt)}</b>. Décochez celles à ne pas créer :</p>
             <div class="checkbox-group">
-                ${matieresDetecteesImport.map((m, i) => `<label><input type="checkbox" id="matiereImport_${i}" checked> ${m}</label>`).join('')}
+                ${matieresDetecteesImport.map((m, i) => {
+                    const existeDeja = dejaExistantes.has(normaliserNomMatiere(m));
+                    return `<label><input type="checkbox" id="matiereImport_${i}" ${existeDeja ? '' : 'checked'}> ${escapeHtml(m)}${existeDeja ? ' <i>(déjà existante — décochée)</i>' : ''}</label>`;
+                }).join('')}
             </div>
             <button type="button" onclick="importerMatieresSelectionnees()" class="btn-success">✅ Créer les matières cochées</button>
         `;
@@ -1217,7 +1465,7 @@ function afficherMatieresProf() {
 
     const mesMatieres = state.MATIERES.filter(m => m.profId === currentUser.id);
     el.innerHTML = mesMatieres.map(m =>
-        `<div class="card"><h4>${m.nom}</h4><p>🎓 ${getNomNiveau(m.niveau)} | 📚 ${getNomSerie(m.serie)}</p></div>`
+        `<div class="card"><h4>${escapeHtml(m.nom)}</h4><p>🎓 ${getNomNiveau(m.niveau)} | 📚 ${getNomSerie(m.serie)}</p></div>`
     ).join('') || "<p>Aucune matière ne vous a encore été attribuée par l'administration.</p>";
 }
 
@@ -1232,7 +1480,7 @@ function remplirSelectMatieresAdmin() {
 
     el.innerHTML = '<option value="">-- Saisie libre (aucune matière) --</option>' +
         state.MATIERES.map(m =>
-            `<option value="${m.id}" data-serie="${m.serie}" data-niveau="${m.niveau}" data-nom="${m.nom}">${m.nom} — ${getNomSerie(m.serie)} / ${getNomNiveau(m.niveau)} ${m.profEmail ? '(' + m.profEmail + ')' : '(non attribuée)'}</option>`
+            `<option value="${m.id}" data-serie="${escapeHtml(m.serie)}" data-niveau="${m.niveau}" data-nom="${escapeHtml(m.nom)}">${escapeHtml(m.nom)} — ${getNomSerie(m.serie)} / ${getNomNiveau(m.niveau)} ${m.profEmail ? '(' + escapeHtml(m.profEmail) + ')' : '(non attribuée)'}</option>`
         ).join('');
 }
 
@@ -1330,7 +1578,7 @@ function blocPresenceEtudiants(c) {
         const presencesEtudiant = state.PRESENCES.filter(p => p.etudiant === u.email && p.coursId === c.id);
         const secondes = presencesEtudiant.reduce((total, p) => total + calculerSecondesPresence(p), 0);
         const enDirect = presencesEtudiant.some(p => p.enLigne);
-        return `<li>${enDirect ? '🔴' : '⏱️'} ${nomAffiche(u)} — <b>${formatDuree(secondes)}</b></li>`;
+        return `<li>${enDirect ? '🔴' : '⏱️'} ${escapeHtml(nomAffiche(u))} — <b>${formatDuree(secondes)}</b></li>`;
     }).join('');
 
     return `<div class="presence-etudiants"><p><b>⏱️ Temps passé par les étudiants dans ce cours :</b></p><ul>${lignes}</ul></div>`;
@@ -1348,7 +1596,7 @@ function afficherCoursProf() {
         : state.COURS.filter(c => coursGereParProf(c, currentUser));
 
     el.innerHTML = mesCours.map(c =>
-        `<div class="card"><h4>${c.titre}</h4><p>📚 ${getNomSerie(c.serie)} | 📅 ${new Date(c.date).toLocaleString('fr-FR')} | 🏫 ${nomSalle(c.serie, c.salle)}</p>${texteMatiereCours(c)}${texteSeriesConcernees(c)}${c.en_live ? `<p class="live">🔴 EN LIVE</p>${blocVisio(c)}<button onclick="couperCours('${c.id}')" class="btn-danger" style="margin-top:12px;">Couper le Live</button>` : `<button onclick="lancerCours('${c.id}')" class="btn-success">▶️ Lancer le Live</button>`}${blocPresenceEtudiants(c)}</div>`
+        `<div class="card"><h4>${escapeHtml(c.titre)}</h4><p>📚 ${getNomSerie(c.serie)} | 📅 ${new Date(c.date).toLocaleString('fr-FR')} | 🏫 ${nomSalle(c.serie, c.salle)}</p>${texteMatiereCours(c)}${texteSeriesConcernees(c)}${c.en_live ? `<p class="live">🔴 EN LIVE</p>${blocVisio(c)}<button onclick="couperCours('${c.id}')" class="btn-danger" style="margin-top:12px;">Couper le Live</button>` : `<button onclick="lancerCours('${c.id}')" class="btn-success">▶️ Lancer le Live</button>`}${blocPresenceEtudiants(c)}</div>`
     ).join('') || "<p>Aucun cours programmé par l'administration pour le moment</p>";
 }
 
@@ -1363,7 +1611,7 @@ function afficherSupportsProf() {
         })
         .map(s => {
             const cours = state.COURS.find(c => c.id === s.coursId);
-            return `<div class="card"><h4>${s.nom}</h4><p><b>Cours:</b> ${cours ? cours.titre : '(cours supprimé)'}</p><a href="${s.fichier}" download="${s.nom}" class="btn-secondary">Télécharger</a><button onclick="supprimerSupport('${s.id}')" class="btn-danger">Supprimer</button></div>`;
+            return `<div class="card"><h4>${escapeHtml(s.nom)}</h4><p><b>Cours:</b> ${escapeHtml(cours ? cours.titre : '(cours supprimé)')}</p><a href="${s.fichier}" download="${escapeHtml(s.nom)}" class="btn-secondary">Télécharger</a><button onclick="supprimerSupport('${s.id}')" class="btn-danger">Supprimer</button></div>`;
         }).join('') || "<p>Aucun support</p>";
 }
 
@@ -1388,7 +1636,7 @@ function afficherDepotsProf() {
         })
         .map(d => {
             const devoir = state.DEVOIRS.find(dv => dv.id === d.devoirId);
-            return `<div class="card"><h4>${devoir ? devoir.titre : '(devoir supprimé)'}</h4><p><b>Étudiant:</b> ${d.etudiant}</p><a href="${d.fichier}" download="copie.pdf" class="btn-secondary">Télécharger Copie</a><input type="number" min="0" max="20" placeholder="Note /20" value="${d.note}" onchange="noterCopie('${d.id}', this.value)" style="width:100px;"></div>`;
+            return `<div class="card"><h4>${escapeHtml(devoir ? devoir.titre : '(devoir supprimé)')}</h4><p><b>Étudiant:</b> ${escapeHtml(d.etudiant)}</p><a href="${d.fichier}" download="copie.pdf" class="btn-secondary">Télécharger Copie</a><input type="number" min="0" max="20" placeholder="Note /20" value="${d.note}" onchange="noterCopie('${d.id}', this.value)" style="width:100px;"></div>`;
         }).join('') || "<p>Aucune copie</p>";
 }
 
@@ -1419,7 +1667,7 @@ function afficherBanniereLive(coursLive) {
     }
 
     banniere.innerHTML = coursLive.map(c =>
-        `<span>🔴 ${c.titre} (${nomSalle(c.serie, c.salle)}${estSerieTroncCommun(c.serie) ? ' - Tronc Commun' : ''}) est en Live</span><a href="#live-cours-${c.id}">▶️ Voir le cours</a>`
+        `<span>🔴 ${escapeHtml(c.titre)} (${nomSalle(c.serie, c.salle)}${estSerieTroncCommun(c.serie) ? ' - Tronc Commun' : ''}) est en Live</span><a href="#live-cours-${c.id}">▶️ Voir le cours</a>`
     ).join(' &nbsp;|&nbsp; ');
     banniere.className = 'live-banner';
 }
@@ -1442,7 +1690,7 @@ function afficherCoursEtudiant() {
     afficherBanniereLive(coursLive);
 
     el.innerHTML = coursLive.map(c =>
-        `<div class="card card-live" id="live-cours-${c.id}"><h4>🔴 ${c.titre}</h4><p>📚 ${getNomSerie(c.serie)} | 📅 ${new Date(c.date).toLocaleString('fr-FR')} | 🏫 ${nomSalle(c.serie, c.salle)}</p>${texteMatiereCours(c)}${blocVisio(c)}</div>`
+        `<div class="card card-live" id="live-cours-${c.id}"><h4>🔴 ${escapeHtml(c.titre)}</h4><p>📚 ${getNomSerie(c.serie)} | 📅 ${new Date(c.date).toLocaleString('fr-FR')} | 🏫 ${nomSalle(c.serie, c.salle)}</p>${texteMatiereCours(c)}${blocVisio(c)}</div>`
     ).join('') || "<p>Aucun cours en live pour le moment. Cette page se met à jour automatiquement et instantanément dès qu'un professeur démarre un cours.</p>";
 }
 
@@ -1460,7 +1708,7 @@ function afficherProchainsCours() {
         .sort((a, b) => new Date(a.date) - new Date(b.date));
 
     el.innerHTML = prochains.map(c =>
-        `<div class="card"><h4>${c.titre}</h4><p>📚 ${getNomSerie(c.serie)} | 📅 ${new Date(c.date).toLocaleString('fr-FR')} | 🏫 ${nomSalle(c.serie, c.salle)}</p>${texteMatiereCours(c)}</div>`
+        `<div class="card"><h4>${escapeHtml(c.titre)}</h4><p>📚 ${getNomSerie(c.serie)} | 📅 ${new Date(c.date).toLocaleString('fr-FR')} | 🏫 ${nomSalle(c.serie, c.salle)}</p>${texteMatiereCours(c)}</div>`
     ).join('') || "<p>Aucun cours programmé pour le moment</p>";
 }
 
@@ -1481,7 +1729,7 @@ function afficherSupportsEtudiant() {
         })
         .map(s => {
             const cours = state.COURS.find(c => c.id === s.coursId);
-            return `<div class="card"><h4>${s.nom}</h4><p><b>Cours:</b> ${cours ? cours.titre : '(cours supprimé)'}</p><a href="${s.fichier}" download="${s.nom}" class="btn-success">📥 Télécharger</a></div>`;
+            return `<div class="card"><h4>${escapeHtml(s.nom)}</h4><p><b>Cours:</b> ${escapeHtml(cours ? cours.titre : '(cours supprimé)')}</p><a href="${s.fichier}" download="${escapeHtml(s.nom)}" class="btn-success">📥 Télécharger</a></div>`;
         }).join('') || "<p>Aucun support pour le moment</p>";
 }
 
@@ -1510,7 +1758,7 @@ function afficherClasseEtudiant() {
 
         return `<div class="card classe-item">
             <span class="minuteur ${presenceEnDirect ? 'minuteur-actif' : ''}">${presenceEnDirect ? '🔴' : '⏱️'} ${formatDuree(secondes)}</span>
-            <span>${u.email === currentUser.email ? `👤 ${nomAffiche(u)} (vous)` : `🎓 ${nomAffiche(u)}`}</span>
+            <span>${u.email === currentUser.email ? `👤 ${escapeHtml(nomAffiche(u))} (vous)` : `🎓 ${escapeHtml(nomAffiche(u))}`}</span>
         </div>`;
     }).join('') || "<p>Vous êtes seul(e) dans ce niveau pour le moment.</p>";
 }
@@ -1522,7 +1770,7 @@ function afficherDevoirsEtudiant() {
         .filter(d => d.serie === currentUser.serie)
         .map(d => {
             const monDepot = state.DEPOTS.find(dep => dep.devoirId === d.id && dep.etudiant === currentUser.email);
-            return `<div class="card"><h4>${d.titre}</h4><p>${d.desc}</p>${monDepot ? `<p class="success">✅ Déposé. Note: ${monDepot.note || 'En attente'}</p>` : `<p class="warning">❌ Pas encore déposé</p>`}</div>`;
+            return `<div class="card"><h4>${escapeHtml(d.titre)}</h4><p>${escapeHtml(d.desc)}</p>${monDepot ? `<p class="success">✅ Déposé. Note: ${escapeHtml(monDepot.note || 'En attente')}</p>` : `<p class="warning">❌ Pas encore déposé</p>`}</div>`;
         }).join('') || "<p>Aucun devoir</p>";
 }
 
@@ -1533,7 +1781,7 @@ function remplirSelectCours(id) {
     // réellement (voir coursGereParProf) — pas tous les cours de sa série.
     const cours = currentUser.role === 'admin' ? state.COURS : state.COURS.filter(c => coursGereParProf(c, currentUser));
     el.innerHTML = '<option value="">Choisir un cours</option>' +
-        cours.map(c => `<option value="${c.id}">${c.titre} (${getNomSerie(c.serie)})</option>`).join('');
+        cours.map(c => `<option value="${c.id}">${escapeHtml(c.titre)} (${getNomSerie(c.serie)})</option>`).join('');
 }
 
 function remplirSelectDevoir(id) {
@@ -1541,7 +1789,7 @@ function remplirSelectDevoir(id) {
     if (!el || !currentUser) return;
     const devoirs = currentUser.role === 'admin' ? state.DEVOIRS : state.DEVOIRS.filter(d => d.serie === currentUser.serie);
     el.innerHTML = '<option value="">Choisir un devoir</option>' +
-        devoirs.map(d => `<option value="${d.id}">${d.titre} (${getNomSerie(d.serie)})</option>`).join('');
+        devoirs.map(d => `<option value="${d.id}">${escapeHtml(d.titre)} (${getNomSerie(d.serie)})</option>`).join('');
 }
 
 function remplirSelectSeries(id) {

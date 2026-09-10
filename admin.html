@@ -58,6 +58,15 @@
         </form>
         <div id="listeUsers"></div>
 
+        <div class="card">
+            <p><b>📥 Créer plusieurs utilisateurs à la fois (Excel/CSV)</b><br>
+            Téléchargez le modèle, remplissez une ligne par utilisateur (admin, professeur ou étudiant), puis déposez le fichier rempli ci-dessous. Chaque ligne est vérifiée avant création : les lignes invalides sont signalées et ne sont pas créées.</p>
+            <button type="button" onclick="telechargerModeleUsers()" class="btn-secondary">📄 Télécharger le modèle (.xlsx)</button>
+            <input type="file" id="fichierUsers" accept=".xlsx,.xls,.csv">
+            <button type="button" onclick="analyserFichierUsers()">🔍 Analyser le fichier</button>
+            <div id="apercuUsersImport"></div>
+        </div>
+
         <h3>📘 Gestion des Matières</h3>
         <p>Créez une matière pour un niveau donné, puis attribuez-la à l'un de vos professeurs (de la même série). Le professeur retrouvera ensuite cette matière dans son espace.</p>
         <form id="formAddMatiere">
