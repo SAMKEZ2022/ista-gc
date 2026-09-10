@@ -1028,17 +1028,30 @@ function normaliserEntete(txt) {
         .replace(/[^a-z]/g, '');
 }
 
+// Génère un mot de passe aléatoire lisible (sans caractères ambigus comme
+// 0/O ou 1/l/I) : utilisé quand la colonne "Mot de passe" est laissée vide
+// dans le fichier importé — indispensable pour créer une centaine
+// d'étudiants d'un coup sans devoir inventer une centaine de mots de passe.
+function genererMotDePasseAleatoire(longueur = 8) {
+    const caracteres = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+    let mdp = '';
+    for (let i = 0; i < longueur; i++) {
+        mdp += caracteres[Math.floor(Math.random() * caracteres.length)];
+    }
+    return mdp;
+}
+
 function telechargerModeleUsers() {
     if (typeof XLSX === 'undefined') {
         alert("⚠️ La bibliothèque Excel n'a pas pu se charger (vérifiez votre connexion internet) puis réessayez.");
         return;
     }
 
-    const entetes = ['Email', 'Mot de passe', 'Role', 'Serie', 'Niveau', 'Nom', 'Prenom'];
+    const entetes = ['Nom', 'Prenom', 'Email', 'Role', 'Serie', 'Niveau', 'Mot de passe'];
     const exemples = [
-        ['jean.dupont@ista-gc.com', 'motdepasse123', 'etudiant', 'gc', 1, 'Dupont', 'Jean'],
-        ['prof.awa@ista-gc.com', 'motdepasse456', 'prof', 'electro', '', '', ''],
-        ['admin2@ista-gc.com', 'motdepasse789', 'admin', '', '', '', '']
+        ['Dupont', 'Jean', 'jean.dupont@ista-gc.com', 'etudiant', 'gc', 1, ''],
+        ['Awa', 'Diallo', 'prof.awa@ista-gc.com', 'prof', 'electro', '', ''],
+        ['', '', 'admin2@ista-gc.com', 'admin', '', '', '']
     ];
     const feuille = XLSX.utils.aoa_to_sheet([entetes, ...exemples]);
     feuille['!cols'] = entetes.map(() => ({ wch: 22 }));
@@ -1047,14 +1060,18 @@ function telechargerModeleUsers() {
         ['Colonne "Role" — valeurs acceptées'],
         ['admin'], ['prof'], ['etudiant'],
         [],
-        ['Colonne "Serie" — code à utiliser', 'Nom complet'],
+        ['Colonne "Serie" — code à utiliser (vide pour un admin)', 'Nom complet'],
         ...Object.keys(SERIES).map(k => [k, SERIES[k].nom]),
-        ['(laisser vide pour un admin)', ''],
         [],
         ['Colonne "Niveau" — uniquement pour les étudiants', 'Signification'],
         ...Object.keys(NIVEAUX).map(n => [n, NIVEAUX[n]]),
         [],
-        ['Nom / Prénom : obligatoires uniquement pour les étudiants (export des notes)']
+        ['Nom / Prénom : obligatoires uniquement pour les étudiants (export des notes),'],
+        ['optionnels pour admin/prof.'],
+        [],
+        ['Mot de passe : optionnel. Laissé vide, un mot de passe est généré'],
+        ['automatiquement pour chaque utilisateur, et la liste complète'],
+        ['(email + mot de passe) est proposée au téléchargement juste après la création.']
     ]);
 
     const classeur = XLSX.utils.book_new();
@@ -1100,7 +1117,12 @@ async function analyserFichierUsers() {
 
         usersDetectesImport = lignes.map((ligne, index) => {
             const email = lireColonne(ligne, 'email').toLowerCase();
-            const password = lireColonne(ligne, 'motdepasse') || lireColonne(ligne, 'password');
+            const passwordSaisi = lireColonne(ligne, 'motdepasse') || lireColonne(ligne, 'password');
+            // Mot de passe optionnel : généré automatiquement si absent du
+            // fichier (indispensable pour créer 100+ étudiants sans en
+            // inventer autant à la main).
+            const motDePasseGenere = !passwordSaisi;
+            const password = passwordSaisi || genererMotDePasseAleatoire();
             const role = lireColonne(ligne, 'role').toLowerCase();
             const serie = lireColonne(ligne, 'serie').toLowerCase();
             const niveauBrut = lireColonne(ligne, 'niveau');
@@ -1110,7 +1132,6 @@ async function analyserFichierUsers() {
 
             const erreurs = [];
             if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) erreurs.push("email invalide");
-            if (!password) erreurs.push("mot de passe manquant");
             if (!['admin', 'prof', 'etudiant'].includes(role)) erreurs.push("rôle invalide (admin/prof/etudiant)");
             if (role && role !== 'admin' && !SERIES[serie]) erreurs.push("série inconnue");
             if (role === 'etudiant' && !NIVEAUX[niveau]) erreurs.push("niveau invalide (1 à 5)");
@@ -1121,7 +1142,7 @@ async function analyserFichierUsers() {
                 emailsDuFichier.add(email);
             }
 
-            return { ligneNum: index + 2, email, password, role, serie, niveau, nom, prenom, erreurs };
+            return { ligneNum: index + 2, email, password, motDePasseGenere, role, serie, niveau, nom, prenom, erreurs };
         });
 
         const nbValides = usersDetectesImport.filter(u => u.erreurs.length === 0).length;
@@ -1131,13 +1152,14 @@ async function analyserFichierUsers() {
             <div class="checkbox-group">
                 ${usersDetectesImport.map((u, i) => {
                     const ok = u.erreurs.length === 0;
+                    const nomComplet = (u.nom && u.prenom) ? `${u.prenom} ${u.nom} — ` : '';
                     const details = ok
-                        ? `${u.email} — ${u.role}${u.serie ? ' — ' + getNomSerie(u.serie) : ''}${u.niveau ? ' — ' + getNomNiveau(u.niveau) : ''}`
+                        ? `${nomComplet}${u.email} — ${u.role}${u.serie ? ' — ' + getNomSerie(u.serie) : ''}${u.niveau ? ' — ' + getNomNiveau(u.niveau) : ''}${u.motDePasseGenere ? ' — 🔑 mot de passe généré' : ''}`
                         : `Ligne ${u.ligneNum} (${u.email || 'email manquant'}) : ⚠️ ${u.erreurs.join(', ')}`;
                     return `<label><input type="checkbox" id="userImport_${i}" ${ok ? 'checked' : 'disabled'}> ${escapeHtml(details)}</label>`;
                 }).join('')}
             </div>
-            <button type="button" onclick="importerUsersSelectionnes()" class="btn-success" ${nbValides === 0 ? 'disabled' : ''}>✅ Créer les utilisateurs cochés</button>
+            <button type="button" onclick="importerUsersSelectionnes()" class="btn-success" ${nbValides === 0 ? 'disabled' : ''}>✅ Créer les utilisateurs cochés (${nbValides})</button>
         `;
     } catch (err) {
         console.error(err);
@@ -1157,36 +1179,74 @@ async function importerUsersSelectionnes() {
         return;
     }
 
-    apercu.innerHTML = '<p>⏳ Création en cours...</p>';
+    if (aCreer.length > 30 && !confirm(`Vous êtes sur le point de créer ${aCreer.length} utilisateurs d'un coup. Continuer ?`)) {
+        return;
+    }
+
+    apercu.innerHTML = `<p>⏳ Création en cours (0 / ${aCreer.length})...</p>`;
 
     try {
-        // Firestore limite un batch à 500 écritures ; on découpe par sécurité
-        // pour rester très en dessous, même pour un très gros fichier.
+        // Firestore limite un batch à 500 écritures ; on découpe par lots de
+        // 400 pour rester largement en dessous, même pour un fichier de
+        // plusieurs centaines de lignes (100 étudiants tiennent dans un seul lot).
+        const TAILLE_LOT = 400;
         const paquets = [];
-        for (let i = 0; i < aCreer.length; i += 400) paquets.push(aCreer.slice(i, i + 400));
+        for (let i = 0; i < aCreer.length; i += TAILLE_LOT) paquets.push(aCreer.slice(i, i + TAILLE_LOT));
 
+        let creees = 0;
         for (const paquet of paquets) {
             const batch = db.batch();
             paquet.forEach(u => {
                 const data = { email: u.email, password: u.password, role: u.role };
                 if (u.role !== 'admin') data.serie = u.serie;
-                if (u.role === 'etudiant') {
-                    data.niveau = u.niveau;
-                    data.nom = u.nom;
-                    data.prenom = u.prenom;
-                }
+                if (u.role === 'etudiant') data.niveau = u.niveau;
+                // Nom/prénom : obligatoires pour un étudiant, mais conservés
+                // aussi pour un admin/prof si le fichier les fournissait.
+                if (u.nom) data.nom = u.nom;
+                if (u.prenom) data.prenom = u.prenom;
                 batch.set(db.collection('users').doc(), data);
             });
             await batch.commit();
+            creees += paquet.length;
+            apercu.innerHTML = `<p>⏳ Création en cours (${creees} / ${aCreer.length})...</p>`;
         }
 
-        apercu.innerHTML = `<p>✅ ${aCreer.length} utilisateur(s) créé(s) avec succès.</p>`;
+        afficherResultatImportUsers(aCreer);
         usersDetectesImport = [];
         document.getElementById('fichierUsers').value = '';
     } catch (err) {
         console.error(err);
         apercu.innerHTML = "<p>⚠️ Une erreur est survenue pendant la création. Vérifiez la liste des utilisateurs ci-dessus (certains ont peut-être déjà été créés) avant de relancer l'import.</p>";
     }
+}
+
+// Affiche le résultat de l'import + un bouton pour télécharger les
+// identifiants (email + mot de passe, y compris ceux générés automatiquement)
+// des utilisateurs qui viennent d'être créés, pour que l'admin puisse les
+// distribuer (impression, envoi par classe...).
+function afficherResultatImportUsers(utilisateursCrees) {
+    const apercu = document.getElementById('apercuUsersImport');
+    dernierImportUsersCrees = utilisateursCrees;
+    apercu.innerHTML = `
+        <p>✅ ${utilisateursCrees.length} utilisateur(s) créé(s) avec succès.</p>
+        <button type="button" onclick="telechargerIdentifiantsImportes()" class="btn-secondary">📥 Télécharger les identifiants (.xlsx)</button>
+    `;
+}
+
+let dernierImportUsersCrees = [];
+
+function telechargerIdentifiantsImportes() {
+    if (typeof XLSX === 'undefined' || dernierImportUsersCrees.length === 0) return;
+    const entetes = ['Nom', 'Prenom', 'Email', 'Role', 'Serie', 'Niveau', 'Mot de passe'];
+    const lignes = dernierImportUsersCrees.map(u => [
+        u.nom || '', u.prenom || '', u.email, u.role,
+        u.serie ? getNomSerie(u.serie) : '', u.niveau ? getNomNiveau(u.niveau) : '', u.password
+    ]);
+    const feuille = XLSX.utils.aoa_to_sheet([entetes, ...lignes]);
+    feuille['!cols'] = entetes.map(() => ({ wch: 20 }));
+    const classeur = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(classeur, feuille, "Identifiants");
+    XLSX.writeFile(classeur, `Identifiants_ISTA-GC_${new Date().toISOString().slice(0, 10)}.xlsx`);
 }
 
 // Petit texte "Séries concernées : ..." affiché uniquement pour les cours de

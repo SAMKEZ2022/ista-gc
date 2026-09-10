@@ -343,3 +343,34 @@ habituel (un utilisateur à la fois) :
 goutte, les mots de passe du fichier sont stockés tels quels dans Firestore
 (voir la section sécurité plus haut dans ce guide) — ne partagez/ne stockez
 pas ce fichier au-delà de l'import.
+
+## Mise à jour : import illimité (100+ utilisateurs) + mot de passe optionnel
+
+Deux ajustements pour un usage réel en début d'année scolaire, où l'admin
+importe une centaine d'étudiants d'un coup :
+
+1. **Le mot de passe devient optionnel** dans le fichier importé. S'il est
+   laissé vide, un mot de passe aléatoire de 8 caractères (sans caractères
+   ambigus comme `0`/`O` ou `1`/`l`/`I`) est généré automatiquement pour
+   chaque ligne. Après la création, un bouton **"📥 Télécharger les
+   identifiants (.xlsx)"** apparaît : il exporte nom/prénom/email/rôle/
+   série/niveau/mot de passe de **tous les utilisateurs qui viennent d'être
+   créés**, pour que l'admin puisse les distribuer (impression, envoi par
+   classe, etc.). Sans ça, importer 100 étudiants obligeait à inventer 100
+   mots de passe à la main dans le fichier — pas réaliste.
+2. **Aucune limite de taille de fichier n'était en réalité bloquante**, mais
+   c'était non vérifié : le découpage en lots Firestore (déjà en place,
+   400 écritures par lot pour rester sous la limite de 500 imposée par
+   Firestore) a été testé avec un jeu de 150 lignes (mélange étudiants/
+   profs/admin, avec doublons et email invalide volontaires) : validation
+   de tout le fichier en ~15 ms, doublons et erreurs bien détectés, un seul
+   lot Firestore nécessaire. Une confirmation (`confirm()`) est maintenant
+   demandée avant de lancer une création de plus de 30 utilisateurs d'un
+   coup, pour éviter un clic accidentel, et l'aperçu affiche une progression
+   ("Création en cours (X / Y)") pendant l'écriture des lots.
+3. **Correction annexe :** nom/prénom saisis pour un admin ou un professeur
+   dans le fichier étaient silencieusement ignorés (le code ne les
+   enregistrait que pour le rôle "etudiant"). Ils sont maintenant conservés
+   pour n'importe quel rôle s'ils sont fournis (utile pour l'affichage dans
+   "Gestion des Utilisateurs", qui préfère déjà afficher "Prénom Nom"
+   quand disponible).
