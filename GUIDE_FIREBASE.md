@@ -231,6 +231,38 @@ tous les cours de sa série.
 série (pas de notion de tronc commun, pas de notion de matière/prof
 attribué) — dites-moi si vous voulez la même logique pour eux.
 
+## Nouveau : import de plusieurs matières en une fois depuis un PDF ou un Word
+
+Jusqu'ici l'admin devait créer les matières une par une (nom + série + niveau).
+Un second bloc a été ajouté juste sous le formulaire habituel, dans
+**"📘 Gestion des Matières"** (`admin.html`) :
+
+1. L'admin choisit une **série** et un **niveau** (ceux qui s'appliqueront à
+   toutes les matières importées).
+2. Il dépose un fichier **PDF ou Word (.docx)** contenant la liste des
+   matières, **une par ligne** (des puces `-`, `•` ou une numérotation
+   `1.`/`1)` en début de ligne sont automatiquement retirées).
+3. Clic sur **"🔍 Analyser le fichier"** → le texte est lu directement dans
+   le navigateur (bibliothèques `pdf.js` pour le PDF, `mammoth.js` pour le
+   `.docx`, ajoutées dans `admin.html`), les lignes vides/doublons sont
+   filtrées, et la liste des matières détectées s'affiche avec une case à
+   cocher par matière (toutes cochées par défaut — l'admin peut décocher
+   celles à ne pas créer).
+4. Clic sur **"✅ Créer les matières cochées"** → chacune est ajoutée à la
+   collection Firestore `matieres` (sans professeur attribué, comme pour une
+   création manuelle) ; l'admin les attribue ensuite à un professeur depuis
+   la liste juste au-dessus, comme avant.
+
+**Limites à connaître :**
+- Le format `.doc` (ancien Word, avant 2007) n'est pas lisible par
+  `mammoth.js` : il faut l'enregistrer en `.docx` ou en PDF avant l'import.
+- Un PDF scanné (image, sans texte sélectionnable) ne contient pas de texte
+  extractible — seuls les PDF "texte" fonctionnent.
+- Toutes les matières importées en une fois partagent la même série et le
+  même niveau ; pour un fichier qui mélange plusieurs séries/niveaux,
+  importez-le plusieurs fois (une fois par série/niveau), ou séparez-le en
+  plusieurs fichiers.
+
 ### Bug corrigé au passage
 
 Le menu déroulant "Envoyer un Support de Cours" (`#supportCours`, page prof)

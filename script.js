@@ -834,6 +834,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         }
 
+        // ==========================================
+        // Import de plusieurs matières depuis un fichier PDF/Word
+        // (un nom de matière par ligne dans le document déposé)
+        // ==========================================
+        if (typeof pdfjsLib !== 'undefined') {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        }
+
         const formAddDevoir = document.getElementById('formAddDevoir');
         formAddDevoir.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -1067,6 +1075,126 @@ async function assignerProfMatiere(matiereId, profId) {
         console.error(err);
         alert("⚠️ Impossible d'attribuer la matière à ce professeur.");
         afficherMatieresAdmin(); // réaffiche l'état réel (annule le changement visuel du select)
+    }
+}
+
+// ==========================================
+// Import de matières en masse depuis un fichier PDF ou Word (.docx)
+// Chaque ligne non vide du fichier devient une matière candidate,
+// créée pour la série et le niveau choisis par l'admin.
+// ==========================================
+let matieresDetecteesImport = [];
+
+async function extraireTexteFichier(file) {
+    const nom = file.name.toLowerCase();
+    if (nom.endsWith('.pdf')) {
+        const buffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
+        let texte = '';
+        for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const contenu = await page.getTextContent();
+            texte += contenu.items.map(it => it.str).join(' ') + '\n';
+        }
+        return texte;
+    }
+    if (nom.endsWith('.docx')) {
+        const buffer = await file.arrayBuffer();
+        const resultat = await mammoth.extractRawText({ arrayBuffer: buffer });
+        return resultat.value;
+    }
+    if (nom.endsWith('.doc')) {
+        throw new Error("Le format .doc (ancien Word) n'est pas pris en charge : enregistrez le fichier en .docx ou en PDF, puis réessayez.");
+    }
+    throw new Error("Format non pris en charge. Utilisez un fichier PDF ou .docx.");
+}
+
+function nettoyerLigneMatiere(ligne) {
+    return ligne
+        .replace(/^[\s•\-–—*]+/, '')     // puces en début de ligne
+        .replace(/^\d+[\).\-]\s*/, '')   // numérotation "1. " / "1) " / "1- "
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+async function analyserFichierMatieres() {
+    const input = document.getElementById('fichierMatieres');
+    const apercu = document.getElementById('apercuMatieresImport');
+    const serie = document.getElementById('importSerieMatiere').value;
+    const niveau = document.getElementById('importNiveauMatiere').value;
+
+    if (!serie || !niveau) {
+        alert("Choisissez d'abord la série et le niveau concernés par ce fichier.");
+        return;
+    }
+    if (!input.files || !input.files[0]) {
+        alert("Choisissez un fichier PDF ou Word à analyser.");
+        return;
+    }
+
+    apercu.innerHTML = '<p>⏳ Lecture du fichier...</p>';
+
+    try {
+        const texte = await extraireTexteFichier(input.files[0]);
+        const lignes = texte.split('\n')
+            .map(nettoyerLigneMatiere)
+            .filter(l => l.length >= 2 && l.length <= 80);
+
+        const vues = new Set();
+        matieresDetecteesImport = lignes.filter(l => {
+            const cle = l.toLowerCase();
+            if (vues.has(cle)) return false;
+            vues.add(cle);
+            return true;
+        });
+
+        if (matieresDetecteesImport.length === 0) {
+            apercu.innerHTML = "<p>⚠️ Aucune matière détectée dans ce fichier. Vérifiez qu'il contient bien un nom de matière par ligne.</p>";
+            return;
+        }
+
+        apercu.innerHTML = `
+            <p>${matieresDetecteesImport.length} matière(s) détectée(s) pour <b>${getNomSerie(serie)} - ${getNomNiveau(parseInt(niveau, 10))}</b>. Décochez celles à ne pas créer :</p>
+            <div class="checkbox-group">
+                ${matieresDetecteesImport.map((m, i) => `<label><input type="checkbox" id="matiereImport_${i}" checked> ${m}</label>`).join('')}
+            </div>
+            <button type="button" onclick="importerMatieresSelectionnees()" class="btn-success">✅ Créer les matières cochées</button>
+        `;
+    } catch (err) {
+        console.error(err);
+        apercu.innerHTML = `<p>⚠️ ${err.message || "Impossible de lire ce fichier."}</p>`;
+    }
+}
+
+async function importerMatieresSelectionnees() {
+    const serie = document.getElementById('importSerieMatiere').value;
+    const niveau = parseInt(document.getElementById('importNiveauMatiere').value, 10);
+    const apercu = document.getElementById('apercuMatieresImport');
+
+    const aCreer = matieresDetecteesImport.filter((m, i) => {
+        const cb = document.getElementById(`matiereImport_${i}`);
+        return cb && cb.checked;
+    });
+
+    if (aCreer.length === 0) {
+        alert("Aucune matière cochée à créer.");
+        return;
+    }
+
+    try {
+        await Promise.all(aCreer.map(nom => db.collection('matieres').add({
+            nom,
+            serie,
+            niveau,
+            profId: null,
+            profEmail: null
+        })));
+        apercu.innerHTML = `<p>✅ ${aCreer.length} matière(s) créée(s) avec succès.</p>`;
+        matieresDetecteesImport = [];
+        document.getElementById('fichierMatieres').value = '';
+    } catch (err) {
+        console.error(err);
+        alert("⚠️ Impossible de créer certaines matières.");
     }
 }
 

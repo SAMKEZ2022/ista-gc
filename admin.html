@@ -12,6 +12,10 @@
     <script src="./firebase-config.js"></script>
     <!-- SheetJS : génère le fichier .xlsx directement dans le navigateur -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- pdf.js : lecture du texte des fichiers PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <!-- Mammoth : lecture du texte des fichiers Word (.docx) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 </head>
 <body class="theme-admin">
     <header class="header">
@@ -68,6 +72,22 @@
         </form>
         <div id="listeMatieresAdmin"></div>
 
+        <div class="card">
+            <p><b>📄 Import rapide depuis un fichier</b><br>
+            Déposez un PDF ou un Word (.docx) contenant la liste des matières (un nom de
+            matière par ligne) : elles seront proposées à la création en une seule fois,
+            pour la série et le niveau choisis ci-dessous.</p>
+            <select id="importSerieMatiere" required>
+                <option value="">-- Choisir une série --</option>
+            </select>
+            <select id="importNiveauMatiere" required>
+                <option value="">-- Choisir un niveau --</option>
+            </select>
+            <input type="file" id="fichierMatieres" accept=".pdf,.doc,.docx">
+            <button type="button" onclick="analyserFichierMatieres()">🔍 Analyser le fichier</button>
+            <div id="apercuMatieresImport"></div>
+        </div>
+
         <h3>📅 Programmer un cours</h3>
         <form id="formAddCours">
             <select id="coursMatiereAdmin" onchange="appliquerMatiereSelectionneeAdmin()">
@@ -122,6 +142,8 @@
             remplirSelectSeries('newSerieDevoir');
             remplirSelectSeries('newSerieMatiere');
             remplirSelectNiveaux('newNiveauMatiere');
+            remplirSelectSeries('importSerieMatiere');
+            remplirSelectNiveaux('importNiveauMatiere');
             remplirSelectSeries('exportSerie');
             remplirSelectNiveaux('exportNiveau');
             // Initialiser le select des salles pour la série par défaut
